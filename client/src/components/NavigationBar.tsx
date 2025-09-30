@@ -25,75 +25,95 @@ export function NavigationBar({
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Link href="/">
-            <a className="text-xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" data-testid="link-home">
-              BasedMem
-            </a>
+            {({ href, navigate }) => (
+              <a href={href} onClick={navigate} className="flex items-center gap-2" data-testid="link-home">
+                <img src="/logo.svg" alt="BasedMem Logo" className="h-8 w-8" />
+                <span className="text-xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  BasedMem
+                </span>
+              </a>
+            )}
           </Link>
           
           <div className="hidden md:flex items-center gap-2">
             <Link href="/browse">
-              <a data-testid="link-browse">
+              {({ href, navigate }) => (
                 <Button 
+                  asChild
                   variant={location === "/browse" ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
                 >
-                  <Grid3x3 className="h-4 w-4" />
-                  Browse
+                  <a href={href} onClick={navigate} data-testid="link-browse">
+                    <Grid3x3 className="h-4 w-4" />
+                    Browse
+                  </a>
                 </Button>
-              </a>
+              )}
             </Link>
             
             <Link href="/create">
-              <a data-testid="link-create">
+              {({ href, navigate }) => (
                 <Button 
+                  asChild
                   variant={location === "/create" ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
                 >
-                  <Rocket className="h-4 w-4" />
-                  Create
+                  <a href={href} onClick={navigate} data-testid="link-create">
+                    <Rocket className="h-4 w-4" />
+                    Create
+                  </a>
                 </Button>
-              </a>
+              )}
             </Link>
 
             <Link href="/portfolio">
-              <a data-testid="link-portfolio">
+              {({ href, navigate }) => (
                 <Button 
+                  asChild
                   variant={location === "/portfolio" ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
                 >
-                  <TrendingUp className="h-4 w-4" />
-                  Portfolio
+                  <a href={href} onClick={navigate} data-testid="link-portfolio">
+                    <TrendingUp className="h-4 w-4" />
+                    Portfolio
+                  </a>
                 </Button>
-              </a>
+              )}
             </Link>
 
             <Link href="/alerts">
-              <a data-testid="link-alerts">
+              {({ href, navigate }) => (
                 <Button 
+                  asChild
                   variant={location === "/alerts" ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
                 >
-                  <Bell className="h-4 w-4" />
-                  Uyarılar
+                  <a href={href} onClick={navigate} data-testid="link-alerts">
+                    <Bell className="h-4 w-4" />
+                    Uyarılar
+                  </a>
                 </Button>
-              </a>
+              )}
             </Link>
 
             <Link href="/daily">
-              <a data-testid="link-daily">
+              {({ href, navigate }) => (
                 <Button 
+                  asChild
                   variant={location === "/daily" ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
                 >
-                  <Flame className="h-4 w-4" />
-                  Daily
+                  <a href={href} onClick={navigate} data-testid="link-daily">
+                    <Flame className="h-4 w-4" />
+                    Daily
+                  </a>
                 </Button>
-              </a>
+              )}
             </Link>
           </div>
         </div>

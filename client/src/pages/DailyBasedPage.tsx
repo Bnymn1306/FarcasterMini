@@ -1,27 +1,55 @@
-import { useState } from "react";
 import { DailyBased } from "@/components/DailyBased";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Flame, Calendar, Award } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { User, DailyCheckIn } from "@shared/schema";
+
+const MOCK_USER_ID = "mock-user-123";
+
+interface CheckInData {
+  user: User;
+  todayCheckIn: DailyCheckIn | null;
+  recentCheckIns: DailyCheckIn[];
+}
 
 export default function DailyBasedPage() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasCheckedIn, setHasCheckedIn] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(5);
-  const [longestStreak] = useState(12);
-  const [totalCheckIns, setTotalCheckIns] = useState(23);
 
-  const handleCheckIn = async () => {
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      setHasCheckedIn(true);
-      const newStreak = currentStreak + 1;
-      setCurrentStreak(newStreak);
-      setTotalCheckIns(totalCheckIns + 1);
+  const { data: checkInData, isLoading: isLoadingData } = useQuery<CheckInData>({
+    queryKey: ["/api/check-in", MOCK_USER_ID],
+    queryFn: async () => {
+      const response = await fetch(`/api/check-in/${MOCK_USER_ID}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          const newUser = await apiRequest("POST", "/api/users", {
+            id: MOCK_USER_ID,
+            walletAddress: "0x1234...mock",
+            username: "DemoUser",
+          }) as unknown as User;
+          return {
+            user: newUser,
+            todayCheckIn: null,
+            recentCheckIns: [],
+          };
+        }
+        throw new Error("Failed to fetch check-in data");
+      }
+      return response.json();
+    },
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/check-in", {
+        userId: MOCK_USER_ID,
+      }) as unknown as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/check-in", MOCK_USER_ID] });
       
+      const newStreak = data.user.currentStreak;
       let rewardMessage = "10 BMEM kazandın! 🎉";
       if (newStreak === 3) rewardMessage = "30 BMEM kazandın! 🔥";
       if (newStreak === 7) rewardMessage = "100 BMEM kazandın! 🚀";
@@ -32,18 +60,52 @@ export default function DailyBasedPage() {
         title: "Check-In Başarılı! 🎯",
         description: `${newStreak} günlük streak! ${rewardMessage}`,
       });
-    }, 1500);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Check-in yapılamadı",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCheckIn = () => {
+    checkInMutation.mutate();
   };
+
+  const user = checkInData?.user;
+  const hasCheckedInToday = !!checkInData?.todayCheckIn;
+  const recentCheckIns = checkInData?.recentCheckIns || [];
 
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - i));
-    const hasCheckIn = i >= (7 - currentStreak) && i < 7;
+    
+    const hasCheckIn = recentCheckIns.some(checkIn => {
+      const checkInDate = new Date(checkIn.checkInDate);
+      return (
+        checkInDate.getFullYear() === date.getFullYear() &&
+        checkInDate.getMonth() === date.getMonth() &&
+        checkInDate.getDate() === date.getDate()
+      );
+    });
+    
     return {
       date,
       hasCheckIn,
     };
   });
+
+  if (isLoadingData) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-20">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -60,12 +122,12 @@ export default function DailyBasedPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <DailyBased
-            currentStreak={currentStreak}
-            longestStreak={longestStreak}
-            totalCheckIns={totalCheckIns}
-            hasCheckedInToday={hasCheckedIn}
+            currentStreak={user?.currentStreak || 0}
+            longestStreak={user?.longestStreak || 0}
+            totalCheckIns={user?.totalCheckIns || 0}
+            hasCheckedInToday={hasCheckedInToday}
             onCheckIn={handleCheckIn}
-            isLoading={isLoading}
+            isLoading={checkInMutation.isPending}
           />
 
           <Card className="p-6 space-y-4">
@@ -125,7 +187,7 @@ export default function DailyBasedPage() {
             <h3 className="font-bold text-lg">💎 Toplam Kazanç</h3>
             <div className="text-center py-4">
               <p className="text-5xl font-black font-mono text-primary mb-2">
-                {totalCheckIns * 10 + Math.floor(currentStreak / 3) * 20}
+                {(user?.totalCheckIns || 0) * 10 + Math.floor((user?.currentStreak || 0) / 3) * 20}
               </p>
               <p className="text-sm text-muted-foreground">BMEM Tokens</p>
             </div>

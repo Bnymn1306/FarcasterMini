@@ -73,7 +73,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User Farcaster profile update
+  // Users API
+  app.post("/api/users", async (req, res) => {
+    try {
+      const user = await storage.createUser(req.body);
+      res.json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
   app.patch("/api/users/:id/farcaster", async (req, res) => {
     try {
       const { id } = req.params;
