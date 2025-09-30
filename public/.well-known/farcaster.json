@@ -1,0 +1,17 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0",
+    "payload": "eyJkb21haW4iOiJiYXNlZG1lbS5jb20ifQ",
+    "signature": "MHg..."
+  },
+  "frame": {
+    "version": "1",
+    "name": "BasedMem",
+    "iconUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=512&h=512&fit=crop",
+    "homeUrl": "https://fb67568f-2022-4ae3-a285-7ec4902c6b54-00-knbb9se0234r.spock.replit.dev",
+    "imageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=630&fit=crop",
+    "buttonTitle": "Launch BasedMem",
+    "splashImageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=1200&fit=crop",
+    "splashBackgroundColor": "#8B5CF6"
+  }
+}

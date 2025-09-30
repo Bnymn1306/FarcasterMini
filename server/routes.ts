@@ -2,8 +2,20 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPriceAlertSchema } from "@shared/schema";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve Farcaster manifest
+  app.get("/.well-known/farcaster.json", (req, res) => {
+    const manifestPath = path.join(process.cwd(), "public/.well-known/farcaster.json");
+    if (fs.existsSync(manifestPath)) {
+      res.setHeader("Content-Type", "application/json");
+      res.sendFile(manifestPath);
+    } else {
+      res.status(404).json({ error: "Manifest not found" });
+    }
+  });
   // Price Alerts API
   app.get("/api/alerts", async (req, res) => {
     try {
