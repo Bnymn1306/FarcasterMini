@@ -11,6 +11,7 @@ import Browse from "@/pages/Browse";
 import Create from "@/pages/Create";
 import TokenDetail from "@/pages/TokenDetail";
 import Portfolio from "@/pages/Portfolio";
+import Alerts from "@/pages/Alerts";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/create" component={Create} />
       <Route path="/token/:id" component={TokenDetail} />
       <Route path="/portfolio" component={Portfolio} />
+      <Route path="/alerts" component={Alerts} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,10 +1,11 @@
-import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding } from "@shared/schema";
+import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByWalletAddress(walletAddress: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   getToken(id: string): Promise<Token | undefined>;
   getAllTokens(): Promise<Token[]>;
@@ -19,6 +20,13 @@ export interface IStorage {
   getHoldingsByUser(userId: string): Promise<Holding[]>;
   createHolding(holding: InsertHolding): Promise<Holding>;
   updateHolding(id: string, updates: Partial<Holding>): Promise<Holding | undefined>;
+  
+  getPriceAlert(id: string): Promise<PriceAlert | undefined>;
+  getPriceAlertsByUser(userId: string): Promise<PriceAlert[]>;
+  getActivePriceAlerts(): Promise<PriceAlert[]>;
+  createPriceAlert(alert: InsertPriceAlert): Promise<PriceAlert>;
+  updatePriceAlert(id: string, updates: Partial<PriceAlert>): Promise<PriceAlert | undefined>;
+  deletePriceAlert(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -26,12 +34,14 @@ export class MemStorage implements IStorage {
   private tokens: Map<string, Token>;
   private trades: Map<string, Trade>;
   private holdings: Map<string, Holding>;
+  private priceAlerts: Map<string, PriceAlert>;
 
   constructor() {
     this.users = new Map();
     this.tokens = new Map();
     this.trades = new Map();
     this.holdings = new Map();
+    this.priceAlerts = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -50,11 +60,22 @@ export class MemStorage implements IStorage {
       walletAddress: insertUser.walletAddress,
       username: insertUser.username ?? null,
       avatarUrl: insertUser.avatarUrl ?? null,
+      farcasterUsername: insertUser.farcasterUsername ?? null,
+      farcasterFid: insertUser.farcasterFid ?? null,
       id,
       createdAt: new Date()
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updated = { ...user, ...updates };
+    this.users.set(id, updated);
+    return updated;
   }
 
   async getToken(id: string): Promise<Token | undefined> {
@@ -155,6 +176,53 @@ export class MemStorage implements IStorage {
     };
     this.holdings.set(id, updated);
     return updated;
+  }
+
+  async getPriceAlert(id: string): Promise<PriceAlert | undefined> {
+    return this.priceAlerts.get(id);
+  }
+
+  async getPriceAlertsByUser(userId: string): Promise<PriceAlert[]> {
+    return Array.from(this.priceAlerts.values()).filter(
+      (alert) => alert.userId === userId
+    );
+  }
+
+  async getActivePriceAlerts(): Promise<PriceAlert[]> {
+    return Array.from(this.priceAlerts.values()).filter(
+      (alert) => alert.isActive && !alert.isTriggered
+    );
+  }
+
+  async createPriceAlert(insertAlert: InsertPriceAlert): Promise<PriceAlert> {
+    const id = randomUUID();
+    const alert: PriceAlert = {
+      userId: insertAlert.userId,
+      tokenId: insertAlert.tokenId,
+      targetPrice: insertAlert.targetPrice,
+      condition: insertAlert.condition,
+      notifyViaFarcaster: insertAlert.notifyViaFarcaster ?? true,
+      id,
+      isActive: true,
+      isTriggered: false,
+      triggeredAt: null,
+      createdAt: new Date()
+    };
+    this.priceAlerts.set(id, alert);
+    return alert;
+  }
+
+  async updatePriceAlert(id: string, updates: Partial<PriceAlert>): Promise<PriceAlert | undefined> {
+    const alert = this.priceAlerts.get(id);
+    if (!alert) return undefined;
+    
+    const updated = { ...alert, ...updates };
+    this.priceAlerts.set(id, updated);
+    return updated;
+  }
+
+  async deletePriceAlert(id: string): Promise<boolean> {
+    return this.priceAlerts.delete(id);
   }
 }
 

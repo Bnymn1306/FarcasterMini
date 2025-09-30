@@ -8,6 +8,8 @@ export const users = pgTable("users", {
   walletAddress: text("wallet_address").notNull().unique(),
   username: text("username"),
   avatarUrl: text("avatar_url"),
+  farcasterUsername: text("farcaster_username"),
+  farcasterFid: text("farcaster_fid"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,6 +54,19 @@ export const holdings = pgTable("holdings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const priceAlerts = pgTable("price_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tokenId: varchar("token_id").notNull().references(() => tokens.id),
+  targetPrice: text("target_price").notNull(),
+  condition: text("condition").notNull(),
+  isActive: boolean("is_active").default(true),
+  isTriggered: boolean("is_triggered").default(false),
+  notifyViaFarcaster: boolean("notify_via_farcaster").default(true),
+  triggeredAt: timestamp("triggered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -79,6 +94,14 @@ export const insertHoldingSchema = createInsertSchema(holdings).omit({
   updatedAt: true,
 });
 
+export const insertPriceAlertSchema = createInsertSchema(priceAlerts).omit({
+  id: true,
+  isActive: true,
+  isTriggered: true,
+  triggeredAt: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -91,6 +114,9 @@ export type Trade = typeof trades.$inferSelect;
 export type InsertHolding = z.infer<typeof insertHoldingSchema>;
 export type Holding = typeof holdings.$inferSelect;
 
+export type InsertPriceAlert = z.infer<typeof insertPriceAlertSchema>;
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+
 export type TokenWithCreator = Token & {
   creator: User;
 };
@@ -101,4 +127,8 @@ export type HoldingWithToken = Holding & {
 
 export type TradeWithUser = Trade & {
   user: User;
+};
+
+export type PriceAlertWithToken = PriceAlert & {
+  token: Token;
 };

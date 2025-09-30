@@ -1,5 +1,6 @@
 import { useRoute } from "wouter";
 import { TradingInterface } from "@/components/TradingInterface";
+import { PriceAlertDialog } from "@/components/PriceAlertDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,6 +45,14 @@ export default function TokenDetail() {
     toast({
       title: "Trade Executed!",
       description: `Successfully sold ${amount} ${mockToken.symbol}`,
+    });
+  };
+
+  const handleCreateAlert = (data: any) => {
+    console.log('Creating alert:', data);
+    toast({
+      title: "Uyarı Oluşturuldu! 🔔",
+      description: `${mockToken.symbol} için fiyat uyarısı başarıyla ayarlandı. Farcaster profilinize bildirim gönderilecek.`,
     });
   };
 
@@ -99,6 +108,7 @@ export default function TokenDetail() {
                         </Button>
                       </a>
                     )}
+                    <PriceAlertDialog token={mockToken} onCreateAlert={handleCreateAlert} />
                   </div>
                 </div>
               </div>

@@ -1,8 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Wallet, Rocket, Grid3x3, TrendingUp } from "lucide-react";
+import { Wallet, Rocket, Grid3x3, TrendingUp, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { useState } from "react";
 
 interface NavigationBarProps {
   onConnectWallet?: () => void;
@@ -67,6 +66,19 @@ export function NavigationBar({
                 >
                   <TrendingUp className="h-4 w-4" />
                   Portfolio
+                </Button>
+              </a>
+            </Link>
+
+            <Link href="/alerts">
+              <a data-testid="link-alerts">
+                <Button 
+                  variant={location === "/alerts" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  Uyarılar
                 </Button>
               </a>
             </Link>
