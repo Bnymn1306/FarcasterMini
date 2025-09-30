@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +8,12 @@ import { Slider } from "@/components/ui/slider";
 import { ArrowDownUp } from "lucide-react";
 import { GasFeeDisplay } from "./GasFeeDisplay";
 import type { Token } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface TradingInterfaceProps {
   token: Token;
   userBalance?: string;
+  userTokenBalance?: string;
   onBuy?: (amount: string) => void;
   onSell?: (amount: string) => void;
 }
@@ -19,26 +21,36 @@ interface TradingInterfaceProps {
 export function TradingInterface({ 
   token, 
   userBalance = "1.5",
+  userTokenBalance = "0",
   onBuy,
   onSell 
 }: TradingInterfaceProps) {
-  const [amount, setAmount] = useState("");
-  const [sliderValue, setSliderValue] = useState([50]);
+  const [buyAmount, setBuyAmount] = useState("");
+  const [sellAmount, setSellAmount] = useState("");
+  const [buySliderValue, setBuySliderValue] = useState([50]);
+  const [sellSliderValue, setSellSliderValue] = useState([50]);
+  const [chartPeriod, setChartPeriod] = useState("24H");
 
   const handleBuy = () => {
-    console.log('Buy', amount, token.symbol);
-    onBuy?.(amount);
+    console.log('Buy', buyAmount, token.symbol);
+    onBuy?.(buyAmount);
   };
 
   const handleSell = () => {
-    console.log('Sell', amount, token.symbol);
-    onSell?.(amount);
+    console.log('Sell', sellAmount, token.symbol);
+    onSell?.(sellAmount);
   };
 
-  const updateFromSlider = (value: number[]) => {
-    setSliderValue(value);
+  const updateBuyFromSlider = (value: number[]) => {
+    setBuySliderValue(value);
     const calculatedAmount = ((parseFloat(userBalance) * value[0]) / 100).toFixed(4);
-    setAmount(calculatedAmount);
+    setBuyAmount(calculatedAmount);
+  };
+
+  const updateSellFromSlider = (value: number[]) => {
+    setSellSliderValue(value);
+    const calculatedAmount = ((parseFloat(userTokenBalance) * value[0]) / 100).toFixed(2);
+    setSellAmount(calculatedAmount);
   };
 
   const formatPrice = (price: string) => {
@@ -46,6 +58,37 @@ export function TradingInterface({
     if (value < 0.01) return `$${value.toFixed(6)}`;
     return `$${value.toFixed(4)}`;
   };
+
+  const generatePriceHistory = (period: string) => {
+    const basePrice = parseFloat(token.currentPrice);
+    const points = period === "1H" ? 12 : period === "24H" ? 24 : period === "7D" ? 7 : 30;
+    const volatility = 0.05;
+    
+    const data = [];
+    for (let i = 0; i < points; i++) {
+      const randomChange = (Math.random() - 0.5) * volatility;
+      const price = basePrice * (1 + randomChange - 0.1 + (i / points) * 0.2);
+      
+      let timeLabel = "";
+      if (period === "1H") {
+        timeLabel = `${i * 5}m`;
+      } else if (period === "24H") {
+        timeLabel = `${i}h`;
+      } else if (period === "7D") {
+        timeLabel = `D${i + 1}`;
+      } else {
+        timeLabel = `D${i + 1}`;
+      }
+      
+      data.push({
+        time: timeLabel,
+        price: parseFloat(price.toFixed(6)),
+      });
+    }
+    return data;
+  };
+
+  const priceHistory = useMemo(() => generatePriceHistory(chartPeriod), [chartPeriod, token.currentPrice]);
 
   return (
     <Card className="p-6 space-y-6">
@@ -61,16 +104,60 @@ export function TradingInterface({
         </p>
       </div>
 
-      <div className="h-64 bg-muted/30 rounded-lg flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">Price Chart</p>
-          <div className="flex gap-2">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-muted-foreground">Price Chart</p>
+          <div className="flex gap-1">
             {['1H', '24H', '7D', '30D'].map((period) => (
-              <Button key={period} variant="ghost" size="sm">
+              <Button 
+                key={period} 
+                variant={chartPeriod === period ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setChartPeriod(period)}
+                data-testid={`chart-period-${period.toLowerCase()}`}
+              >
                 {period}
               </Button>
             ))}
           </div>
+        </div>
+        
+        <div className="h-64 bg-muted/30 rounded-lg p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={priceHistory}>
+              <XAxis 
+                dataKey="time" 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `$${value.toFixed(4)}`}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                }}
+                labelStyle={{ color: "hsl(var(--foreground))" }}
+                formatter={(value: number) => [`$${value.toFixed(6)}`, "Price"]}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="price" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                dot={false}
+                animationDuration={300}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -94,8 +181,15 @@ export function TradingInterface({
               <Input
                 id="buy-amount"
                 type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                value={buyAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBuyAmount(value);
+                  if (value && userBalance) {
+                    const percentage = (parseFloat(value) / parseFloat(userBalance)) * 100;
+                    setBuySliderValue([Math.min(100, Math.max(0, percentage))]);
+                  }
+                }}
                 placeholder="0.0"
                 className="pr-16"
                 data-testid="input-buy-amount"
@@ -109,8 +203,8 @@ export function TradingInterface({
           <div className="space-y-2">
             <Label className="text-xs uppercase font-semibold">Quick Select</Label>
             <Slider
-              value={sliderValue}
-              onValueChange={updateFromSlider}
+              value={buySliderValue}
+              onValueChange={updateBuyFromSlider}
               max={100}
               step={25}
               className="py-4"
@@ -128,7 +222,7 @@ export function TradingInterface({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You'll receive</span>
               <span className="font-mono font-semibold">
-                ~{amount ? (parseFloat(amount) / parseFloat(token.currentPrice)).toFixed(2) : '0'} {token.symbol}
+                ~{buyAmount ? (parseFloat(buyAmount) / parseFloat(token.currentPrice)).toFixed(2) : '0'} {token.symbol}
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -144,7 +238,7 @@ export function TradingInterface({
             onClick={handleBuy}
             className="w-full py-6 bg-chart-2 hover:bg-chart-2/90"
             size="lg"
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!buyAmount || parseFloat(buyAmount) <= 0}
             data-testid="button-buy"
           >
             <ArrowDownUp className="h-5 w-5 mr-2" />
@@ -159,15 +253,22 @@ export function TradingInterface({
                 Amount
               </Label>
               <span className="text-xs text-muted-foreground">
-                Balance: 0 {token.symbol}
+                Balance: {userTokenBalance} {token.symbol}
               </span>
             </div>
             <div className="relative">
               <Input
                 id="sell-amount"
                 type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                value={sellAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSellAmount(value);
+                  if (value && userTokenBalance) {
+                    const percentage = (parseFloat(value) / parseFloat(userTokenBalance)) * 100;
+                    setSellSliderValue([Math.min(100, Math.max(0, percentage))]);
+                  }
+                }}
                 placeholder="0.0"
                 className="pr-20"
                 data-testid="input-sell-amount"
@@ -181,8 +282,8 @@ export function TradingInterface({
           <div className="space-y-2">
             <Label className="text-xs uppercase font-semibold">Quick Select</Label>
             <Slider
-              value={sliderValue}
-              onValueChange={updateFromSlider}
+              value={sellSliderValue}
+              onValueChange={updateSellFromSlider}
               max={100}
               step={25}
               className="py-4"
@@ -200,7 +301,7 @@ export function TradingInterface({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You'll receive</span>
               <span className="font-mono font-semibold">
-                ~{amount ? (parseFloat(amount) * parseFloat(token.currentPrice)).toFixed(4) : '0'} ETH
+                ~{sellAmount ? (parseFloat(sellAmount) * parseFloat(token.currentPrice)).toFixed(4) : '0'} ETH
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -217,7 +318,7 @@ export function TradingInterface({
             variant="destructive"
             className="w-full py-6"
             size="lg"
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!sellAmount || parseFloat(sellAmount) <= 0}
             data-testid="button-sell"
           >
             <ArrowDownUp className="h-5 w-5 mr-2" />

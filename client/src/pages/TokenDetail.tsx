@@ -184,6 +184,7 @@ export default function TokenDetail() {
             <TradingInterface 
               token={mockToken}
               userBalance="2.5"
+              userTokenBalance="500"
               onBuy={handleBuy}
               onSell={handleSell}
             />
