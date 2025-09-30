@@ -202,6 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priceChange = parseFloat(token.priceChange24h);
       const priceChangeText = priceChange >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`;
       
+      const frameImage = token.logoUrl || `${baseUrl}/logo.svg`;
+      
       const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -209,17 +211,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${token.name} (${token.symbol}) - BasedMem</title>
   <meta property="og:title" content="${token.name} (${token.symbol})">
-  <meta property="og:description" content="Price: $${token.currentPrice} | 24h: ${priceChangeText} | Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K">
-  <meta property="og:image" content="${token.logoUrl || `${baseUrl}/logo.svg`}">
+  <meta property="og:image" content="${frameImage}">
   <meta property="fc:frame" content="vNext">
-  <meta property="fc:frame:image" content="${token.logoUrl || `${baseUrl}/logo.svg`}">
-  <meta property="fc:frame:image:aspect_ratio" content="1:1">
+  <meta property="fc:frame:image" content="${frameImage}">
   <meta property="fc:frame:button:1" content="View on BasedMem">
   <meta property="fc:frame:button:1:action" content="link">
   <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}">
-  <meta property="fc:frame:button:2" content="Price: $${token.currentPrice}">
-  <meta property="fc:frame:button:3" content="Set Alert">
-  <meta property="fc:frame:button:3:action" content="post">
+  <meta property="fc:frame:button:2" content="Set Alert">
+  <meta property="fc:frame:button:2:action" content="post">
   <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}">
 </head>
 <body>
