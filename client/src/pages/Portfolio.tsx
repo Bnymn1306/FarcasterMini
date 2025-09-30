@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SiFarcaster } from "react-icons/si";
 
 export default function Portfolio() {
   const holdings = [
@@ -40,11 +41,33 @@ export default function Portfolio() {
   const totalPnL = holdings.reduce((sum, h) => sum + h.pnlValue, 0);
   const totalPnLPercent = ((totalPnL / (totalValue - totalPnL)) * 100).toFixed(2);
 
+  const sharePortfolio = () => {
+    const baseUrl = window.location.origin;
+    const tokenNames = holdings.map(h => `$${h.token.symbol}`).join(', ');
+    const pnlDirection = totalPnL >= 0 ? 'UP' : 'DOWN';
+    const portfolioUrl = `${baseUrl}/portfolio`;
+    const text = `My BasedMem Portfolio [${pnlDirection}]\n\nTotal Value: $${totalValue.toFixed(2)}\nP&L: ${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)} (${totalPnL >= 0 ? '+' : ''}${totalPnLPercent}%)\nTokens: ${holdings.length}\n\nHoldings: ${tokenNames}\n\n#BasedMem #MemeCoins #Portfolio`;
+    
+    const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(portfolioUrl)}`;
+    window.open(warpcastUrl, '_blank');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black mb-2">My Portfolio</h1>
-        <p className="text-muted-foreground">Track your meme token holdings and performance</p>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black mb-2">My Portfolio</h1>
+          <p className="text-muted-foreground">Track your meme token holdings and performance</p>
+        </div>
+        <Button 
+          variant="outline" 
+          className="gap-2"
+          onClick={sharePortfolio}
+          data-testid="button-share-portfolio"
+        >
+          <SiFarcaster className="h-4 w-4" />
+          Share Portfolio
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

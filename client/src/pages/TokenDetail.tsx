@@ -60,7 +60,8 @@ export default function TokenDetail() {
   const shareToFarcaster = () => {
     const baseUrl = window.location.origin;
     const frameUrl = `${baseUrl}/frame/token/${mockToken.id}`;
-    const text = `Check out ${mockToken.name} ($${mockToken.symbol}) on BasedMem! 🚀\n\nPrice: $${mockToken.currentPrice}\nMarket Cap: $${(parseFloat(mockToken.marketCap) / 1000).toFixed(0)}K\n\n#BasedMem #MemeCoins`;
+    const priceChange = parseFloat(mockToken.priceChange24h);
+    const text = `Check out ${mockToken.name} ($${mockToken.symbol}) on BasedMem!\n\nPrice: $${mockToken.currentPrice}\nMarket Cap: $${(parseFloat(mockToken.marketCap) / 1000).toFixed(0)}K\nPrice Change 24h: ${priceChange >= 0 ? '+' : ''}${mockToken.priceChange24h}%\n\n#BasedMem #MemeCoins`;
     
     const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(frameUrl)}`;
     window.open(warpcastUrl, '_blank');
