@@ -48,6 +48,33 @@ export class MemStorage implements IStorage {
     this.holdings = new Map();
     this.priceAlerts = new Map();
     this.dailyCheckIns = new Map();
+    
+    this.seedData();
+  }
+
+  private async seedData() {
+    const token1: Token = {
+      id: '1',
+      creatorId: 'creator1',
+      name: 'Doge Moon',
+      symbol: 'DMOON',
+      description: 'Doge Moon is the ultimate meme coin taking the crypto world by storm! With a passionate community and ambitious roadmap, we\'re headed straight to the moon.',
+      logoUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=dmoon',
+      contractAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4',
+      totalSupply: '1000000000',
+      currentPrice: '0.0042',
+      marketCap: '420000',
+      volume24h: '52000',
+      priceChange24h: '15.8',
+      holderCount: 1337,
+      twitterUrl: 'https://twitter.com/dogemoon',
+      telegramUrl: 'https://t.me/dogemoon',
+      websiteUrl: 'https://dogemoon.io',
+      isVerified: true,
+      createdAt: new Date('2024-01-15'),
+    };
+    
+    this.tokens.set('1', token1);
   }
 
   async getUser(id: string): Promise<User | undefined> {
