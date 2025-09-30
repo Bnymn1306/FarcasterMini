@@ -25,7 +25,17 @@ export function NavigationBar({
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2" data-testid="link-home">
-            <img src="/logo.svg" alt="BasedMem Logo" className="h-8 w-8" />
+            <svg className="h-8 w-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8B5CF6"/>
+                  <stop offset="50%" stopColor="#6366F1"/>
+                  <stop offset="100%" stopColor="#06B6D4"/>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#logoGradient)"/>
+              <text x="32" y="45" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="900" fill="#FFFFFF" textAnchor="middle" dominantBaseline="middle">B</text>
+            </svg>
             <span className="text-xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               BasedMem
             </span>
