@@ -233,7 +233,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   <meta property="fc:frame:button:1" content="View on BasedMem" />
   <meta property="fc:frame:button:1:action" content="link" />
   <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}" />
-  <meta property="fc:frame:post_url" content="${baseUrl}/frame/token/${id}" />
 </head>
 <body>
   <h1>${token.name} (${token.symbol})</h1>
