@@ -82,7 +82,7 @@ export function NavigationBar({
                 className="gap-2"
               >
                 <Bell className="h-4 w-4" />
-                Uyarılar
+                Price Alerts
               </Button>
             </Link>
 
