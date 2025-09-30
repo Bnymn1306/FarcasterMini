@@ -1,71 +1,53 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background gradient -->
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1a2332;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0066ff;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Colorful meme tokens in a simple arrangement -->
   
-  <!-- Main container with rounded corners -->
-  <rect x="32" y="32" width="448" height="448" rx="80" fill="url(#bgGrad)"/>
-  <rect x="32" y="32" width="448" height="448" rx="80" stroke="url(#borderGrad)" stroke-width="6" fill="none"/>
+  <!-- Yellow token -->
+  <circle cx="16" cy="20" r="8" fill="#FFD700"/>
+  <circle cx="14" cy="19" r="2" fill="#000"/>
+  <circle cx="18" cy="19" r="2" fill="#000"/>
+  <ellipse cx="16" cy="22" rx="3" ry="2" fill="#000"/>
   
-  <!-- Meme characters arranged in a circle -->
-  <!-- Yellow meme (top left) -->
-  <circle cx="190" cy="180" r="32" fill="#FFD700"/>
-  <circle cx="185" cy="175" r="6" fill="#000"/>
-  <circle cx="200" cy="175" r="6" fill="#000"/>
-  <ellipse cx="192.5" cy="188" rx="12" ry="8" fill="#000"/>
+  <!-- Blue token -->
+  <circle cx="32" cy="14" r="9" fill="#4169E1"/>
+  <circle cx="30" cy="13" r="2" fill="#fff"/>
+  <circle cx="34" cy="13" r="2" fill="#fff"/>
+  <circle cx="30" cy="13" r="1" fill="#000"/>
+  <circle cx="34" cy="13" r="1" fill="#000"/>
+  <circle cx="28" cy="11" r="3" fill="#4169E1"/>
+  <circle cx="36" cy="11" r="3" fill="#4169E1"/>
   
-  <!-- Blue bear meme (top center) -->
-  <circle cx="256" cy="150" r="36" fill="#4169E1"/>
-  <circle cx="245" cy="145" r="7" fill="#fff"/>
-  <circle cx="267" cy="145" r="7" fill="#fff"/>
-  <circle cx="245" cy="145" r="4" fill="#000"/>
-  <circle cx="267" cy="145" r="4" fill="#000"/>
-  <circle cx="236" cy="135" r="12" fill="#4169E1"/>
-  <circle cx="276" cy="135" r="12" fill="#4169E1"/>
-  <ellipse cx="256" cy="162" rx="10" ry="6" fill="#000"/>
+  <!-- Cyan token -->
+  <circle cx="48" cy="20" r="7" fill="#00CED1"/>
+  <circle cx="46" cy="19" r="1.5" fill="#fff"/>
+  <circle cx="50" cy="19" r="1.5" fill="#fff"/>
+  <circle cx="46" cy="19" r="1" fill="#000"/>
+  <circle cx="50" cy="19" r="1" fill="#000"/>
   
-  <!-- Cyan meme (top right) -->
-  <circle cx="322" cy="180" r="28" fill="#00CED1"/>
-  <circle cx="315" cy="175" r="5" fill="#fff"/>
-  <circle cx="329" cy="175" r="5" fill="#fff"/>
-  <circle cx="315" cy="175" r="3" fill="#000"/>
-  <circle cx="329" cy="175" r="3" fill="#000"/>
-  <ellipse cx="322" cy="188" rx="8" ry="5" fill="#000"/>
+  <!-- Green token -->
+  <circle cx="14" cy="38" r="8" fill="#32CD32"/>
+  <circle cx="12" cy="37" r="2" fill="#000"/>
+  <circle cx="16" cy="37" r="2" fill="#000"/>
+  <path d="M 11 40 Q 14 42 17 40" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round"/>
   
-  <!-- Green meme (left) -->
-  <circle cx="170" cy="256" r="34" fill="#32CD32"/>
-  <circle cx="162" cy="250" r="6" fill="#000"/>
-  <circle cx="178" cy="250" r="6" fill="#000"/>
-  <path d="M 160 268 Q 170 275 180 268" stroke="#000" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Purple token -->
+  <circle cx="32" cy="44" r="7" fill="#9370DB"/>
+  <circle cx="30" cy="43" r="1.5" fill="#000"/>
+  <circle cx="34" cy="43" r="1.5" fill="#000"/>
+  <circle cx="32" cy="46" r="1.5" fill="#000"/>
   
-  <!-- Purple meme (bottom center) -->
-  <circle cx="240" cy="300" r="26" fill="#9370DB"/>
-  <circle cx="234" cy="296" r="5" fill="#000"/>
-  <circle cx="246" cy="296" r="5" fill="#000"/>
-  <circle cx="240" cy="305" r="4" fill="#000"/>
+  <!-- Orange token -->
+  <circle cx="50" cy="38" r="8" fill="#FF8C00"/>
+  <circle cx="48" cy="37" r="2" fill="#000"/>
+  <circle cx="52" cy="37" r="2" fill="#000"/>
+  <ellipse cx="50" cy="40" rx="3" ry="2" fill="#000"/>
   
-  <!-- Dark blue meme (center right) -->
-  <circle cx="300" cy="270" r="30" fill="#1E90FF"/>
-  <circle cx="293" cy="265" r="6" fill="#fff"/>
-  <circle cx="307" cy="265" r="6" fill="#fff"/>
-  <circle cx="293" cy="265" r="3" fill="#000"/>
-  <circle cx="307" cy="265" r="3" fill="#000"/>
-  <ellipse cx="300" cy="278" rx="9" ry="6" fill="#000"/>
+  <!-- Center blue token -->
+  <circle cx="32" cy="32" r="7" fill="#1E90FF"/>
+  <circle cx="30" cy="31" r="1.5" fill="#fff"/>
+  <circle cx="34" cy="31" r="1.5" fill="#fff"/>
+  <circle cx="30" cy="31" r="1" fill="#000"/>
+  <circle cx="34" cy="31" r="1" fill="#000"/>
   
-  <!-- Orange meme (right) -->
-  <circle cx="340" cy="240" r="32" fill="#FF8C00"/>
-  <circle cx="333" cy="235" r="6" fill="#000"/>
-  <circle cx="347" cy="235" r="6" fill="#000"/>
-  <ellipse cx="340" cy="248" rx="10" ry="7" fill="#000"/>
-  
-  <!-- BasedMem text at bottom -->
-  <text x="256" y="390" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#00d4ff" text-anchor="middle">BasedMem</text>
+  <!-- "B" letter in center -->
+  <text x="32" y="58" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#00d4ff" text-anchor="middle">B</text>
 </svg>
