@@ -42,14 +42,15 @@ export default function DailyBasedPage() {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/check-in", {
+      const response = await apiRequest("POST", "/api/check-in", {
         userId: MOCK_USER_ID,
-      }) as unknown as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
+      });
+      return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/check-in", MOCK_USER_ID] });
       
-      const newStreak = data.user.currentStreak;
+      const newStreak = data?.user?.currentStreak || 1;
       let rewardMessage = "10 BMEM kazandın! 🎉";
       if (newStreak === 3) rewardMessage = "30 BMEM kazandın! 🔥";
       if (newStreak === 7) rewardMessage = "100 BMEM kazandın! 🚀";
