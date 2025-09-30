@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Twitter, Send, Globe } from "lucide-react";
+import { ExternalLink, Twitter, Send, Globe, Share2 } from "lucide-react";
 import type { Token } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { SiFarcaster } from "react-icons/si";
 
 export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
@@ -56,6 +57,15 @@ export default function TokenDetail() {
     });
   };
 
+  const shareToFarcaster = () => {
+    const baseUrl = window.location.origin;
+    const frameUrl = `${baseUrl}/frame/token/${mockToken.id}`;
+    const text = `Check out ${mockToken.name} ($${mockToken.symbol}) on BasedMem! 🚀\n\nPrice: $${mockToken.currentPrice}\nMarket Cap: $${(parseFloat(mockToken.marketCap) / 1000).toFixed(0)}K\n\n#BasedMem #MemeCoins`;
+    
+    const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(frameUrl)}`;
+    window.open(warpcastUrl, '_blank');
+  };
+
   const recentTrades = [
     { type: 'buy', amount: '0.5', price: '0.0042', time: '2 min ago' },
     { type: 'sell', amount: '1.2', price: '0.0041', time: '5 min ago' },
@@ -89,25 +99,35 @@ export default function TokenDetail() {
                   <div className="flex items-center gap-3 mt-2">
                     {mockToken.twitterUrl && (
                       <a href={mockToken.twitterUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8">
+                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-twitter">
                           <Twitter className="h-4 w-4" />
                         </Button>
                       </a>
                     )}
                     {mockToken.telegramUrl && (
                       <a href={mockToken.telegramUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8">
+                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-telegram">
                           <Send className="h-4 w-4" />
                         </Button>
                       </a>
                     )}
                     {mockToken.websiteUrl && (
                       <a href={mockToken.websiteUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8">
+                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-website">
                           <Globe className="h-4 w-4" />
                         </Button>
                       </a>
                     )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="gap-2 h-8" 
+                      onClick={shareToFarcaster}
+                      data-testid="button-share-farcaster"
+                    >
+                      <SiFarcaster className="h-4 w-4" />
+                      <span className="text-xs">Share</span>
+                    </Button>
                     <PriceAlertDialog token={mockToken} onCreateAlert={handleCreateAlert} />
                   </div>
                 </div>
