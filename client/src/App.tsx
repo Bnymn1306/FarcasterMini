@@ -36,6 +36,8 @@ function Router() {
 function App() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
+  const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
+  const [farcasterUsername, setFarcasterUsername] = useState("");
   const { toast } = useToast();
 
   const handleConnectWallet = () => {
@@ -51,8 +53,27 @@ function App() {
       setIsWalletConnected(true);
       setWalletAddress(mockAddress);
       toast({
-        title: "Wallet Connected! 🎉",
+        title: "Wallet Connected!",
         description: "Successfully connected to your wallet",
+      });
+    }
+  };
+
+  const handleFarcasterLogin = () => {
+    if (isFarcasterConnected) {
+      setIsFarcasterConnected(false);
+      setFarcasterUsername("");
+      toast({
+        title: "Signed Out",
+        description: "You have been signed out of Farcaster",
+      });
+    } else {
+      const mockUsername = "basedmemer";
+      setIsFarcasterConnected(true);
+      setFarcasterUsername(mockUsername);
+      toast({
+        title: "Signed in with Farcaster!",
+        description: `Welcome back, @${mockUsername}! [Demo Mode]`,
       });
     }
   };
@@ -65,6 +86,9 @@ function App() {
             onConnectWallet={handleConnectWallet}
             isWalletConnected={isWalletConnected}
             walletAddress={walletAddress}
+            onFarcasterLogin={handleFarcasterLogin}
+            isFarcasterConnected={isFarcasterConnected}
+            farcasterUsername={farcasterUsername}
           />
           <main className="pt-16 pb-20 md:pb-4">
             <Router />

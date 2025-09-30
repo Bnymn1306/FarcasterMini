@@ -2,17 +2,24 @@ import { Link, useLocation } from "wouter";
 import { Wallet, Rocket, Grid3x3, TrendingUp, Bell, Flame, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
+import { SiFarcaster } from "react-icons/si";
 
 interface NavigationBarProps {
   onConnectWallet?: () => void;
   isWalletConnected?: boolean;
   walletAddress?: string;
+  onFarcasterLogin?: () => void;
+  isFarcasterConnected?: boolean;
+  farcasterUsername?: string;
 }
 
 export function NavigationBar({ 
   onConnectWallet,
   isWalletConnected = false,
-  walletAddress
+  walletAddress,
+  onFarcasterLogin,
+  isFarcasterConnected = false,
+  farcasterUsername
 }: NavigationBarProps) {
   const [location] = useLocation();
 
@@ -114,10 +121,26 @@ export function NavigationBar({
           <ThemeToggle />
           
           <Button
+            onClick={onFarcasterLogin}
+            variant={isFarcasterConnected ? "secondary" : "outline"}
+            size="sm"
+            className="gap-2"
+            data-testid="button-farcaster-login"
+          >
+            <SiFarcaster className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {isFarcasterConnected && farcasterUsername 
+                ? `@${farcasterUsername}`
+                : "Sign in"
+              }
+            </span>
+          </Button>
+          
+          <Button
             onClick={onConnectWallet}
             variant={isWalletConnected ? "secondary" : "default"}
             size="sm"
-            className="gap-2 rounded-full px-6"
+            className="gap-2"
             data-testid="button-connect-wallet"
           >
             <Wallet className="h-4 w-4" />
