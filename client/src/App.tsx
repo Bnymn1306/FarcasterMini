@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
+import { BottomNav } from "@/components/BottomNav";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Home from "@/pages/Home";
@@ -63,9 +64,10 @@ function App() {
             isWalletConnected={isWalletConnected}
             walletAddress={walletAddress}
           />
-          <main className="pt-16">
+          <main className="pt-16 pb-20 md:pb-4">
             <Router />
           </main>
+          <BottomNav />
         </div>
         <Toaster />
       </TooltipProvider>
