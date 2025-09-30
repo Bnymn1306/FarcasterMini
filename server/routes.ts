@@ -199,50 +199,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const protocol = req.get('x-forwarded-proto') || req.protocol;
       const baseUrl = `${protocol}://${req.get('host')}`;
-      const frameUrl = `${baseUrl}/frame/token/${id}`;
-      const imageUrl = token.logoUrl || `${baseUrl}/logo.svg`;
+      const priceChange = parseFloat(token.priceChange24h);
+      const priceChangeText = priceChange >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`;
       
-      const html = `
-<!DOCTYPE html>
+      const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${token.name} (${token.symbol}) - BasedMem</title>
-  
-  <!-- Open Graph -->
   <meta property="og:title" content="${token.name} (${token.symbol})">
-  <meta property="og:description" content="${token.description?.substring(0, 200) || 'Trade on BasedMem'}">
-  <meta property="og:image" content="${imageUrl}">
-  
-  <!-- Farcaster Frame -->
+  <meta property="og:description" content="Price: $${token.currentPrice} | 24h: ${priceChangeText} | Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K">
+  <meta property="og:image" content="${token.logoUrl || `${baseUrl}/logo.svg`}">
   <meta property="fc:frame" content="vNext">
-  <meta property="fc:frame:image" content="${imageUrl}">
+  <meta property="fc:frame:image" content="${token.logoUrl || `${baseUrl}/logo.svg`}">
   <meta property="fc:frame:image:aspect_ratio" content="1:1">
-  <meta property="fc:frame:button:1" content="💰 Price: $${token.currentPrice}">
-  <meta property="fc:frame:button:2" content="📊 View Chart">
-  <meta property="fc:frame:button:2:action" content="link">
-  <meta property="fc:frame:button:2:target" content="${baseUrl}/token/${id}">
-  <meta property="fc:frame:button:3" content="🔔 Set Alert">
+  <meta property="fc:frame:button:1" content="View on BasedMem">
+  <meta property="fc:frame:button:1:action" content="link">
+  <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}">
+  <meta property="fc:frame:button:2" content="Price: $${token.currentPrice}">
+  <meta property="fc:frame:button:3" content="Set Alert">
   <meta property="fc:frame:button:3:action" content="post">
   <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${token.name} (${token.symbol})">
-  <meta name="twitter:description" content="Price: $${token.currentPrice} | Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K">
-  <meta name="twitter:image" content="${imageUrl}">
 </head>
 <body>
   <h1>${token.name} (${token.symbol})</h1>
-  <p>${token.description}</p>
-  <p>Price: $${token.currentPrice}</p>
-  <p>Market Cap: $${token.marketCap}</p>
-  <p><a href="${baseUrl}/token/${id}">View on BasedMem</a></p>
+  <p>Price: $${token.currentPrice} (${priceChangeText})</p>
+  <p>Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K</p>
+  <p><a href="${baseUrl}/token/${id}">Trade on BasedMem</a></p>
 </body>
 </html>`;
       
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
     } catch (error) {
       console.error("Error generating frame:", error);
@@ -265,16 +253,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = `${protocol}://${req.get('host')}`;
       const imageUrl = token.logoUrl || `${baseUrl}/logo.svg`;
       
-      const html = `
-<!DOCTYPE html>
+      const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:title" content="Alert Set - ${token.name}">
+  <meta property="og:image" content="${imageUrl}">
   <meta property="fc:frame" content="vNext">
   <meta property="fc:frame:image" content="${imageUrl}">
   <meta property="fc:frame:image:aspect_ratio" content="1:1">
-  <meta property="fc:frame:button:1" content="✅ Alert Set!">
-  <meta property="fc:frame:button:2" content="📊 View Token">
+  <meta property="fc:frame:button:1" content="Alert Set!">
+  <meta property="fc:frame:button:2" content="View Token">
   <meta property="fc:frame:button:2:action" content="link">
   <meta property="fc:frame:button:2:target" content="${baseUrl}/token/${tokenId}">
 </head>
@@ -283,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 </body>
 </html>`;
       
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
     } catch (error) {
       console.error("Error handling frame action:", error);
