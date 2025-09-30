@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Wallet, Rocket, Grid3x3, TrendingUp, Bell } from "lucide-react";
+import { Wallet, Rocket, Grid3x3, TrendingUp, Bell, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -79,6 +79,19 @@ export function NavigationBar({
                 >
                   <Bell className="h-4 w-4" />
                   Uyarılar
+                </Button>
+              </a>
+            </Link>
+
+            <Link href="/daily">
+              <a data-testid="link-daily">
+                <Button 
+                  variant={location === "/daily" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Flame className="h-4 w-4" />
+                  Daily
                 </Button>
               </a>
             </Link>

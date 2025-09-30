@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert } from "@shared/schema";
+import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert, type DailyCheckIn, type InsertDailyCheckIn } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -27,6 +27,10 @@ export interface IStorage {
   createPriceAlert(alert: InsertPriceAlert): Promise<PriceAlert>;
   updatePriceAlert(id: string, updates: Partial<PriceAlert>): Promise<PriceAlert | undefined>;
   deletePriceAlert(id: string): Promise<boolean>;
+  
+  getDailyCheckIn(userId: string, date: Date): Promise<DailyCheckIn | undefined>;
+  getCheckInsByUser(userId: string): Promise<DailyCheckIn[]>;
+  createDailyCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn>;
 }
 
 export class MemStorage implements IStorage {
@@ -35,6 +39,7 @@ export class MemStorage implements IStorage {
   private trades: Map<string, Trade>;
   private holdings: Map<string, Holding>;
   private priceAlerts: Map<string, PriceAlert>;
+  private dailyCheckIns: Map<string, DailyCheckIn>;
 
   constructor() {
     this.users = new Map();
@@ -42,6 +47,7 @@ export class MemStorage implements IStorage {
     this.trades = new Map();
     this.holdings = new Map();
     this.priceAlerts = new Map();
+    this.dailyCheckIns = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -62,6 +68,10 @@ export class MemStorage implements IStorage {
       avatarUrl: insertUser.avatarUrl ?? null,
       farcasterUsername: insertUser.farcasterUsername ?? null,
       farcasterFid: insertUser.farcasterFid ?? null,
+      currentStreak: 0,
+      longestStreak: 0,
+      totalCheckIns: 0,
+      lastCheckIn: null,
       id,
       createdAt: new Date()
     };
@@ -223,6 +233,42 @@ export class MemStorage implements IStorage {
 
   async deletePriceAlert(id: string): Promise<boolean> {
     return this.priceAlerts.delete(id);
+  }
+
+  async getDailyCheckIn(userId: string, date: Date): Promise<DailyCheckIn | undefined> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return Array.from(this.dailyCheckIns.values()).find(
+      (checkIn) => {
+        const checkInDate = new Date(checkIn.checkInDate);
+        return checkIn.userId === userId && 
+               checkInDate >= startOfDay && 
+               checkInDate <= endOfDay;
+      }
+    );
+  }
+
+  async getCheckInsByUser(userId: string): Promise<DailyCheckIn[]> {
+    return Array.from(this.dailyCheckIns.values())
+      .filter((checkIn) => checkIn.userId === userId)
+      .sort((a, b) => new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime());
+  }
+
+  async createDailyCheckIn(insertCheckIn: InsertDailyCheckIn): Promise<DailyCheckIn> {
+    const id = randomUUID();
+    const checkIn: DailyCheckIn = {
+      userId: insertCheckIn.userId,
+      checkInDate: insertCheckIn.checkInDate,
+      streakDay: insertCheckIn.streakDay,
+      rewardClaimed: false,
+      id,
+      createdAt: new Date()
+    };
+    this.dailyCheckIns.set(id, checkIn);
+    return checkIn;
   }
 }
 

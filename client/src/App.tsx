@@ -12,6 +12,7 @@ import Create from "@/pages/Create";
 import TokenDetail from "@/pages/TokenDetail";
 import Portfolio from "@/pages/Portfolio";
 import Alerts from "@/pages/Alerts";
+import DailyBasedPage from "@/pages/DailyBasedPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/token/:id" component={TokenDetail} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/alerts" component={Alerts} />
+      <Route path="/daily" component={DailyBasedPage} />
       <Route component={NotFound} />
     </Switch>
   );

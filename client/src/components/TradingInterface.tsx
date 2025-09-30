@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { ArrowDownUp } from "lucide-react";
+import { GasFeeDisplay } from "./GasFeeDisplay";
 import type { Token } from "@shared/schema";
 
 interface TradingInterfaceProps {
@@ -134,6 +135,9 @@ export function TradingInterface({
               <span className="text-muted-foreground">Price impact</span>
               <span className="font-mono text-chart-2">~0.5%</span>
             </div>
+            <div className="pt-2 border-t border-border">
+              <GasFeeDisplay gasFee="0.00012" />
+            </div>
           </div>
 
           <Button
@@ -202,6 +206,9 @@ export function TradingInterface({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Price impact</span>
               <span className="font-mono text-chart-2">~0.5%</span>
+            </div>
+            <div className="pt-2 border-t border-border">
+              <GasFeeDisplay gasFee="0.00012" />
             </div>
           </div>
 

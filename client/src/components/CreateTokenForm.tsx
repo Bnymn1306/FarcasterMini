@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Upload, Rocket } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GasFeeDisplay } from "./GasFeeDisplay";
 
 interface CreateTokenFormProps {
   onSubmit?: (data: TokenFormData) => void;
@@ -166,15 +167,25 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
             />
           </div>
 
-          <Button
-            type="submit"
-            className="w-full gap-2 py-6"
-            size="lg"
-            data-testid="button-create-token"
-          >
-            <Rocket className="h-5 w-5" />
-            Launch Token - 0.001 ETH
-          </Button>
+          <div className="space-y-3">
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Launch Fee</span>
+                <span className="font-mono font-semibold">0.001 ETH</span>
+              </div>
+              <GasFeeDisplay gasFee="0.00015" />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full gap-2 py-6"
+              size="lg"
+              data-testid="button-create-token"
+            >
+              <Rocket className="h-5 w-5" />
+              Launch Token
+            </Button>
+          </div>
         </form>
       </Card>
 

@@ -95,6 +95,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Daily Check-In API
+  app.post("/api/check-in", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const today = new Date();
+      const existingCheckIn = await storage.getDailyCheckIn(userId, today);
+
+      if (existingCheckIn) {
+        return res.status(400).json({ error: "Already checked in today" });
+      }
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayCheckIn = await storage.getDailyCheckIn(userId, yesterday);
+
+      let newStreak = 1;
+      if (yesterdayCheckIn) {
+        newStreak = (user.currentStreak || 0) + 1;
+      }
+
+      const longestStreak = Math.max(newStreak, user.longestStreak || 0);
+      const totalCheckIns = (user.totalCheckIns || 0) + 1;
+
+      await storage.updateUser(userId, {
+        currentStreak: newStreak,
+        longestStreak,
+        totalCheckIns,
+        lastCheckIn: today,
+      });
+
+      const checkIn = await storage.createDailyCheckIn({
+        userId,
+        checkInDate: today,
+        streakDay: newStreak,
+      });
+
+      const updatedUser = await storage.getUser(userId);
+
+      res.json({
+        checkIn,
+        user: updatedUser,
+        gasFeePaid: "0.00003",
+      });
+    } catch (error) {
+      console.error("Error creating check-in:", error);
+      res.status(500).json({ error: "Failed to create check-in" });
+    }
+  });
+
+  app.get("/api/check-in/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const today = new Date();
+      const todayCheckIn = await storage.getDailyCheckIn(userId, today);
+      const recentCheckIns = await storage.getCheckInsByUser(userId);
+
+      res.json({
+        user,
+        todayCheckIn,
+        recentCheckIns: recentCheckIns.slice(0, 7),
+      });
+    } catch (error) {
+      console.error("Error fetching check-in data:", error);
+      res.status(500).json({ error: "Failed to fetch check-in data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

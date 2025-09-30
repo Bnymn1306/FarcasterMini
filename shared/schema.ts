@@ -10,6 +10,10 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   farcasterUsername: text("farcaster_username"),
   farcasterFid: text("farcaster_fid"),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  totalCheckIns: integer("total_check_ins").default(0),
+  lastCheckIn: timestamp("last_check_in"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -42,6 +46,7 @@ export const trades = pgTable("trades", {
   amount: text("amount").notNull(),
   price: text("price").notNull(),
   totalValue: text("total_value").notNull(),
+  gasFee: text("gas_fee").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -67,8 +72,21 @@ export const priceAlerts = pgTable("price_alerts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const dailyCheckIns = pgTable("daily_check_ins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  checkInDate: timestamp("check_in_date").notNull(),
+  streakDay: integer("streak_day").notNull(),
+  rewardClaimed: boolean("reward_claimed").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
+  currentStreak: true,
+  longestStreak: true,
+  totalCheckIns: true,
+  lastCheckIn: true,
   createdAt: true,
 });
 
@@ -102,6 +120,12 @@ export const insertPriceAlertSchema = createInsertSchema(priceAlerts).omit({
   createdAt: true,
 });
 
+export const insertDailyCheckInSchema = createInsertSchema(dailyCheckIns).omit({
+  id: true,
+  rewardClaimed: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -116,6 +140,9 @@ export type Holding = typeof holdings.$inferSelect;
 
 export type InsertPriceAlert = z.infer<typeof insertPriceAlertSchema>;
 export type PriceAlert = typeof priceAlerts.$inferSelect;
+
+export type InsertDailyCheckIn = z.infer<typeof insertDailyCheckInSchema>;
+export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
 
 export type TokenWithCreator = Token & {
   creator: User;
