@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Wallet, Rocket, Grid3x3, TrendingUp, Bell, Flame } from "lucide-react";
+import { Wallet, Rocket, Grid3x3, TrendingUp, Bell, Flame, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -94,6 +94,17 @@ export function NavigationBar({
               >
                 <Flame className="h-4 w-4" />
                 Daily
+              </Button>
+            </Link>
+
+            <Link href="/how-to-use" data-testid="link-how-to-use">
+              <Button 
+                variant={location === "/how-to-use" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                Guide
               </Button>
             </Link>
           </div>
