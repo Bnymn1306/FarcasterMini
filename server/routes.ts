@@ -202,7 +202,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priceChange = parseFloat(token.priceChange24h);
       const priceChangeText = priceChange >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`;
       
-      const frameImage = token.logoUrl || `${baseUrl}/logo.svg`;
+      // Farcaster requires PNG/JPG, not SVG
+      // Using placeholder image for testing - replace with actual PNG logo later
+      const frameImage = "https://placehold.co/600x314/8B5CF6/FFFFFF/png?text=BasedMem";
       
       const html = `<!DOCTYPE html>
 <html>
