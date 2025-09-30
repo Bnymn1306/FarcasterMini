@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPriceAlertSchema } from "@shared/schema";
@@ -6,6 +7,10 @@ import path from "path";
 import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static files from public directory
+  const publicPath = path.join(process.cwd(), "public");
+  app.use(express.static(publicPath));
+
   // Serve Farcaster manifest
   app.get("/.well-known/farcaster.json", (req, res) => {
     const manifestPath = path.join(process.cwd(), "public/.well-known/farcaster.json");
@@ -214,9 +219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priceChange = parseFloat(token.priceChange24h);
       const priceChangeText = priceChange >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`;
       
-      // Farcaster requires PNG/JPG, not SVG
-      // Using a reliable CDN image that Warpcast can fetch
-      const frameImage = "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=630&fit=crop";
+      // Farcaster requires PNG/JPG (not WebP or SVG)
+      // Using local JPG to ensure correct format
+      const frameImage = `${baseUrl}/frame-image.jpg`;
       
       const html = `<!DOCTYPE html>
 <html lang="en">
@@ -263,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const protocol = req.get('x-forwarded-proto') || req.protocol;
       const baseUrl = `${protocol}://${req.get('host')}`;
-      const imageUrl = token.logoUrl || `${baseUrl}/logo.svg`;
+      const imageUrl = `${baseUrl}/frame-image.jpg`;
       
       const html = `<!DOCTYPE html>
 <html>
