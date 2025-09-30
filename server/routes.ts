@@ -11,15 +11,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const publicPath = path.join(process.cwd(), "public");
   app.use(express.static(publicPath));
 
-  // Serve Farcaster manifest
+  // Redirect to Farcaster Hosted Manifest
   app.get("/.well-known/farcaster.json", (req, res) => {
-    const manifestPath = path.join(process.cwd(), "public/.well-known/farcaster.json");
-    if (fs.existsSync(manifestPath)) {
-      res.setHeader("Content-Type", "application/json");
-      res.sendFile(manifestPath);
-    } else {
-      res.status(404).json({ error: "Manifest not found" });
-    }
+    res.redirect(307, "https://api.farcaster.xyz/miniapps/hosted-manifest/01996ca7-cb08-1a85-aa80-ec7c32c0df78");
   });
   // Price Alerts API
   app.get("/api/alerts", async (req, res) => {
