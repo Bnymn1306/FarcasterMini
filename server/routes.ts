@@ -207,21 +207,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const frameImage = "https://placehold.co/600x314/8B5CF6/FFFFFF/png?text=BasedMem";
       
       const html = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${token.name} (${token.symbol}) - BasedMem</title>
   <meta property="og:title" content="${token.name} (${token.symbol})">
   <meta property="og:image" content="${frameImage}">
-  <meta property="fc:frame" content="vNext">
-  <meta property="fc:frame:image" content="${frameImage}">
-  <meta property="fc:frame:button:1" content="View on BasedMem">
-  <meta property="fc:frame:button:1:action" content="link">
-  <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}">
-  <meta property="fc:frame:button:2" content="Set Alert">
-  <meta property="fc:frame:button:2:action" content="post">
-  <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}">
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="${frameImage}" />
+  <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
+  <meta property="fc:frame:button:1" content="View Token" />
+  <meta property="fc:frame:button:1:action" content="link" />
+  <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}" />
+  <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}" />
 </head>
 <body>
   <h1>${token.name} (${token.symbol})</h1>
