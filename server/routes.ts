@@ -203,8 +203,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priceChangeText = priceChange >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`;
       
       // Farcaster requires PNG/JPG, not SVG
-      // Using placeholder image for testing - replace with actual PNG logo later
-      const frameImage = "https://placehold.co/600x314/8B5CF6/FFFFFF/png?text=BasedMem";
+      // Using a reliable CDN image that Warpcast can fetch
+      const frameImage = "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=630&fit=crop";
       
       const html = `<!DOCTYPE html>
 <html lang="en">
@@ -212,15 +212,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${token.name} (${token.symbol}) - BasedMem</title>
-  <meta property="og:title" content="${token.name} (${token.symbol})">
-  <meta property="og:image" content="${frameImage}">
+  <meta property="og:title" content="${token.name} (${token.symbol})" />
+  <meta property="og:description" content="Price: $${token.currentPrice} | Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K | BasedMem Meme Coin" />
+  <meta property="og:image" content="${frameImage}" />
   <meta property="fc:frame" content="vNext" />
   <meta property="fc:frame:image" content="${frameImage}" />
-  <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
   <meta property="fc:frame:button:1" content="View Token" />
   <meta property="fc:frame:button:1:action" content="link" />
   <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}" />
-  <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}" />
 </head>
 <body>
   <h1>${token.name} (${token.symbol})</h1>
