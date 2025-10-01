@@ -47,6 +47,10 @@ function App() {
         const context = await sdk.context;
         console.log("Farcaster SDK initialized:", context);
         
+        // Signal that the app is ready - this hides the splash screen
+        await sdk.actions.ready();
+        console.log("SDK ready called - splash screen hidden");
+        
         // Show "Add Mini App" prompt on first launch
         const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
         if (!hasShownPrompt) {
