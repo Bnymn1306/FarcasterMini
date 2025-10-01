@@ -51,19 +51,23 @@ function AppContent() {
   useEffect(() => {
     const initFarcasterSDK = async () => {
       try {
+        console.log("Initializing Farcaster SDK...");
+        
         const context = await sdk.context;
-        console.log("Farcaster SDK initialized:", context);
+        console.log("Farcaster SDK context loaded:", context);
         
-        // Signal that the app is ready - this hides the splash screen
-        await sdk.actions.ready();
-        console.log("SDK ready called - splash screen hidden");
+        try {
+          await sdk.actions.ready();
+          console.log("✅ SDK ready() called successfully - splash screen should be hidden");
+        } catch (readyError) {
+          console.error("❌ Error calling sdk.actions.ready():", readyError);
+        }
         
-        // Auto-connect Farcaster if available
         if (context.user) {
+          console.log("Auto-connecting Farcaster user:", context.user);
           connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
         }
         
-        // Show "Add Mini App" prompt on first launch
         const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
         if (!hasShownPrompt) {
           try {
@@ -76,6 +80,7 @@ function AppContent() {
         }
       } catch (error) {
         console.log("Farcaster SDK not available (running outside Farcaster):", error);
+        console.log("App will work in browser preview mode");
       }
     };
 

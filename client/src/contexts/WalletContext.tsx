@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import sdk from "@farcaster/frame-sdk";
 
 interface WalletContextType {
   isWalletConnected: boolean;
@@ -6,7 +7,7 @@ interface WalletContextType {
   isFarcasterConnected: boolean;
   farcasterUsername: string;
   farcasterFid: string;
-  connectWallet: () => void;
+  connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   connectFarcaster: (username: string, fid: string) => void;
   disconnectFarcaster: () => void;
@@ -39,11 +40,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const connectWallet = () => {
-    const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
-    setIsWalletConnected(true);
-    setWalletAddress(mockAddress);
-    localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
+  const connectWallet = async () => {
+    try {
+      const accounts = await sdk.wallet.ethProvider.request({ method: "eth_accounts" });
+      if (accounts && accounts.length > 0) {
+        const address = accounts[0];
+        setIsWalletConnected(true);
+        setWalletAddress(address);
+        localStorage.setItem("basedmem_wallet", JSON.stringify({ address }));
+      } else {
+        const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
+        setIsWalletConnected(true);
+        setWalletAddress(mockAddress);
+        localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
+      }
+    } catch (error) {
+      console.log("SDK wallet not available, using mock:", error);
+      const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
+      setIsWalletConnected(true);
+      setWalletAddress(mockAddress);
+      localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
+    }
   };
 
   const disconnectWallet = () => {
