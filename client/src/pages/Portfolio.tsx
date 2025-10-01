@@ -40,23 +40,47 @@ export default function Portfolio() {
   const { data: holdings = [], isLoading: isLoadingHoldings } = useQuery<HoldingWithToken[]>({
     queryKey: ["/api/holdings", walletAddress],
     queryFn: async () => {
-      if (!walletAddress) return [];
+      console.log("🔍 Portfolio Query - Starting for wallet:", walletAddress);
+      if (!walletAddress) {
+        console.log("❌ No wallet address");
+        return [];
+      }
       
       const userResponse = await fetch(`/api/users?walletAddress=${walletAddress}`);
-      if (!userResponse.ok) return [];
+      if (!userResponse.ok) {
+        console.log("❌ User fetch failed:", userResponse.status);
+        return [];
+      }
       const user = await userResponse.json();
+      console.log("✅ User fetched:", user?.id);
       
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log("❌ No user ID");
+        return [];
+      }
       
       const holdingsResponse = await fetch(`/api/holdings/${user.id}`);
-      if (!holdingsResponse.ok) return [];
+      if (!holdingsResponse.ok) {
+        console.log("❌ Holdings fetch failed:", holdingsResponse.status);
+        return [];
+      }
       
-      return holdingsResponse.json();
+      const data = await holdingsResponse.json();
+      console.log("✅ Holdings fetched:", data?.length, "items", data);
+      return data;
     },
     enabled: !!walletAddress,
   });
 
   const isLoading = isLoadingUser || isLoadingHoldings;
+  
+  console.log("📊 Portfolio Render:", {
+    isWalletConnected,
+    walletAddress,
+    isLoading,
+    holdingsCount: holdings?.length,
+    holdings
+  });
 
   if (!isWalletConnected) {
     return (
@@ -133,6 +157,11 @@ export default function Portfolio() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-500 rounded">
+        <p className="text-sm font-mono">
+          🔍 DEBUG: Wallet={walletAddress || "NONE"} | Connected={isWalletConnected ? "YES" : "NO"} | Holdings={holdings?.length || 0}
+        </p>
+      </div>
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black mb-2">My Portfolio</h1>
