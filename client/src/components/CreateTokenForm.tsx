@@ -45,7 +45,7 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
     setIsCreating(true);
     
     try {
-      const creationFeeInWei = "0x35A4E900000000" as `0x${string}`;
+      const creationFeeInWei = "0x88B8E5B8000" as `0x${string}`;
       
       const provider = sdk.wallet.ethProvider;
       const accounts = await provider.request({ method: "eth_accounts" });
