@@ -51,42 +51,38 @@ function AppContent() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+    
     const initFarcasterSDK = async () => {
       try {
         const sdk = (await import("@farcaster/frame-sdk")).default;
         
-        const readyPromise = sdk.actions.ready().catch(() => {});
-        Promise.race([
-          readyPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 400))
-        ]).catch(() => {});
+        sdk.actions.ready();
         
         sdk.context.then(context => {
-          if (context.user) {
+          if (mounted && context.user) {
             connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
           }
         }).catch(() => {});
         
-        const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-        if (!hasShownPrompt) {
-          localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-          const idleCallback = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 100));
-          idleCallback(() => {
+        setTimeout(() => {
+          if (!mounted) return;
+          const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+          if (!hasShownPrompt) {
+            localStorage.setItem('basedmem_add_miniapp_shown', 'true');
             sdk.actions.addMiniApp().catch(() => {});
-          });
-        }
-        
-        const prefetchRoutes = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
-        prefetchRoutes(() => {
-          import("@/pages/Browse");
-          import("@/pages/DailyBasedPage");
-        });
+          }
+        }, 1000);
       } catch (error) {
-        console.log("Farcaster SDK not available (browser mode):", error);
+        console.log("SDK not available:", error);
       }
     };
 
     initFarcasterSDK();
+    
+    return () => {
+      mounted = false;
+    };
   }, [connectFarcaster]);
 
   const handleConnectWallet = () => {
