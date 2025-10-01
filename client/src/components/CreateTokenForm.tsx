@@ -171,7 +171,7 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
             <div className="p-3 bg-muted/30 rounded-lg">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Launch Fee</span>
-                <span className="font-mono font-semibold">0.001 ETH</span>
+                <span className="font-mono font-semibold">0.00015 ETH</span>
               </div>
               <GasFeeDisplay gasFee="0.00015" />
             </div>
