@@ -1,37 +1,39 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
-import { BottomNav } from "@/components/BottomNav";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Home from "@/pages/Home";
-import Browse from "@/pages/Browse";
-import Create from "@/pages/Create";
-import TokenDetail from "@/pages/TokenDetail";
-import Portfolio from "@/pages/Portfolio";
-import Alerts from "@/pages/Alerts";
-import DailyBasedPage from "@/pages/DailyBasedPage";
-import HowToUse from "@/pages/HowToUse";
-import NotFound from "@/pages/not-found";
-import sdk from "@farcaster/frame-sdk";
+
+const Browse = lazy(() => import("@/pages/Browse"));
+const Create = lazy(() => import("@/pages/Create"));
+const TokenDetail = lazy(() => import("@/pages/TokenDetail"));
+const Portfolio = lazy(() => import("@/pages/Portfolio"));
+const Alerts = lazy(() => import("@/pages/Alerts"));
+const DailyBasedPage = lazy(() => import("@/pages/DailyBasedPage"));
+const HowToUse = lazy(() => import("@/pages/HowToUse"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const Toaster = lazy(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster })));
+const BottomNav = lazy(() => import("@/components/BottomNav").then(m => ({ default: m.BottomNav })));
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/browse" component={Browse} />
-      <Route path="/create" component={Create} />
-      <Route path="/token/:id" component={TokenDetail} />
-      <Route path="/portfolio" component={Portfolio} />
-      <Route path="/alerts" component={Alerts} />
-      <Route path="/daily" component={DailyBasedPage} />
-      <Route path="/how-to-use" component={HowToUse} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/browse" component={Browse} />
+        <Route path="/create" component={Create} />
+        <Route path="/token/:id" component={TokenDetail} />
+        <Route path="/portfolio" component={Portfolio} />
+        <Route path="/alerts" component={Alerts} />
+        <Route path="/daily" component={DailyBasedPage} />
+        <Route path="/how-to-use" component={HowToUse} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
@@ -51,41 +53,41 @@ function AppContent() {
   useEffect(() => {
     const initFarcasterSDK = async () => {
       try {
-        console.log("Initializing Farcaster SDK...");
+        const sdk = (await import("@farcaster/frame-sdk")).default;
         
-        const context = await sdk.context;
-        console.log("Farcaster SDK context loaded:", context);
+        const readyPromise = sdk.actions.ready().catch(() => {});
+        Promise.race([
+          readyPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 400))
+        ]).catch(() => {});
         
-        try {
-          await sdk.actions.ready();
-          console.log("✅ SDK ready() called successfully - splash screen should be hidden");
-        } catch (readyError) {
-          console.error("❌ Error calling sdk.actions.ready():", readyError);
-        }
-        
-        if (context.user) {
-          console.log("Auto-connecting Farcaster user:", context.user);
-          connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
-        }
+        sdk.context.then(context => {
+          if (context.user) {
+            connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
+          }
+        }).catch(() => {});
         
         const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
         if (!hasShownPrompt) {
-          try {
-            await sdk.actions.addMiniApp();
-            localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-            console.log("Add Mini App prompt shown");
-          } catch (error) {
-            console.log("Add Mini App prompt dismissed or error:", error);
-          }
+          localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+          const idleCallback = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 100));
+          idleCallback(() => {
+            sdk.actions.addMiniApp().catch(() => {});
+          });
         }
+        
+        const prefetchRoutes = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 200));
+        prefetchRoutes(() => {
+          import("@/pages/Browse");
+          import("@/pages/DailyBasedPage");
+        });
       } catch (error) {
-        console.log("Farcaster SDK not available (running outside Farcaster):", error);
-        console.log("App will work in browser preview mode");
+        console.log("Farcaster SDK not available (browser mode):", error);
       }
     };
 
     initFarcasterSDK();
-  }, []);
+  }, [connectFarcaster]);
 
   const handleConnectWallet = () => {
     if (isWalletConnected) {
@@ -132,7 +134,9 @@ function AppContent() {
       <main className="pt-16 pb-20 md:pb-4">
         <Router />
       </main>
-      <BottomNav />
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
     </div>
   );
 }
@@ -143,7 +147,9 @@ function App() {
       <TooltipProvider>
         <WalletProvider>
           <AppContent />
-          <Toaster />
+          <Suspense fallback={null}>
+            <Toaster />
+          </Suspense>
         </WalletProvider>
       </TooltipProvider>
     </QueryClientProvider>

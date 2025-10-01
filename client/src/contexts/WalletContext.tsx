@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import sdk from "@farcaster/frame-sdk";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
 interface WalletContextType {
   isWalletConnected: boolean;
@@ -14,6 +13,8 @@ interface WalletContextType {
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+let cachedSDK: any = null;
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -40,9 +41,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const connectWallet = async () => {
+  const connectWallet = useCallback(async () => {
     try {
-      const accounts = await sdk.wallet.ethProvider.request({ method: "eth_accounts" });
+      if (!cachedSDK) {
+        cachedSDK = (await import("@farcaster/frame-sdk")).default;
+      }
+      const accounts = await cachedSDK.wallet.ethProvider.request({ method: "eth_accounts" });
       if (accounts && accounts.length > 0) {
         const address = accounts[0];
         setIsWalletConnected(true);
@@ -61,27 +65,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setWalletAddress(mockAddress);
       localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
     }
-  };
+  }, []);
 
-  const disconnectWallet = () => {
+  const disconnectWallet = useCallback(() => {
     setIsWalletConnected(false);
     setWalletAddress("");
     localStorage.removeItem("basedmem_wallet");
-  };
+  }, []);
 
-  const connectFarcaster = (username: string, fid: string) => {
+  const connectFarcaster = useCallback((username: string, fid: string) => {
     setIsFarcasterConnected(true);
     setFarcasterUsername(username);
     setFarcasterFid(fid);
     localStorage.setItem("basedmem_farcaster", JSON.stringify({ username, fid }));
-  };
+  }, []);
 
-  const disconnectFarcaster = () => {
+  const disconnectFarcaster = useCallback(() => {
     setIsFarcasterConnected(false);
     setFarcasterUsername("");
     setFarcasterFid("");
     localStorage.removeItem("basedmem_farcaster");
-  };
+  }, []);
 
   return (
     <WalletContext.Provider
