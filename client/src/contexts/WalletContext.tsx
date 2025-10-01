@@ -39,14 +39,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const refreshBalance = useCallback(async (address?: string) => {
     try {
-      if (!ethersProvider) return;
+      // Ensure we have provider and address
+      if (!ethersProvider) {
+        console.warn("No provider available for balance fetch");
+        return;
+      }
       
       const targetAddress = address || walletAddress;
-      if (!targetAddress) return;
+      if (!targetAddress) {
+        console.warn("No address available for balance fetch");
+        return;
+      }
       
+      console.log("Fetching balance for:", targetAddress);
       const balance = await ethersProvider.getBalance(targetAddress);
       const balanceEth = formatEther(balance);
       const formatted = parseFloat(balanceEth).toFixed(4);
+      console.log("Balance fetched:", formatted, "ETH");
       setWalletBalance(formatted);
     } catch (error) {
       console.error("Failed to refresh balance:", error);
@@ -60,22 +69,54 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     
     if (savedWallet) {
       const { address } = JSON.parse(savedWallet);
+      console.log("Restoring wallet:", address);
       setIsWalletConnected(true);
       setWalletAddress(address);
       
       // Re-initialize provider on mount
       (async () => {
         try {
+          console.log("Initializing wallet provider...");
+          
+          // Try Farcaster SDK first
           if (!cachedSDK) {
             cachedSDK = (await import("@farcaster/frame-sdk")).default;
           }
           const ethProvider = cachedSDK.wallet.ethProvider;
+          
           if (ethProvider) {
+            console.log("Using Farcaster provider");
             ethersProvider = new BrowserProvider(ethProvider);
-            await refreshBalance(address);
+            
+            // Wait a bit for provider to be ready
+            setTimeout(async () => {
+              try {
+                const balance = await ethersProvider!.getBalance(address);
+                const balanceEth = formatEther(balance);
+                const formatted = parseFloat(balanceEth).toFixed(4);
+                console.log("Balance fetched:", formatted, "ETH");
+                setWalletBalance(formatted);
+              } catch (err) {
+                console.error("Failed to fetch balance:", err);
+              }
+            }, 500);
           } else if (typeof window.ethereum !== "undefined") {
+            console.log("Using MetaMask provider");
             ethersProvider = new BrowserProvider(window.ethereum);
-            await refreshBalance(address);
+            
+            setTimeout(async () => {
+              try {
+                const balance = await ethersProvider!.getBalance(address);
+                const balanceEth = formatEther(balance);
+                const formatted = parseFloat(balanceEth).toFixed(4);
+                console.log("Balance fetched:", formatted, "ETH");
+                setWalletBalance(formatted);
+              } catch (err) {
+                console.error("Failed to fetch balance:", err);
+              }
+            }, 500);
+          } else {
+            console.warn("No provider available");
           }
         } catch (err) {
           console.error("Failed to initialize provider on mount:", err);
