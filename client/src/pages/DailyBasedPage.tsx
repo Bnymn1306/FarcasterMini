@@ -46,14 +46,22 @@ export default function DailyBasedPage() {
       if (!walletAddress) throw new Error("Wallet not connected");
       
       try {
-        const gasFeeInWei = "0x6F05B59D3B20000" as `0x${string}`;
+        const gasFeeInWei = "0x1B48EB57E000" as `0x${string}`;
         
         const provider = sdk.wallet.ethProvider;
+        
+        const accounts = await provider.request({ method: "eth_accounts" });
+        if (!accounts || accounts.length === 0) {
+          throw new Error("Wallet not connected");
+        }
+        
+        const fromAddress = accounts[0];
+        
         const txHash = await provider.request({
           method: "eth_sendTransaction",
           params: [{
-            from: walletAddress as `0x${string}`,
-            to: walletAddress as `0x${string}`,
+            from: fromAddress,
+            to: fromAddress,
             value: gasFeeInWei,
             data: "0x" as `0x${string}`,
           }],
