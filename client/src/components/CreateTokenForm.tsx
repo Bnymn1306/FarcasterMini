@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GasFeeDisplay } from "./GasFeeDisplay";
 import sdk from "@farcaster/frame-sdk";
 import { useToast } from "@/hooks/use-toast";
+
+const STORAGE_KEY = 'basedmem_create_token_draft';
 
 interface CreateTokenFormProps {
   onSubmit?: (data: TokenFormData) => void;
@@ -29,16 +31,39 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [formData, setFormData] = useState<TokenFormData>({
-    name: '',
-    symbol: '',
-    description: '',
-    totalSupply: '1000000000',
-    logoUrl: '',
-    twitterUrl: '',
-    telegramUrl: '',
-    websiteUrl: '',
+  const [formData, setFormData] = useState<TokenFormData>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          name: '',
+          symbol: '',
+          description: '',
+          totalSupply: '1000000000',
+          logoUrl: '',
+          twitterUrl: '',
+          telegramUrl: '',
+          websiteUrl: '',
+        };
+      }
+    }
+    return {
+      name: '',
+      symbol: '',
+      description: '',
+      totalSupply: '1000000000',
+      logoUrl: '',
+      twitterUrl: '',
+      telegramUrl: '',
+      websiteUrl: '',
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  }, [formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +90,8 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
       });
       
       console.log('Token creation transaction sent:', txHash);
+      
+      localStorage.removeItem(STORAGE_KEY);
       
       onSubmit?.(formData);
     } catch (error: any) {
