@@ -87,6 +87,8 @@ export default function TokenDetail() {
       const tokenAmount = parseFloat(amount) / parseFloat(token.currentPrice);
       const gasFee = "0.00012";
       
+      const { queryClient } = await import("@/lib/queryClient");
+      
       let userResponse = await fetch(`/api/users?walletAddress=${walletAddress}`);
       let user;
       
@@ -102,6 +104,7 @@ export default function TokenDetail() {
         }
         
         user = await createUserResponse.json();
+        await queryClient.invalidateQueries({ queryKey: ["/api/users", walletAddress] });
       } else {
         user = await userResponse.json();
       }
@@ -139,7 +142,6 @@ export default function TokenDetail() {
         throw new Error("Failed to update holdings");
       }
 
-      const { queryClient } = await import("@/lib/queryClient");
       await queryClient.invalidateQueries({ queryKey: ["/api/holdings", user.id] });
       
       toast({

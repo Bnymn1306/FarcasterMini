@@ -9,6 +9,20 @@ import { useQuery } from "@tanstack/react-query";
 import type { HoldingWithToken } from "@shared/schema";
 import { Link } from "wouter";
 
+function formatPrice(price: number): string {
+  if (!isFinite(price) || price === 0) return "0.00";
+  
+  if (price >= 1) {
+    return price.toFixed(2);
+  } else if (price >= 0.0001) {
+    return price.toFixed(4);
+  } else if (price >= 0.000001) {
+    return price.toFixed(6);
+  } else {
+    return price.toFixed(8);
+  }
+}
+
 export default function Portfolio() {
   const { walletAddress, isWalletConnected } = useWallet();
 
@@ -64,8 +78,8 @@ export default function Portfolio() {
       return {
         ...holding,
         value: "0.00",
-        buyPrice: "0.0000",
-        currentPrice: currentPrice.toFixed(4),
+        buyPrice: "0.00",
+        currentPrice: formatPrice(currentPrice),
         pnl: 0,
         pnlValue: 0,
       };
@@ -78,8 +92,8 @@ export default function Portfolio() {
     return {
       ...holding,
       value: value.toFixed(2),
-      buyPrice: avgBuyPrice.toFixed(4),
-      currentPrice: currentPrice.toFixed(4),
+      buyPrice: formatPrice(avgBuyPrice),
+      currentPrice: formatPrice(currentPrice),
       pnl: isFinite(pnl) ? pnl : 0,
       pnlValue: isFinite(pnlValue) ? pnlValue : 0,
     };
