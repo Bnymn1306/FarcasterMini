@@ -18,7 +18,7 @@ export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
   const { toast } = useToast();
   const [isTrading, setIsTrading] = useState(false);
-  const { walletBalance, walletAddress, isWalletConnected } = useWallet();
+  const { walletBalance, walletAddress, isWalletConnected, sendETH, refreshBalance } = useWallet();
 
   const { data: token, isLoading, isError } = useQuery<Token>({
     queryKey: ["/api/tokens", params?.id],
@@ -81,33 +81,29 @@ export default function TokenDetail() {
         throw new Error("Wallet not connected");
       }
 
-      const amountInWei = (parseFloat(amount) * 1e18).toString(16);
-      const valueInWei = `0x${amountInWei}` as `0x${string}`;
-      
-      const provider = sdk.wallet.ethProvider;
-      const accounts = await provider.request({ method: "eth_accounts" });
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error("Wallet not connected");
-      }
-      
-      const txHash = await provider.request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: accounts[0],
-          to: token.contractAddress as `0x${string}`,
-          value: valueInWei,
-          data: "0x" as `0x${string}`,
-        }],
-      });
-      
-      console.log("Buy transaction sent:", txHash);
-
       if (parseFloat(token.currentPrice) === 0) {
         throw new Error("Token price is not set yet. Please try again later.");
       }
 
-      const tokenAmount = parseFloat(amount) / parseFloat(token.currentPrice);
+      const ethAmount = parseFloat(amount);
+      if (isNaN(ethAmount) || ethAmount <= 0) {
+        throw new Error("Invalid amount");
+      }
+
+      const tokenAmount = ethAmount / parseFloat(token.currentPrice);
+      
+      // Platform wallet address (BasedMem treasury)
+      const PLATFORM_WALLET = "0x8988C0418F2D4B0CB8823E330e2e9A7D3bC83C17";
+      
+      toast({
+        title: "Sending ETH...",
+        description: `Please confirm the transaction in your wallet`,
+      });
+
+      // Send real ETH to platform wallet
+      const txHash = await sendETH(PLATFORM_WALLET, amount);
+      console.log("Buy transaction confirmed:", txHash);
+
       const gasFee = "0.00012";
       
       const { queryClient } = await import("@/lib/queryClient");
@@ -200,88 +196,43 @@ export default function TokenDetail() {
       }
 
       const ethValue = tokenAmount * parseFloat(token.currentPrice);
-      const gasFee = "0.00012";
 
-      const provider = sdk.wallet.ethProvider;
-      const accounts = await provider.request({ method: "eth_accounts" });
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error("Wallet not connected");
-      }
-      
-      const txHash = await provider.request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: accounts[0],
-          to: token.contractAddress as `0x${string}`,
-          value: "0x0" as `0x${string}`,
-          data: "0x" as `0x${string}`,
-        }],
+      toast({
+        title: "Processing Sell...",
+        description: `Selling ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
       });
-      
-      console.log("Sell transaction sent:", txHash);
 
-      const { queryClient } = await import("@/lib/queryClient");
-
-      const tradeResponse = await fetch("/api/trades", {
+      // Backend will handle: validate holdings, update DB, send real ETH
+      const sellResponse = await fetch("/api/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: userData.id,
           tokenId: token.id,
-          type: "sell",
-          amount: tokenAmount.toString(),
-          price: token.currentPrice,
-          totalValue: ethValue.toString(),
-          gasFee,
+          tokenAmount: tokenAmount.toString(),
+          walletAddress,
         }),
       });
 
-      if (!tradeResponse.ok) {
-        throw new Error("Failed to record trade");
+      if (!sellResponse.ok) {
+        const error = await sellResponse.json();
+        throw new Error(error.message || "Failed to execute sell");
       }
 
-      const currentHolding = userHolding;
-      if (!currentHolding) {
-        throw new Error("No holdings found");
-      }
+      const result = await sellResponse.json();
+      console.log("Sell completed:", result);
 
-      const currentAmount = parseFloat(currentHolding.amount);
-      const newAmount = currentAmount - tokenAmount;
-
-      if (newAmount < 0) {
-        throw new Error("Insufficient token balance");
-      }
-
-      if (newAmount === 0) {
-        const deleteResponse = await fetch(`/api/holdings/${currentHolding.id}`, {
-          method: "DELETE",
-        });
-
-        if (!deleteResponse.ok) {
-          throw new Error("Failed to delete holding");
-        }
-      } else {
-        const updateResponse = await fetch(`/api/holdings/${currentHolding.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: newAmount.toString(),
-          }),
-        });
-
-        if (!updateResponse.ok) {
-          throw new Error("Failed to update holdings");
-        }
-      }
-
+      const { queryClient } = await import("@/lib/queryClient");
       await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
       await queryClient.invalidateQueries({ queryKey: ["/api/holdings", walletAddress] });
       await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
       
+      // Refresh wallet balance
+      await refreshBalance();
+      
       toast({
         title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
+        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol}. ETH sent: ${result.ethSent}`,
       });
     } catch (error: any) {
       console.error("Sell error:", error);

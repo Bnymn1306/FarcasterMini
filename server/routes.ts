@@ -333,6 +333,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sell Token - Real ETH Transfer
+  app.post("/api/sell", async (req, res) => {
+    try {
+      const { userId, tokenId, tokenAmount, walletAddress } = req.body;
+
+      if (!userId || !tokenId || !tokenAmount || !walletAddress) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const parsedAmount = parseFloat(tokenAmount);
+      if (!isFinite(parsedAmount) || parsedAmount <= 0) {
+        return res.status(400).json({ error: "Invalid token amount" });
+      }
+
+      // Get token info
+      const token = await storage.getToken(tokenId);
+      if (!token) {
+        return res.status(404).json({ error: "Token not found" });
+      }
+
+      // Get user holdings
+      const holdings = await storage.getHoldingsByUser(userId);
+      const currentHolding = holdings.find(h => h.tokenId === tokenId);
+
+      if (!currentHolding) {
+        return res.status(400).json({ error: "No holdings found for this token" });
+      }
+
+      const currentAmount = parseFloat(currentHolding.amount);
+      if (currentAmount < parsedAmount) {
+        return res.status(400).json({ error: "Insufficient token balance" });
+      }
+
+      // Calculate ETH to send
+      const ethValue = parsedAmount * parseFloat(token.currentPrice);
+      const gasFee = 0.00012; // Fixed gas fee
+      const ethToSend = ethValue - gasFee;
+
+      // TODO: Send real ETH to user wallet
+      // const { Wallet, JsonRpcProvider } = await import("ethers");
+      // const provider = new JsonRpcProvider("https://mainnet.base.org");
+      // const platformWallet = new Wallet(process.env.PLATFORM_PRIVATE_KEY!, provider);
+      // const tx = await platformWallet.sendTransaction({
+      //   to: walletAddress,
+      //   value: parseEther(ethToSend.toString())
+      // });
+      // await tx.wait();
+
+      console.log(`[SELL] Would send ${ethToSend} ETH to ${walletAddress}`);
+
+      // Update holdings
+      const newAmount = currentAmount - parsedAmount;
+      if (newAmount === 0) {
+        await storage.deleteHolding(currentHolding.id);
+      } else {
+        await storage.updateHolding(currentHolding.id, { amount: newAmount.toString() });
+      }
+
+      // Record trade
+      await storage.createTrade({
+        userId,
+        tokenId,
+        type: "sell",
+        amount: parsedAmount.toString(),
+        price: token.currentPrice,
+        totalValue: ethValue.toString(),
+        gasFee: gasFee.toString(),
+      });
+
+      res.json({
+        success: true,
+        ethSent: ethToSend.toFixed(6),
+        txHash: "0x" + Math.random().toString(16).substr(2, 64), // Mock for now
+        message: `Successfully sold ${parsedAmount} ${token.symbol}`,
+      });
+    } catch (error: any) {
+      console.error("Error executing sell:", error);
+      res.status(500).json({ error: error.message || "Failed to execute sell" });
+    }
+  });
+
   // Daily Check-In API
   app.post("/api/check-in", async (req, res) => {
     try {

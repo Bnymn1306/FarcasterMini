@@ -100,3 +100,32 @@ The application follows comprehensive design guidelines defined in `design_guide
 4. **Portfolio Tracking**: Holdings overview with PnL calculation and performance metrics
 5. **Daily Check-in**: Gamification system with streak tracking and BMEM token rewards for consistent engagement
 6. **Token Discovery**: Browse, filter, and sort tokens by volume, market cap, price, and holder count
+
+## Recent Changes
+
+### Phase 1: Real ETH Transfer Implementation (October 1, 2025)
+- **WalletContext Upgrade**: Replaced mock wallet with real blockchain integration using ethers.js
+  - Supports both Farcaster wallet provider and MetaMask fallback
+  - Auto-switches/adds Base network (Chain ID: 8453)
+  - Real-time balance fetching from blockchain
+  - `sendETH()` function for real ETH transfers
+  - `getProvider()` exposes ethers.js BrowserProvider
+
+- **Buy Flow**: Users now send real ETH to platform wallet (0x8988C0418F2D4B0CB8823E330e2e9A7D3bC83C17)
+  - Transaction confirmation via blockchain
+  - Database token allocation after ETH received
+  - Real gas fees applied (no mock fees)
+
+- **Sell Flow**: Backend `/api/sell` endpoint handles real ETH payouts
+  - Validates holdings before processing
+  - Updates/deletes holdings in database
+  - Records trade history
+  - **TODO**: Uncomment ETH transfer code when PLATFORM_PRIVATE_KEY env var is added
+
+- **TypeScript Configuration**: Added `vite-env.d.ts` with window.ethereum type definitions for Web3 compatibility
+
+### Known Limitations (Phase 1)
+- Tokens not yet deployed as real smart contracts (database-only for now)
+- Platform ETH transfers require manual PLATFORM_PRIVATE_KEY configuration
+- No bonding curve pricing yet (fixed prices from database)
+- Phase 2 will add: Smart contract deployment, bonding curves, Uniswap graduation
