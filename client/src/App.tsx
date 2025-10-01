@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
 import { BottomNav } from "@/components/BottomNav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Home from "@/pages/Home";
 import Browse from "@/pages/Browse";
@@ -16,6 +16,7 @@ import Alerts from "@/pages/Alerts";
 import DailyBasedPage from "@/pages/DailyBasedPage";
 import HowToUse from "@/pages/HowToUse";
 import NotFound from "@/pages/not-found";
+import sdk from "@farcaster/frame-sdk";
 
 function Router() {
   return (
@@ -39,6 +40,31 @@ function App() {
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [farcasterUsername, setFarcasterUsername] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    const initFarcasterSDK = async () => {
+      try {
+        const context = await sdk.context;
+        console.log("Farcaster SDK initialized:", context);
+        
+        // Show "Add Mini App" prompt on first launch
+        const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+        if (!hasShownPrompt) {
+          try {
+            await sdk.actions.addMiniApp();
+            localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+            console.log("Add Mini App prompt shown");
+          } catch (error) {
+            console.log("Add Mini App prompt dismissed or error:", error);
+          }
+        }
+      } catch (error) {
+        console.log("Farcaster SDK not available (running outside Farcaster):", error);
+      }
+    };
+
+    initFarcasterSDK();
+  }, []);
 
   const handleConnectWallet = () => {
     if (isWalletConnected) {
