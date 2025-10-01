@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ export interface TokenFormData {
 
 export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<TokenFormData>({
     name: '',
@@ -82,6 +83,26 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      updateField('logoUrl', reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
       <Card className="p-6 space-y-6">
@@ -104,14 +125,19 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
                   {formData.symbol.slice(0, 2) || '?'}
                 </AvatarFallback>
               </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                data-testid="input-logo-file"
+              />
               <Button
                 type="button"
                 variant="outline"
                 className="gap-2"
-                onClick={() => {
-                  const url = prompt('Enter image URL:');
-                  if (url) updateField('logoUrl', url);
-                }}
+                onClick={() => fileInputRef.current?.click()}
                 data-testid="button-upload-logo"
               >
                 <Upload className="h-4 w-4" />
