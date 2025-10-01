@@ -26,27 +26,37 @@ function formatPrice(price: number): string {
 export default function Portfolio() {
   const { walletAddress, isWalletConnected } = useWallet();
 
-  const { data: userData } = useQuery({
+  const { data: userData, isLoading: isLoadingUser } = useQuery({
     queryKey: ["/api/users", walletAddress],
     queryFn: async () => {
-      if (!walletAddress) return null;
+      if (!walletAddress) throw new Error("No wallet address");
       const response = await fetch(`/api/users?walletAddress=${walletAddress}`);
-      if (!response.ok) return null;
+      if (!response.ok) throw new Error("Failed to fetch user");
       return response.json();
     },
     enabled: !!walletAddress,
   });
 
-  const { data: holdings = [], isLoading } = useQuery<HoldingWithToken[]>({
-    queryKey: ["/api/holdings", userData?.id],
+  const { data: holdings = [], isLoading: isLoadingHoldings } = useQuery<HoldingWithToken[]>({
+    queryKey: ["/api/holdings", walletAddress],
     queryFn: async () => {
-      if (!userData?.id) return [];
-      const response = await fetch(`/api/holdings/${userData.id}`);
-      if (!response.ok) throw new Error("Failed to fetch holdings");
-      return response.json();
+      if (!walletAddress) return [];
+      
+      const userResponse = await fetch(`/api/users?walletAddress=${walletAddress}`);
+      if (!userResponse.ok) return [];
+      const user = await userResponse.json();
+      
+      if (!user?.id) return [];
+      
+      const holdingsResponse = await fetch(`/api/holdings/${user.id}`);
+      if (!holdingsResponse.ok) return [];
+      
+      return holdingsResponse.json();
     },
-    enabled: !!userData?.id,
+    enabled: !!walletAddress,
   });
+
+  const isLoading = isLoadingUser || isLoadingHoldings;
 
   if (!isWalletConnected) {
     return (
