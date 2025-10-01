@@ -52,10 +52,12 @@ function AppContent() {
 
   useEffect(() => {
     let mounted = true;
+    let sdkInstance: any = null;
     
     const initFarcasterSDK = async () => {
       try {
         const sdk = (await import("@farcaster/frame-sdk")).default;
+        sdkInstance = sdk;
         
         sdk.actions.ready();
         
@@ -78,10 +80,19 @@ function AppContent() {
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && sdkInstance) {
+        console.log("App visible again, calling ready()");
+        sdkInstance.actions.ready().catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     initFarcasterSDK();
     
     return () => {
       mounted = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [connectFarcaster]);
 
