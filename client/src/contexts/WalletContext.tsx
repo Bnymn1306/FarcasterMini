@@ -252,13 +252,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const farcasterProvider = cachedSDK?.wallet?.ethProvider;
     if (farcasterProvider && typeof farcasterProvider.request === 'function') {
       console.log("Using Farcaster EIP-1193 provider");
-      console.log("Provider object:", farcasterProvider);
       try {
         const valueWei = '0x' + parseEther(amount).toString(16);
-        console.log("Sending transaction via eth_sendTransaction:", { from: walletAddress, to, value: valueWei });
+        console.log("Calling request method with:", { from: walletAddress, to, value: valueWei });
         
-        // Add timeout wrapper
-        const txPromise = farcasterProvider.request({
+        // Call the request - wallet popup should appear HERE
+        const txHash = await farcasterProvider.request({
           method: 'eth_sendTransaction',
           params: [{
             from: walletAddress,
@@ -267,41 +266,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           }]
         });
         
-        console.log("Waiting for transaction response...");
+        console.log("✅ TX HASH RECEIVED:", txHash);
         
-        // Race with timeout
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Transaction timed out after 60 seconds")), 60000)
-        );
-        
-        const txHash = await Promise.race([txPromise, timeoutPromise]) as string;
-        
-        console.log("Farcaster transaction sent:", txHash);
-        console.log("txHash type:", typeof txHash, "value:", txHash);
-        
-        // Wait for transaction confirmation
+        // Wait for confirmation on blockchain
         if (ethersProvider && txHash) {
-          console.log("Waiting for transaction confirmation...");
           try {
-            const receipt = await ethersProvider.waitForTransaction(txHash);
-            console.log("Transaction confirmed:", receipt);
+            await ethersProvider.waitForTransaction(txHash);
+            console.log("✅ Transaction mined on blockchain");
           } catch (waitError) {
-            console.warn("Could not wait for confirmation, but transaction was sent:", waitError);
+            console.warn("Could not wait for confirmation:", waitError);
           }
         }
         
         await refreshBalance();
         return txHash;
       } catch (error: any) {
-        console.error("Farcaster transaction failed:", error);
-        console.error("Error details:", { code: error.code, message: error.message, stack: error.stack });
+        console.error("❌ Farcaster transaction error:", error);
         
         if (error.code === 4001 || error.message?.includes("reject") || error.message?.includes("denied")) {
           throw new Error("Transaction cancelled by user");
         } else if (error.message?.includes("insufficient funds")) {
           throw new Error("Insufficient funds for this transaction");
-        } else if (error.message?.includes("timeout")) {
-          throw new Error("Transaction confirmation timed out. Please check your wallet.");
         }
         
         throw new Error(error.message || "Transaction failed");
