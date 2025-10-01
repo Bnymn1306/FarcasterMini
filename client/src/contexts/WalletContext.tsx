@@ -248,25 +248,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       throw new Error(error);
     }
     
-    // Try Farcaster SDK first (this is the PRIMARY path for Farcaster Mini Apps)
-    if (cachedSDK?.wallet) {
-      console.log("Using Farcaster SDK wallet.sendTransaction()");
+    // Try Farcaster SDK using EIP-1193 provider (PRIMARY path for Farcaster Mini Apps)
+    const farcasterProvider = cachedSDK?.wallet?.ethProvider;
+    if (farcasterProvider && typeof farcasterProvider.request === 'function') {
+      console.log("Using Farcaster EIP-1193 provider");
       try {
-        const valueWei = parseEther(amount).toString();
-        console.log("Calling Farcaster wallet.sendTransaction with value:", valueWei);
+        const valueWei = '0x' + parseEther(amount).toString(16);
+        console.log("Sending transaction via eth_sendTransaction:", { from: walletAddress, to, value: valueWei });
         
-        const txHash = await cachedSDK.wallet.sendTransaction({
-          to,
-          value: valueWei,
+        // Use EIP-1193 request method - this SHOULD trigger wallet popup
+        const txHash = await farcasterProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: walletAddress,
+            to,
+            value: valueWei,
+          }]
         });
         
-        console.log("Farcaster transaction confirmed:", txHash);
+        console.log("Farcaster transaction sent:", txHash);
+        
+        // Wait for transaction confirmation
+        if (ethersProvider) {
+          const receipt = await ethersProvider.waitForTransaction(txHash);
+          console.log("Transaction confirmed:", receipt);
+        }
+        
         await refreshBalance();
         return txHash;
       } catch (error: any) {
         console.error("Farcaster transaction failed:", error);
         
-        if (error.code === "ACTION_REJECTED" || error.message?.includes("reject")) {
+        if (error.code === 4001 || error.message?.includes("reject") || error.message?.includes("denied")) {
           throw new Error("Transaction cancelled by user");
         } else if (error.message?.includes("insufficient funds")) {
           throw new Error("Insufficient funds for this transaction");
@@ -303,7 +316,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error("MetaMask transaction failed:", error);
       
-      if (error.code === "ACTION_REJECTED") {
+      if (error.code === "ACTION_REJECTED" || error.code === 4001) {
         throw new Error("Transaction cancelled by user");
       } else if (error.message?.includes("insufficient funds")) {
         throw new Error("Insufficient funds for this transaction");
