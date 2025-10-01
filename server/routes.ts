@@ -150,6 +150,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tokens/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const token = await storage.getToken(id);
+      
+      if (!token) {
+        return res.status(404).json({ error: "Token not found" });
+      }
+      
+      res.json(token);
+    } catch (error) {
+      console.error("Error fetching token:", error);
+      res.status(500).json({ error: "Failed to fetch token" });
+    }
+  });
+
   app.post("/api/tokens", async (req, res) => {
     try {
       const validatedData = insertTokenSchema.parse(req.body);
