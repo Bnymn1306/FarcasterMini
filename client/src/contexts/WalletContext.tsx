@@ -1,0 +1,94 @@
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+
+interface WalletContextType {
+  isWalletConnected: boolean;
+  walletAddress: string;
+  isFarcasterConnected: boolean;
+  farcasterUsername: string;
+  farcasterFid: string;
+  connectWallet: () => void;
+  disconnectWallet: () => void;
+  connectFarcaster: (username: string, fid: string) => void;
+  disconnectFarcaster: () => void;
+}
+
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+export function WalletProvider({ children }: { children: ReactNode }) {
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
+  const [farcasterUsername, setFarcasterUsername] = useState("");
+  const [farcasterFid, setFarcasterFid] = useState("");
+
+  useEffect(() => {
+    const savedWallet = localStorage.getItem("basedmem_wallet");
+    const savedFarcaster = localStorage.getItem("basedmem_farcaster");
+    
+    if (savedWallet) {
+      const { address } = JSON.parse(savedWallet);
+      setIsWalletConnected(true);
+      setWalletAddress(address);
+    }
+    
+    if (savedFarcaster) {
+      const { username, fid } = JSON.parse(savedFarcaster);
+      setIsFarcasterConnected(true);
+      setFarcasterUsername(username);
+      setFarcasterFid(fid);
+    }
+  }, []);
+
+  const connectWallet = () => {
+    const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
+    setIsWalletConnected(true);
+    setWalletAddress(mockAddress);
+    localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
+  };
+
+  const disconnectWallet = () => {
+    setIsWalletConnected(false);
+    setWalletAddress("");
+    localStorage.removeItem("basedmem_wallet");
+  };
+
+  const connectFarcaster = (username: string, fid: string) => {
+    setIsFarcasterConnected(true);
+    setFarcasterUsername(username);
+    setFarcasterFid(fid);
+    localStorage.setItem("basedmem_farcaster", JSON.stringify({ username, fid }));
+  };
+
+  const disconnectFarcaster = () => {
+    setIsFarcasterConnected(false);
+    setFarcasterUsername("");
+    setFarcasterFid("");
+    localStorage.removeItem("basedmem_farcaster");
+  };
+
+  return (
+    <WalletContext.Provider
+      value={{
+        isWalletConnected,
+        walletAddress,
+        isFarcasterConnected,
+        farcasterUsername,
+        farcasterFid,
+        connectWallet,
+        disconnectWallet,
+        connectFarcaster,
+        disconnectFarcaster,
+      }}
+    >
+      {children}
+    </WalletContext.Provider>
+  );
+}
+
+export function useWallet() {
+  const context = useContext(WalletContext);
+  if (context === undefined) {
+    throw new Error("useWallet must be used within a WalletProvider");
+  }
+  return context;
+}

@@ -1,5 +1,9 @@
-import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert, type DailyCheckIn, type InsertDailyCheckIn } from "@shared/schema";
+import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert, type DailyCheckIn, type InsertDailyCheckIn, users, tokens, trades, holdings, priceAlerts, dailyCheckIns } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
+import ws from "ws";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -299,4 +303,149 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+neonConfig.webSocketConstructor = ws;
+
+export class DBStorage implements IStorage {
+  private db;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is required");
+    }
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    this.db = drizzle(pool);
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByWalletAddress(walletAddress: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.walletAddress, walletAddress)).limit(1);
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const result = await this.db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return result[0];
+  }
+
+  async getToken(id: string): Promise<Token | undefined> {
+    const result = await this.db.select().from(tokens).where(eq(tokens.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAllTokens(): Promise<Token[]> {
+    return await this.db.select().from(tokens);
+  }
+
+  async createToken(insertToken: InsertToken): Promise<Token> {
+    const result = await this.db.insert(tokens).values(insertToken).returning();
+    return result[0];
+  }
+
+  async updateToken(id: string, updates: Partial<Token>): Promise<Token | undefined> {
+    const result = await this.db.update(tokens).set(updates).where(eq(tokens.id, id)).returning();
+    return result[0];
+  }
+
+  async getTrade(id: string): Promise<Trade | undefined> {
+    const result = await this.db.select().from(trades).where(eq(trades.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getTradesByToken(tokenId: string): Promise<Trade[]> {
+    return await this.db.select().from(trades).where(eq(trades.tokenId, tokenId));
+  }
+
+  async createTrade(insertTrade: InsertTrade): Promise<Trade> {
+    const result = await this.db.insert(trades).values(insertTrade).returning();
+    return result[0];
+  }
+
+  async getHolding(userId: string, tokenId: string): Promise<Holding | undefined> {
+    const result = await this.db.select().from(holdings).where(
+      and(eq(holdings.userId, userId), eq(holdings.tokenId, tokenId))
+    ).limit(1);
+    return result[0];
+  }
+
+  async getHoldingsByUser(userId: string): Promise<Holding[]> {
+    return await this.db.select().from(holdings).where(eq(holdings.userId, userId));
+  }
+
+  async createHolding(insertHolding: InsertHolding): Promise<Holding> {
+    const result = await this.db.insert(holdings).values(insertHolding).returning();
+    return result[0];
+  }
+
+  async updateHolding(id: string, updates: Partial<Holding>): Promise<Holding | undefined> {
+    const result = await this.db.update(holdings).set(updates).where(eq(holdings.id, id)).returning();
+    return result[0];
+  }
+
+  async getPriceAlert(id: string): Promise<PriceAlert | undefined> {
+    const result = await this.db.select().from(priceAlerts).where(eq(priceAlerts.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getPriceAlertsByUser(userId: string): Promise<PriceAlert[]> {
+    return await this.db.select().from(priceAlerts).where(eq(priceAlerts.userId, userId));
+  }
+
+  async getActivePriceAlerts(): Promise<PriceAlert[]> {
+    return await this.db.select().from(priceAlerts).where(
+      and(eq(priceAlerts.isActive, true), eq(priceAlerts.isTriggered, false))
+    );
+  }
+
+  async createPriceAlert(insertAlert: InsertPriceAlert): Promise<PriceAlert> {
+    const result = await this.db.insert(priceAlerts).values(insertAlert).returning();
+    return result[0];
+  }
+
+  async updatePriceAlert(id: string, updates: Partial<PriceAlert>): Promise<PriceAlert | undefined> {
+    const result = await this.db.update(priceAlerts).set(updates).where(eq(priceAlerts.id, id)).returning();
+    return result[0];
+  }
+
+  async deletePriceAlert(id: string): Promise<boolean> {
+    const result = await this.db.delete(priceAlerts).where(eq(priceAlerts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getDailyCheckIn(userId: string, date: Date): Promise<DailyCheckIn | undefined> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const result = await this.db.select().from(dailyCheckIns).where(
+      and(
+        eq(dailyCheckIns.userId, userId),
+        gte(dailyCheckIns.checkInDate, startOfDay),
+        lte(dailyCheckIns.checkInDate, endOfDay)
+      )
+    ).limit(1);
+    return result[0];
+  }
+
+  async getCheckInsByUser(userId: string): Promise<DailyCheckIn[]> {
+    return await this.db.select().from(dailyCheckIns)
+      .where(eq(dailyCheckIns.userId, userId))
+      .orderBy(desc(dailyCheckIns.checkInDate));
+  }
+
+  async createDailyCheckIn(insertCheckIn: InsertDailyCheckIn): Promise<DailyCheckIn> {
+    const result = await this.db.insert(dailyCheckIns).values(insertCheckIn).returning();
+    return result[0];
+  }
+}
+
+export const storage = new DBStorage();

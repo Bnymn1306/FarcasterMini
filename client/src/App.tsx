@@ -5,8 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
 import { BottomNav } from "@/components/BottomNav";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Home from "@/pages/Home";
 import Browse from "@/pages/Browse";
 import Create from "@/pages/Create";
@@ -34,11 +35,17 @@ function Router() {
   );
 }
 
-function App() {
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
-  const [farcasterUsername, setFarcasterUsername] = useState("");
+function AppContent() {
+  const {
+    isWalletConnected,
+    walletAddress,
+    isFarcasterConnected,
+    farcasterUsername,
+    connectWallet,
+    disconnectWallet,
+    connectFarcaster,
+    disconnectFarcaster,
+  } = useWallet();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,6 +57,11 @@ function App() {
         // Signal that the app is ready - this hides the splash screen
         await sdk.actions.ready();
         console.log("SDK ready called - splash screen hidden");
+        
+        // Auto-connect Farcaster if available
+        if (context.user) {
+          connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
+        }
         
         // Show "Add Mini App" prompt on first launch
         const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
@@ -72,16 +84,13 @@ function App() {
 
   const handleConnectWallet = () => {
     if (isWalletConnected) {
-      setIsWalletConnected(false);
-      setWalletAddress("");
+      disconnectWallet();
       toast({
         title: "Wallet Disconnected",
         description: "Your wallet has been disconnected",
       });
     } else {
-      const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
-      setIsWalletConnected(true);
-      setWalletAddress(mockAddress);
+      connectWallet();
       toast({
         title: "Wallet Connected!",
         description: "Successfully connected to your wallet",
@@ -91,41 +100,46 @@ function App() {
 
   const handleFarcasterLogin = () => {
     if (isFarcasterConnected) {
-      setIsFarcasterConnected(false);
-      setFarcasterUsername("");
+      disconnectFarcaster();
       toast({
         title: "Signed Out",
         description: "You have been signed out of Farcaster",
       });
     } else {
-      const mockUsername = "basedmemer";
-      setIsFarcasterConnected(true);
-      setFarcasterUsername(mockUsername);
+      connectFarcaster("basedmemer", "123456");
       toast({
         title: "Signed in with Farcaster!",
-        description: `Welcome back, @${mockUsername}! [Demo Mode]`,
+        description: `Welcome back, @basedmemer!`,
       });
     }
   };
 
   return (
+    <div className="min-h-screen bg-background">
+      <NavigationBar 
+        onConnectWallet={handleConnectWallet}
+        isWalletConnected={isWalletConnected}
+        walletAddress={walletAddress}
+        onFarcasterLogin={handleFarcasterLogin}
+        isFarcasterConnected={isFarcasterConnected}
+        farcasterUsername={farcasterUsername}
+      />
+      <main className="pt-16 pb-20 md:pb-4">
+        <Router />
+      </main>
+      <BottomNav />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-background">
-          <NavigationBar 
-            onConnectWallet={handleConnectWallet}
-            isWalletConnected={isWalletConnected}
-            walletAddress={walletAddress}
-            onFarcasterLogin={handleFarcasterLogin}
-            isFarcasterConnected={isFarcasterConnected}
-            farcasterUsername={farcasterUsername}
-          />
-          <main className="pt-16 pb-20 md:pb-4">
-            <Router />
-          </main>
-          <BottomNav />
-        </div>
-        <Toaster />
+        <WalletProvider>
+          <AppContent />
+          <Toaster />
+        </WalletProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

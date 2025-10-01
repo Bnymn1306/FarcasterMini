@@ -142,18 +142,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Daily Check-In API
   app.post("/api/check-in", async (req, res) => {
     try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "userId required" });
+      const { walletAddress } = req.body;
+      if (!walletAddress) {
+        return res.status(400).json({ error: "walletAddress required" });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserByWalletAddress(walletAddress);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
       const today = new Date();
-      const existingCheckIn = await storage.getDailyCheckIn(userId, today);
+      const existingCheckIn = await storage.getDailyCheckIn(user.id, today);
 
       if (existingCheckIn) {
         return res.status(400).json({ error: "Already checked in today" });
@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayCheckIn = await storage.getDailyCheckIn(userId, yesterday);
+      const yesterdayCheckIn = await storage.getDailyCheckIn(user.id, yesterday);
 
       let newStreak = 1;
       if (yesterdayCheckIn) {
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const longestStreak = Math.max(newStreak, user.longestStreak || 0);
       const totalCheckIns = (user.totalCheckIns || 0) + 1;
 
-      await storage.updateUser(userId, {
+      await storage.updateUser(user.id, {
         currentStreak: newStreak,
         longestStreak,
         totalCheckIns,
@@ -179,12 +179,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const checkIn = await storage.createDailyCheckIn({
-        userId,
+        userId: user.id,
         checkInDate: today,
         streakDay: newStreak,
       });
 
-      const updatedUser = await storage.getUser(userId);
+      const updatedUser = await storage.getUser(user.id);
 
       res.json({
         checkIn,
@@ -197,18 +197,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/check-in/:userId", async (req, res) => {
+  app.get("/api/check-in/:walletAddress", async (req, res) => {
     try {
-      const { userId } = req.params;
-      const user = await storage.getUser(userId);
+      const { walletAddress } = req.params;
+      const user = await storage.getUserByWalletAddress(walletAddress);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
       const today = new Date();
-      const todayCheckIn = await storage.getDailyCheckIn(userId, today);
-      const recentCheckIns = await storage.getCheckInsByUser(userId);
+      const todayCheckIn = await storage.getDailyCheckIn(user.id, today);
+      const recentCheckIns = await storage.getCheckInsByUser(user.id);
 
       res.json({
         user,

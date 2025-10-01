@@ -1,12 +1,11 @@
 import { DailyBased } from "@/components/DailyBased";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useWallet } from "@/contexts/WalletContext";
 import { Flame, Calendar, Award } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User, DailyCheckIn } from "@shared/schema";
-
-const MOCK_USER_ID = "mock-user-123";
 
 interface CheckInData {
   user: User;
@@ -16,17 +15,18 @@ interface CheckInData {
 
 export default function DailyBasedPage() {
   const { toast } = useToast();
+  const { walletAddress, isWalletConnected } = useWallet();
 
   const { data: checkInData, isLoading: isLoadingData } = useQuery<CheckInData>({
-    queryKey: ["/api/check-in", MOCK_USER_ID],
+    queryKey: ["/api/check-in", walletAddress],
+    enabled: isWalletConnected && !!walletAddress,
     queryFn: async () => {
-      const response = await fetch(`/api/check-in/${MOCK_USER_ID}`);
+      const response = await fetch(`/api/check-in/${walletAddress}`);
       if (!response.ok) {
         if (response.status === 404) {
           const newUser = await apiRequest("POST", "/api/users", {
-            id: MOCK_USER_ID,
-            walletAddress: "0x1234...mock",
-            username: "DemoUser",
+            walletAddress,
+            username: `User_${walletAddress.slice(0, 6)}`,
           }) as unknown as User;
           return {
             user: newUser,
@@ -42,13 +42,14 @@ export default function DailyBasedPage() {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
+      if (!walletAddress) throw new Error("Wallet not connected");
       const response = await apiRequest("POST", "/api/check-in", {
-        userId: MOCK_USER_ID,
+        walletAddress,
       });
       return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/check-in", MOCK_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/check-in", walletAddress] });
       
       const newStreak = data?.user?.currentStreak || 1;
       let rewardMessage = "10 BMEM kazandın! 🎉";
@@ -97,6 +98,20 @@ export default function DailyBasedPage() {
       hasCheckIn,
     };
   });
+
+  if (!isWalletConnected) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-20">
+          <Flame className="h-20 w-20 text-primary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Connect Your Wallet</h2>
+          <p className="text-muted-foreground">
+            Please connect your wallet to access Daily Check-in
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoadingData) {
     return (
