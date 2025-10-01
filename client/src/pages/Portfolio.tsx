@@ -41,7 +41,7 @@ export default function Portfolio() {
   const totalPnL = holdings.reduce((sum, h) => sum + h.pnlValue, 0);
   const totalPnLPercent = ((totalPnL / (totalValue - totalPnL)) * 100).toFixed(2);
 
-  const sharePortfolio = () => {
+  const sharePortfolio = async () => {
     const baseUrl = window.location.origin;
     const tokenNames = holdings.map(h => `$${h.token.symbol}`).join(', ');
     const pnlDirection = totalPnL >= 0 ? 'UP' : 'DOWN';
@@ -49,7 +49,14 @@ export default function Portfolio() {
     const text = `My BasedMem Portfolio [${pnlDirection}]\n\nTotal Value: $${totalValue.toFixed(2)}\nP&L: ${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)} (${totalPnL >= 0 ? '+' : ''}${totalPnLPercent}%)\nTokens: ${holdings.length}\n\nHoldings: ${tokenNames}\n\n#BasedMem #MemeCoins #Portfolio`;
     
     const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(portfolioUrl)}`;
-    window.open(warpcastUrl, '_blank');
+    
+    try {
+      const sdk = (await import("@farcaster/frame-sdk")).default;
+      await sdk.actions.openUrl(warpcastUrl);
+    } catch (error) {
+      console.log("SDK not available, opening in new tab:", error);
+      window.open(warpcastUrl, '_blank');
+    }
   };
 
   return (
