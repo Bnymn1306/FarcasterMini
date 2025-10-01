@@ -241,13 +241,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     console.log("=== sendETH called ===");
     console.log("to:", to);
     console.log("amount:", amount);
-    console.log("ethersProvider exists?", !!ethersProvider);
-    
-    if (!ethersProvider) {
-      const error = "Wallet provider not initialized. Please reconnect your wallet.";
-      console.error(error);
-      throw new Error(error);
-    }
     
     if (!walletAddress) {
       const error = "Wallet address not found. Please reconnect your wallet.";
@@ -255,8 +248,44 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       throw new Error(error);
     }
     
+    // Try Farcaster SDK first (this is the PRIMARY path for Farcaster Mini Apps)
+    if (cachedSDK?.wallet) {
+      console.log("Using Farcaster SDK wallet.sendTransaction()");
+      try {
+        const valueWei = parseEther(amount).toString();
+        console.log("Calling Farcaster wallet.sendTransaction with value:", valueWei);
+        
+        const txHash = await cachedSDK.wallet.sendTransaction({
+          to,
+          value: valueWei,
+        });
+        
+        console.log("Farcaster transaction confirmed:", txHash);
+        await refreshBalance();
+        return txHash;
+      } catch (error: any) {
+        console.error("Farcaster transaction failed:", error);
+        
+        if (error.code === "ACTION_REJECTED" || error.message?.includes("reject")) {
+          throw new Error("Transaction cancelled by user");
+        } else if (error.message?.includes("insufficient funds")) {
+          throw new Error("Insufficient funds for this transaction");
+        }
+        
+        throw new Error(error.message || "Transaction failed");
+      }
+    }
+    
+    // Fallback to MetaMask/browser wallet
+    console.log("Using MetaMask/browser wallet (fallback)");
+    if (!ethersProvider) {
+      const error = "Wallet provider not initialized. Please reconnect your wallet.";
+      console.error(error);
+      throw new Error(error);
+    }
+    
     try {
-      console.log("Getting signer...");
+      console.log("Getting signer from ethersProvider...");
       const signer = await ethersProvider.getSigner();
       console.log("Signer obtained, sending transaction...");
       
@@ -269,14 +298,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       await tx.wait();
       console.log("Transaction confirmed:", tx.hash);
       
-      // Refresh balance after transaction
       await refreshBalance();
-      
       return tx.hash;
     } catch (error: any) {
-      console.error("ETH transfer failed:", error);
+      console.error("MetaMask transaction failed:", error);
       
-      // User-friendly error messages
       if (error.code === "ACTION_REJECTED") {
         throw new Error("Transaction cancelled by user");
       } else if (error.message?.includes("insufficient funds")) {
