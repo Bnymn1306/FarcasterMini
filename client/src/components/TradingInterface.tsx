@@ -32,12 +32,30 @@ export function TradingInterface({
   const [chartPeriod, setChartPeriod] = useState("24H");
 
   const handleBuy = () => {
-    console.log('Buy', buyAmount, token.symbol);
+    console.log('=== BUY CLICKED ===');
+    console.log('buyAmount:', buyAmount);
+    console.log('token.symbol:', token.symbol);
+    console.log('onBuy function exists?', !!onBuy);
+    
+    if (!buyAmount || parseFloat(buyAmount) <= 0) {
+      console.error('Invalid buy amount:', buyAmount);
+      return;
+    }
+    
     onBuy?.(buyAmount);
   };
 
   const handleSell = () => {
-    console.log('Sell', sellAmount, token.symbol);
+    console.log('=== SELL CLICKED ===');
+    console.log('sellAmount:', sellAmount);
+    console.log('token.symbol:', token.symbol);
+    console.log('onSell function exists?', !!onSell);
+    
+    if (!sellAmount || parseFloat(sellAmount) <= 0) {
+      console.error('Invalid sell amount:', sellAmount);
+      return;
+    }
+    
     onSell?.(sellAmount);
   };
 
