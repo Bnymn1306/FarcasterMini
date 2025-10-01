@@ -300,6 +300,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/holdings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amount } = req.body;
+
+      if (!amount) {
+        return res.status(400).json({ error: "Amount is required" });
+      }
+
+      const parsedAmount = parseFloat(amount);
+      if (!isFinite(parsedAmount) || parsedAmount < 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+      }
+
+      const updated = await storage.updateHolding(id, { amount: parsedAmount.toString() });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating holding:", error);
+      res.status(400).json({ error: "Failed to update holding" });
+    }
+  });
+
+  app.delete("/api/holdings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteHolding(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting holding:", error);
+      res.status(400).json({ error: "Failed to delete holding" });
+    }
+  });
+
   // Daily Check-In API
   app.post("/api/check-in", async (req, res) => {
     try {

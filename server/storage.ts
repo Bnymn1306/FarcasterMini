@@ -24,6 +24,7 @@ export interface IStorage {
   getHoldingsByUser(userId: string): Promise<Holding[]>;
   createHolding(holding: InsertHolding): Promise<Holding>;
   updateHolding(id: string, updates: Partial<Holding>): Promise<Holding | undefined>;
+  deleteHolding(id: string): Promise<boolean>;
   
   getPriceAlert(id: string): Promise<PriceAlert | undefined>;
   getPriceAlertsByUser(userId: string): Promise<PriceAlert[]>;
@@ -219,6 +220,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async deleteHolding(id: string): Promise<boolean> {
+    return this.holdings.delete(id);
+  }
+
   async getPriceAlert(id: string): Promise<PriceAlert | undefined> {
     return this.priceAlerts.get(id);
   }
@@ -410,6 +415,11 @@ export class DBStorage implements IStorage {
   async updateHolding(id: string, updates: Partial<Holding>): Promise<Holding | undefined> {
     const result = await this.db.update(holdings).set(updates).where(eq(holdings.id, id)).returning();
     return result[0];
+  }
+
+  async deleteHolding(id: string): Promise<boolean> {
+    const result = await this.db.delete(holdings).where(eq(holdings.id, id)).returning();
+    return result.length > 0;
   }
 
   async getPriceAlert(id: string): Promise<PriceAlert | undefined> {

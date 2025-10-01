@@ -186,6 +186,22 @@ export default function TokenDetail() {
   const handleSell = async (amount: string) => {
     setIsTrading(true);
     try {
+      if (!isWalletConnected || !walletAddress) {
+        throw new Error("Wallet not connected");
+      }
+
+      if (!userData?.id) {
+        throw new Error("User not found");
+      }
+
+      const tokenAmount = parseFloat(amount);
+      if (isNaN(tokenAmount) || tokenAmount <= 0) {
+        throw new Error("Invalid amount");
+      }
+
+      const ethValue = tokenAmount * parseFloat(token.currentPrice);
+      const gasFee = "0.00012";
+
       const provider = sdk.wallet.ethProvider;
       const accounts = await provider.request({ method: "eth_accounts" });
       
@@ -204,16 +220,74 @@ export default function TokenDetail() {
       });
       
       console.log("Sell transaction sent:", txHash);
+
+      const { queryClient } = await import("@/lib/queryClient");
+
+      const tradeResponse = await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userData.id,
+          tokenId: token.id,
+          type: "sell",
+          amount: tokenAmount.toString(),
+          price: token.currentPrice,
+          totalValue: ethValue.toString(),
+          gasFee,
+        }),
+      });
+
+      if (!tradeResponse.ok) {
+        throw new Error("Failed to record trade");
+      }
+
+      const currentHolding = userHolding;
+      if (!currentHolding) {
+        throw new Error("No holdings found");
+      }
+
+      const currentAmount = parseFloat(currentHolding.amount);
+      const newAmount = currentAmount - tokenAmount;
+
+      if (newAmount < 0) {
+        throw new Error("Insufficient token balance");
+      }
+
+      if (newAmount === 0) {
+        const deleteResponse = await fetch(`/api/holdings/${currentHolding.id}`, {
+          method: "DELETE",
+        });
+
+        if (!deleteResponse.ok) {
+          throw new Error("Failed to delete holding");
+        }
+      } else {
+        const updateResponse = await fetch(`/api/holdings/${currentHolding.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: newAmount.toString(),
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          throw new Error("Failed to update holdings");
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", walletAddress] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
       
       toast({
         title: "Trade Executed! 💰",
-        description: `Successfully sold ${amount} ${token.symbol}. Transaction hash: ${txHash.slice(0, 10)}...`,
+        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
       });
     } catch (error: any) {
       console.error("Sell error:", error);
       toast({
         title: "Trade Failed",
-        description: error.message?.includes("rejected") ? "Transaction rejected" : "Failed to execute trade",
+        description: error.message || "Failed to execute trade",
         variant: "destructive",
       });
     } finally {
