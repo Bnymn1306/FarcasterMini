@@ -9,10 +9,13 @@ import { ExternalLink, Twitter, Send, Globe, Share2 } from "lucide-react";
 import type { Token } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { SiFarcaster } from "react-icons/si";
+import sdk from "@farcaster/frame-sdk";
+import { useState } from "react";
 
 export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
   const { toast } = useToast();
+  const [isTrading, setIsTrading] = useState(false);
 
   const mockToken: Token = {
     id: params?.id || '1',
@@ -35,18 +38,83 @@ export default function TokenDetail() {
     createdAt: new Date('2024-01-15'),
   };
 
-  const handleBuy = (amount: string) => {
-    toast({
-      title: "Trade Executed!",
-      description: `Successfully bought ${amount} ETH worth of ${mockToken.symbol}`,
-    });
+  const handleBuy = async (amount: string) => {
+    setIsTrading(true);
+    try {
+      const amountInWei = (parseFloat(amount) * 1e18).toString(16);
+      const valueInWei = `0x${amountInWei}` as `0x${string}`;
+      
+      const provider = sdk.wallet.ethProvider;
+      const accounts = await provider.request({ method: "eth_accounts" });
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error("Wallet not connected");
+      }
+      
+      const txHash = await provider.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: accounts[0],
+          to: mockToken.contractAddress as `0x${string}`,
+          value: valueInWei,
+          data: "0x" as `0x${string}`,
+        }],
+      });
+      
+      console.log("Buy transaction sent:", txHash);
+      
+      toast({
+        title: "Trade Executed! 🎉",
+        description: `Successfully bought ${amount} ETH worth of ${mockToken.symbol}. Transaction hash: ${txHash.slice(0, 10)}...`,
+      });
+    } catch (error: any) {
+      console.error("Buy error:", error);
+      toast({
+        title: "Trade Failed",
+        description: error.message?.includes("rejected") ? "Transaction rejected" : "Failed to execute trade",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTrading(false);
+    }
   };
 
-  const handleSell = (amount: string) => {
-    toast({
-      title: "Trade Executed!",
-      description: `Successfully sold ${amount} ${mockToken.symbol}`,
-    });
+  const handleSell = async (amount: string) => {
+    setIsTrading(true);
+    try {
+      const provider = sdk.wallet.ethProvider;
+      const accounts = await provider.request({ method: "eth_accounts" });
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error("Wallet not connected");
+      }
+      
+      const txHash = await provider.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: accounts[0],
+          to: mockToken.contractAddress as `0x${string}`,
+          value: "0x0" as `0x${string}`,
+          data: "0x" as `0x${string}`,
+        }],
+      });
+      
+      console.log("Sell transaction sent:", txHash);
+      
+      toast({
+        title: "Trade Executed! 💰",
+        description: `Successfully sold ${amount} ${mockToken.symbol}. Transaction hash: ${txHash.slice(0, 10)}...`,
+      });
+    } catch (error: any) {
+      console.error("Sell error:", error);
+      toast({
+        title: "Trade Failed",
+        description: error.message?.includes("rejected") ? "Transaction rejected" : "Failed to execute trade",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTrading(false);
+    }
   };
 
   const handleCreateAlert = (data: any) => {

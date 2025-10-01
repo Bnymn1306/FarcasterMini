@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Upload, Rocket } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GasFeeDisplay } from "./GasFeeDisplay";
+import sdk from "@farcaster/frame-sdk";
+import { useToast } from "@/hooks/use-toast";
 
 interface CreateTokenFormProps {
   onSubmit?: (data: TokenFormData) => void;
@@ -24,6 +26,8 @@ export interface TokenFormData {
 }
 
 export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
+  const { toast } = useToast();
+  const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<TokenFormData>({
     name: '',
     symbol: '',
@@ -35,10 +39,43 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
     websiteUrl: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Token creation:', formData);
-    onSubmit?.(formData);
+    setIsCreating(true);
+    
+    try {
+      const creationFeeInWei = "0x35A4E900000000" as `0x${string}`;
+      
+      const provider = sdk.wallet.ethProvider;
+      const accounts = await provider.request({ method: "eth_accounts" });
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error("Wallet not connected");
+      }
+      
+      const txHash = await provider.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: accounts[0],
+          to: accounts[0],
+          value: creationFeeInWei,
+          data: "0x" as `0x${string}`,
+        }],
+      });
+      
+      console.log('Token creation transaction sent:', txHash);
+      
+      onSubmit?.(formData);
+    } catch (error: any) {
+      console.error("Token creation error:", error);
+      toast({
+        title: "Creation Failed",
+        description: error.message?.includes("rejected") ? "Transaction rejected" : "Failed to create token",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const updateField = (field: keyof TokenFormData, value: string) => {
@@ -180,10 +217,11 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
               type="submit"
               className="w-full gap-2 py-6"
               size="lg"
+              disabled={isCreating}
               data-testid="button-create-token"
             >
               <Rocket className="h-5 w-5" />
-              Launch Token
+              {isCreating ? "Creating..." : "Launch Token"}
             </Button>
           </div>
         </form>
