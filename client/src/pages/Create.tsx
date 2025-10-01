@@ -1,36 +1,87 @@
 import { CreateTokenForm } from "@/components/CreateTokenForm";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useWallet } from "@/contexts/WalletContext";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { walletAddress } = useWallet();
+
+  const createTokenMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const tokenData = {
+        creatorId: walletAddress || null,
+        name: data.name,
+        symbol: data.symbol,
+        description: data.description,
+        logoUrl: data.logoUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${data.symbol.toLowerCase()}`,
+        contractAddress: `0x${Math.random().toString(16).substring(2, 42)}`,
+        totalSupply: data.totalSupply,
+        currentPrice: "0.001",
+        marketCap: "0",
+        volume24h: "0",
+        priceChange24h: "0",
+        holderCount: 1,
+        twitterUrl: data.twitterUrl || null,
+        telegramUrl: data.telegramUrl || null,
+        websiteUrl: data.websiteUrl || null,
+        isVerified: false,
+      };
+
+      const response = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokenData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create token");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tokens"] });
+    },
+  });
 
   const handleSubmit = async (data: any) => {
-    console.log('Creating token:', data);
-    
-    toast({
-      title: "Token Launched! 🚀",
-      description: `${data.name} (${data.symbol}) has been successfully created on Base.`,
-    });
-
-    const baseUrl = window.location.origin;
-    const tokenUrl = `${baseUrl}/browse`;
-    const castText = `🚀 Just launched ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token is born!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
-
-    const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
-
     try {
-      const sdk = (await import("@farcaster/frame-sdk")).default;
-      await sdk.actions.openUrl(warpcastUrl);
-    } catch (error) {
-      console.log("SDK not available, opening in new tab:", error);
-      window.open(warpcastUrl, '_blank');
-    }
+      await createTokenMutation.mutateAsync(data);
+      
+      toast({
+        title: "Token Launched! 🚀",
+        description: `${data.name} (${data.symbol}) has been successfully created on Base.`,
+      });
 
-    setTimeout(() => {
-      setLocation('/browse');
-    }, 3000);
+      const baseUrl = window.location.origin;
+      const tokenUrl = `${baseUrl}/browse`;
+      const castText = `🚀 Just launched ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token is born!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+
+      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
+
+      try {
+        const sdk = (await import("@farcaster/frame-sdk")).default;
+        await sdk.actions.openUrl(warpcastUrl);
+      } catch (error) {
+        console.log("SDK not available, opening in new tab:", error);
+        window.open(warpcastUrl, '_blank');
+      }
+
+      setTimeout(() => {
+        setLocation('/browse');
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving token:", error);
+      toast({
+        title: "Save Failed",
+        description: "Token transaction succeeded but failed to save to database",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

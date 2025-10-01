@@ -139,6 +139,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tokens API
+  app.get("/api/tokens", async (req, res) => {
+    try {
+      const tokens = await storage.getAllTokens();
+      res.json(tokens);
+    } catch (error) {
+      console.error("Error fetching tokens:", error);
+      res.status(500).json({ error: "Failed to fetch tokens" });
+    }
+  });
+
+  app.post("/api/tokens", async (req, res) => {
+    try {
+      const token = await storage.createToken(req.body);
+      res.json(token);
+    } catch (error) {
+      console.error("Error creating token:", error);
+      res.status(500).json({ error: "Failed to create token" });
+    }
+  });
+
   // Daily Check-In API
   app.post("/api/check-in", async (req, res) => {
     try {

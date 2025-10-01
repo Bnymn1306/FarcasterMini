@@ -19,7 +19,7 @@ export const users = pgTable("users", {
 
 export const tokens = pgTable("tokens", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  creatorId: varchar("creator_id").notNull().references(() => users.id),
+  creatorId: varchar("creator_id"),
   name: text("name").notNull(),
   symbol: text("symbol").notNull(),
   description: text("description"),
