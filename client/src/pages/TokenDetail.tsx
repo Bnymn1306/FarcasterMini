@@ -12,11 +12,13 @@ import { SiFarcaster } from "react-icons/si";
 import sdk from "@farcaster/frame-sdk";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useWallet } from "@/contexts/WalletContext";
 
 export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
   const { toast } = useToast();
   const [isTrading, setIsTrading] = useState(false);
+  const { walletBalance } = useWallet();
 
   const { data: token, isLoading, isError } = useQuery<Token>({
     queryKey: ["/api/tokens", params?.id],
@@ -283,8 +285,8 @@ export default function TokenDetail() {
           <div className="sticky top-24">
             <TradingInterface 
               token={token}
-              userBalance="2.5"
-              userTokenBalance="500"
+              userBalance={walletBalance}
+              userTokenBalance="0"
               onBuy={handleBuy}
               onSell={handleSell}
             />
