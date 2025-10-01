@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BasedMem - Meme Tokens on Base</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 1200px;
+            height: 628px;
+            background: linear-gradient(135deg, #0052FF 0%, #0038B8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .base-logo-bg {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            opacity: 0.1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .title {
+            color: white;
+            font-size: 72px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 50px;
+        }
+        
+        .tokens-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .token-item {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s;
+        }
+        
+        .token-emoji {
+            font-size: 80px;
+            margin-bottom: 10px;
+        }
+        
+        .token-name {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .token-symbol {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <img src="/base-logo.png" alt="Base" class="base-logo-bg">
+    
+    <div class="container">
+        <div class="title">BasedMem</div>
+        <div class="subtitle">Meme Tokens on Base</div>
+        
+        <div class="tokens-grid">
+            <div class="token-item">
+                <div class="token-emoji">🐱</div>
+                <div class="token-name">Mochi</div>
+                <div class="token-symbol">$MOCHI</div>
+            </div>
+            
+            <div class="token-item">
+                <div class="token-emoji">💙</div>
+                <div class="token-name">Brett</div>
+                <div class="token-symbol">$BRETT</div>
+            </div>
+            
+            <div class="token-item">
+                <div class="token-emoji">🙏</div>
+                <div class="token-name">Base God</div>
+                <div class="token-symbol">$TYBG</div>
+            </div>
+            
+            <div class="token-item">
+                <div class="token-emoji">🐈</div>
+                <div class="token-name">Toshi</div>
+                <div class="token-symbol">$TOSHI</div>
+            </div>
+            
+            <div class="token-item">
+                <div class="token-emoji">🐸</div>
+                <div class="token-name">Peezy</div>
+                <div class="token-symbol">$PEEZY</div>
+            </div>
+            
+            <div class="token-item">
+                <div class="token-emoji">🥋</div>
+                <div class="token-name">Chuck</div>
+                <div class="token-symbol">$CHUCK</div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas" width="1200" height="628"></canvas>
+
+    <script>
+        // Wait for page to fully load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Take screenshot using html2canvas approach
+                const body = document.body;
+                
+                // Simple way: provide download button
+                console.log('Page ready for screenshot');
+                
+                // Add download button
+                const btn = document.createElement('button');
+                btn.textContent = 'Download Image';
+                btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:1000;padding:10px 20px;background:white;border:none;border-radius:10px;cursor:pointer;font-weight:bold;';
+                btn.onclick = () => {
+                    alert('Right-click on the page and select "Save As" or take a screenshot!');
+                };
+                document.body.appendChild(btn);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
