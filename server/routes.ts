@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPriceAlertSchema } from "@shared/schema";
+import { insertPriceAlertSchema, insertTokenSchema } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 
@@ -152,11 +152,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tokens", async (req, res) => {
     try {
-      const token = await storage.createToken(req.body);
+      const validatedData = insertTokenSchema.parse(req.body);
+      const token = await storage.createToken(validatedData);
       res.json(token);
     } catch (error) {
       console.error("Error creating token:", error);
-      res.status(500).json({ error: "Failed to create token" });
+      res.status(400).json({ error: "Failed to create token" });
     }
   });
 

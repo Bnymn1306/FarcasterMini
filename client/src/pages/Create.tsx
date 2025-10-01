@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import type { InsertToken } from "@shared/schema";
 
 export default function Create() {
   const { toast } = useToast();
@@ -12,23 +13,16 @@ export default function Create() {
 
   const createTokenMutation = useMutation({
     mutationFn: async (data: any) => {
-      const tokenData = {
+      const tokenData: InsertToken = {
         creatorId: walletAddress || null,
         name: data.name,
         symbol: data.symbol,
-        description: data.description,
+        description: data.description || null,
         logoUrl: data.logoUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${data.symbol.toLowerCase()}`,
-        contractAddress: `0x${Math.random().toString(16).substring(2, 42)}`,
         totalSupply: data.totalSupply,
-        currentPrice: "0.001",
-        marketCap: "0",
-        volume24h: "0",
-        priceChange24h: "0",
-        holderCount: 1,
         twitterUrl: data.twitterUrl || null,
         telegramUrl: data.telegramUrl || null,
         websiteUrl: data.websiteUrl || null,
-        isVerified: false,
       };
 
       const response = await fetch("/api/tokens", {

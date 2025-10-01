@@ -130,7 +130,7 @@ export class MemStorage implements IStorage {
   async createToken(insertToken: InsertToken): Promise<Token> {
     const id = randomUUID();
     const token: Token = {
-      creatorId: insertToken.creatorId,
+      creatorId: insertToken.creatorId ?? null,
       name: insertToken.name,
       symbol: insertToken.symbol,
       description: insertToken.description ?? null,
@@ -358,7 +358,17 @@ export class DBStorage implements IStorage {
   }
 
   async createToken(insertToken: InsertToken): Promise<Token> {
-    const result = await this.db.insert(tokens).values(insertToken).returning();
+    const tokenWithDefaults = {
+      ...insertToken,
+      contractAddress: null,
+      currentPrice: "0",
+      marketCap: "0",
+      volume24h: "0",
+      priceChange24h: "0",
+      holderCount: 0,
+      isVerified: false,
+    };
+    const result = await this.db.insert(tokens).values(tokenWithDefaults).returning();
     return result[0];
   }
 
