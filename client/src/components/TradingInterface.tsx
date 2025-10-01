@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,20 @@ export function TradingInterface({
   const [buySliderValue, setBuySliderValue] = useState([50]);
   const [sellSliderValue, setSellSliderValue] = useState([50]);
   const [chartPeriod, setChartPeriod] = useState("24H");
+
+  // Initialize buyAmount based on initial slider value
+  useEffect(() => {
+    const initialBuyAmount = ((parseFloat(userBalance) * buySliderValue[0]) / 100).toFixed(4);
+    setBuyAmount(initialBuyAmount);
+    console.log('Initial buyAmount set to:', initialBuyAmount);
+  }, [userBalance]);
+
+  // Initialize sellAmount based on initial slider value
+  useEffect(() => {
+    const initialSellAmount = ((parseFloat(userTokenBalance) * sellSliderValue[0]) / 100).toFixed(2);
+    setSellAmount(initialSellAmount);
+    console.log('Initial sellAmount set to:', initialSellAmount);
+  }, [userTokenBalance]);
 
   const handleBuy = () => {
     console.log('=== BUY CLICKED ===');
