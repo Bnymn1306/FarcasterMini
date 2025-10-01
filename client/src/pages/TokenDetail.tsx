@@ -31,6 +31,29 @@ export default function TokenDetail() {
     enabled: !!params?.id,
   });
 
+  const { data: userData } = useQuery({
+    queryKey: ["/api/users", walletAddress],
+    queryFn: async () => {
+      if (!walletAddress) return null;
+      const response = await fetch(`/api/users?walletAddress=${walletAddress}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!walletAddress && isWalletConnected,
+  });
+
+  const { data: userHolding } = useQuery({
+    queryKey: ["/api/user-token-holding", userData?.id, params?.id],
+    queryFn: async () => {
+      if (!userData?.id || !params?.id) return null;
+      const response = await fetch(`/api/holdings/${userData.id}`);
+      if (!response.ok) return null;
+      const holdings = await response.json();
+      return holdings.find((h: any) => h.tokenId === params.id);
+    },
+    enabled: !!userData?.id && !!params?.id,
+  });
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -354,7 +377,7 @@ export default function TokenDetail() {
             <TradingInterface 
               token={token}
               userBalance={walletBalance}
-              userTokenBalance="0"
+              userTokenBalance={userHolding?.amount || "0"}
               onBuy={handleBuy}
               onSell={handleSell}
             />

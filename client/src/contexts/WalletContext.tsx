@@ -112,7 +112,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
         setIsWalletConnected(true);
         setWalletAddress(mockAddress);
-        setWalletBalance("0.0000");
+        setWalletBalance("1.5000");
         localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
       }
     } catch (error) {
@@ -120,7 +120,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const mockAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";
       setIsWalletConnected(true);
       setWalletAddress(mockAddress);
-      setWalletBalance("0.0000");
+      setWalletBalance("1.5000");
       localStorage.setItem("basedmem_wallet", JSON.stringify({ address: mockAddress }));
     }
   }, [refreshBalance]);
