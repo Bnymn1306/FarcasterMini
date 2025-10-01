@@ -11,9 +11,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const publicPath = path.join(process.cwd(), "public");
   app.use(express.static(publicPath));
 
-  // Redirect to Farcaster Hosted Manifest
+  // Serve Farcaster Manifest with Account Association
   app.get("/.well-known/farcaster.json", (req, res) => {
-    res.redirect(307, "https://api.farcaster.xyz/miniapps/hosted-manifest/01996ca7-cb08-1a85-aa80-ec7c32c0df78");
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const baseUrl = `${protocol}://${req.get('host')}`;
+    
+    const manifest = {
+      frame: {
+        version: "1",
+        name: "BasedMem",
+        iconUrl: `${baseUrl}/icon.jpg`,
+        homeUrl: baseUrl,
+        imageUrl: `${baseUrl}/frame-image.jpg`,
+        buttonTitle: "Launch BasedMem",
+        splashImageUrl: `${baseUrl}/icon.jpg`,
+        splashBackgroundColor: "#8B5CF6",
+        webhookUrl: `${baseUrl}/api/webhook`,
+      },
+      accountAssociation: {
+        header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDg5ODhDNDU1ZjBjZjREMzE2N2MzMkI5RDY1QjA5MTMwNDU0NTM2YWMifQ",
+        payload: "eyJkb21haW4iOiJmYjY3NTY4Zi0yMDIyLTRhZTMtYTI4NS03ZWM0OTAyYzZiNTQtMDAta25iYjlzZTAyMzRyLnNwb2NrLnJlcGxpdC5kZXYifQ",
+        signature: "agp+aqj8P+GYxzTwoX56T3OyOWM4hC0tmzKpy389KTUaiPacqdXHJVQOZ0GGIN8tS8t6Uz9DdmVaf0qG4UbIzBw="
+      }
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json(manifest);
   });
   // Price Alerts API
   app.get("/api/alerts", async (req, res) => {
