@@ -82,10 +82,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           if (!cachedSDK) {
             cachedSDK = (await import("@farcaster/frame-sdk")).default;
           }
-          const ethProvider = cachedSDK.wallet.ethProvider;
+          const ethProvider = cachedSDK?.wallet?.ethProvider;
           
           if (ethProvider) {
-            console.log("Using Farcaster provider");
+            console.log("Using Farcaster provider for restore");
             ethersProvider = new BrowserProvider(ethProvider);
             
             // Wait a bit for provider to be ready
@@ -136,11 +136,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // Try Farcaster SDK first (if in Farcaster frame)
       if (!cachedSDK) {
-        cachedSDK = (await import("@farcaster/frame-sdk")).default;
+        try {
+          cachedSDK = (await import("@farcaster/frame-sdk")).default;
+        } catch (sdkError) {
+          console.log("Farcaster SDK not available:", sdkError);
+        }
       }
       
-      const ethProvider = cachedSDK.wallet.ethProvider;
+      // Use optional chaining to safely access wallet provider
+      const ethProvider = cachedSDK?.wallet?.ethProvider;
       if (ethProvider) {
+        console.log("Using Farcaster wallet provider");
         // Use Farcaster's provider
         ethersProvider = new BrowserProvider(ethProvider);
         
@@ -148,6 +154,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const accounts = await ethProvider.request({ method: "eth_requestAccounts" });
         if (accounts && accounts.length > 0) {
           const address = accounts[0];
+          console.log("Connected to Farcaster wallet:", address);
           
           // Switch to Base network if needed
           try {
@@ -179,17 +186,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (farcasterError) {
-      console.log("Farcaster wallet not available, trying MetaMask:", farcasterError);
+      console.log("Farcaster wallet error:", farcasterError);
     }
     
     // Fallback to MetaMask/browser wallet
+    console.log("Trying MetaMask fallback...");
     try {
       if (typeof window.ethereum !== "undefined") {
+        console.log("MetaMask detected, initializing...");
         ethersProvider = new BrowserProvider(window.ethereum);
         
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         if (accounts && accounts.length > 0) {
           const address = accounts[0];
+          console.log("Connected to MetaMask:", address);
           
           // Switch to Base network
           try {
@@ -228,12 +238,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [refreshBalance]);
 
   const sendETH = useCallback(async (to: string, amount: string): Promise<string> => {
+    console.log("=== sendETH called ===");
+    console.log("to:", to);
+    console.log("amount:", amount);
+    console.log("ethersProvider exists?", !!ethersProvider);
+    
     if (!ethersProvider) {
-      throw new Error("Wallet not connected");
+      const error = "Wallet provider not initialized. Please reconnect your wallet.";
+      console.error(error);
+      throw new Error(error);
+    }
+    
+    if (!walletAddress) {
+      const error = "Wallet address not found. Please reconnect your wallet.";
+      console.error(error);
+      throw new Error(error);
     }
     
     try {
+      console.log("Getting signer...");
       const signer = await ethersProvider.getSigner();
+      console.log("Signer obtained, sending transaction...");
+      
       const tx = await signer.sendTransaction({
         to,
         value: parseEther(amount),
@@ -249,9 +275,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return tx.hash;
     } catch (error: any) {
       console.error("ETH transfer failed:", error);
+      
+      // User-friendly error messages
+      if (error.code === "ACTION_REJECTED") {
+        throw new Error("Transaction cancelled by user");
+      } else if (error.message?.includes("insufficient funds")) {
+        throw new Error("Insufficient funds for this transaction");
+      }
+      
       throw new Error(error.message || "Transaction failed");
     }
-  }, [refreshBalance]);
+  }, [refreshBalance, walletAddress]);
 
   const disconnectWallet = useCallback(() => {
     setIsWalletConnected(false);

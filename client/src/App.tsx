@@ -96,7 +96,7 @@ function AppContent() {
     };
   }, [connectFarcaster]);
 
-  const handleConnectWallet = () => {
+  const handleConnectWallet = async () => {
     if (isWalletConnected) {
       disconnectWallet();
       toast({
@@ -104,11 +104,19 @@ function AppContent() {
         description: "Your wallet has been disconnected",
       });
     } else {
-      connectWallet();
-      toast({
-        title: "Wallet Connected!",
-        description: "Successfully connected to your wallet",
-      });
+      try {
+        await connectWallet();
+        toast({
+          title: "Wallet Connected!",
+          description: "Successfully connected to your wallet",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Connection Failed",
+          description: error.message || "Failed to connect wallet",
+          variant: "destructive",
+        });
+      }
     }
   };
 
