@@ -25,17 +25,37 @@ export default function Create() {
         websiteUrl: data.websiteUrl || null,
       };
 
-      const response = await fetch("/api/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokenData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create token");
+      let response;
+      try {
+        response = await fetch("/api/tokens", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tokenData),
+        });
+      } catch (networkError: any) {
+        console.error("Network error:", networkError);
+        throw new Error(`Network error: ${networkError.message || 'Unable to reach server'}`);
       }
 
-      return response.json();
+      if (!response.ok) {
+        let errorMessage = `Server error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      try {
+        return await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse response:", parseError);
+        throw new Error("Server returned invalid response");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tokens"] });
@@ -44,7 +64,9 @@ export default function Create() {
 
   const handleSubmit = async (data: any) => {
     try {
-      await createTokenMutation.mutateAsync(data);
+      console.log("Submitting token to API:", data);
+      const result = await createTokenMutation.mutateAsync(data);
+      console.log("Token saved successfully:", result);
       
       toast({
         title: "Token Launched! 🚀",
@@ -68,11 +90,19 @@ export default function Create() {
       setTimeout(() => {
         setLocation('/browse');
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving token:", error);
+      
+      let errorMessage = "Failed to save token to database";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.toString) {
+        errorMessage = error.toString();
+      }
+      
       toast({
         title: "Save Failed",
-        description: "Token transaction succeeded but failed to save to database",
+        description: errorMessage,
         variant: "destructive",
       });
     }
