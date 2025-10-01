@@ -304,6 +304,7 @@ export class MemStorage implements IStorage {
 }
 
 neonConfig.webSocketConstructor = ws;
+neonConfig.fetchConnectionCache = true;
 
 export class DBStorage implements IStorage {
   private db;
@@ -312,7 +313,18 @@ export class DBStorage implements IStorage {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL environment variable is required");
     }
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    
+    const connectionString = process.env.DATABASE_URL.includes('?')
+      ? `${process.env.DATABASE_URL}&connect_timeout=30&pool_timeout=30`
+      : `${process.env.DATABASE_URL}?connect_timeout=30&pool_timeout=30`;
+    
+    const pool = new Pool({ 
+      connectionString,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 30000,
+    });
+    
     this.db = drizzle(pool);
   }
 

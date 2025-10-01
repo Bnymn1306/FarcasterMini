@@ -6,6 +6,7 @@ import { Flame, Calendar, Award } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User, DailyCheckIn } from "@shared/schema";
+import sdk from "@farcaster/frame-sdk";
 
 interface CheckInData {
   user: User;
@@ -43,10 +44,33 @@ export default function DailyBasedPage() {
   const checkInMutation = useMutation({
     mutationFn: async () => {
       if (!walletAddress) throw new Error("Wallet not connected");
-      const response = await apiRequest("POST", "/api/check-in", {
-        walletAddress,
-      });
-      return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
+      
+      try {
+        const gasFeeInWei = "0x6F05B59D3B20000" as `0x${string}`;
+        
+        const provider = sdk.wallet.ethProvider;
+        const txHash = await provider.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: walletAddress as `0x${string}`,
+            to: walletAddress as `0x${string}`,
+            value: gasFeeInWei,
+            data: "0x" as `0x${string}`,
+          }],
+        });
+        
+        console.log("Check-in transaction sent:", txHash);
+        
+        const response = await apiRequest("POST", "/api/check-in", {
+          walletAddress,
+        });
+        return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
+      } catch (error: any) {
+        if (error.message?.includes("rejected") || error.message?.includes("denied")) {
+          throw new Error("Transaction reddedildi");
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/check-in", walletAddress] });
@@ -60,7 +84,7 @@ export default function DailyBasedPage() {
 
       toast({
         title: "Check-In Başarılı! 🎯",
-        description: `${newStreak} günlük streak! ${rewardMessage}`,
+        description: `${newStreak} günlük streak! ${rewardMessage} Gas fee ödendi: 0.00003 ETH`,
       });
     },
     onError: (error: any) => {
