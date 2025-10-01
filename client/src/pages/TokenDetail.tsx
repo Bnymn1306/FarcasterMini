@@ -18,7 +18,7 @@ export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
   const { toast } = useToast();
   const [isTrading, setIsTrading] = useState(false);
-  const { walletBalance } = useWallet();
+  const { walletBalance, walletAddress, isWalletConnected } = useWallet();
 
   const { data: token, isLoading, isError } = useQuery<Token>({
     queryKey: ["/api/tokens", params?.id],
@@ -54,6 +54,10 @@ export default function TokenDetail() {
   const handleBuy = async (amount: string) => {
     setIsTrading(true);
     try {
+      if (!isWalletConnected || !walletAddress) {
+        throw new Error("Wallet not connected");
+      }
+
       const amountInWei = (parseFloat(amount) * 1e18).toString(16);
       const valueInWei = `0x${amountInWei}` as `0x${string}`;
       
@@ -75,10 +79,72 @@ export default function TokenDetail() {
       });
       
       console.log("Buy transaction sent:", txHash);
+
+      if (parseFloat(token.currentPrice) === 0) {
+        throw new Error("Token price is not set yet. Please try again later.");
+      }
+
+      const tokenAmount = parseFloat(amount) / parseFloat(token.currentPrice);
+      const gasFee = "0.00012";
+      
+      let userResponse = await fetch(`/api/users?walletAddress=${walletAddress}`);
+      let user;
+      
+      if (!userResponse.ok) {
+        const createUserResponse = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress }),
+        });
+        
+        if (!createUserResponse.ok) {
+          throw new Error("Failed to create user");
+        }
+        
+        user = await createUserResponse.json();
+      } else {
+        user = await userResponse.json();
+      }
+
+      const tradeResponse = await fetch("/api/trades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          tokenId: token.id,
+          type: "buy",
+          amount: tokenAmount.toString(),
+          price: token.currentPrice,
+          totalValue: amount,
+          gasFee,
+        }),
+      });
+
+      if (!tradeResponse.ok) {
+        throw new Error("Failed to record trade");
+      }
+
+      const holdingResponse = await fetch("/api/holdings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          tokenId: token.id,
+          amount: tokenAmount.toString(),
+          price: token.currentPrice,
+        }),
+      });
+
+      if (!holdingResponse.ok) {
+        throw new Error("Failed to update holdings");
+      }
+
+      const { queryClient } = await import("@/lib/queryClient");
+      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", user.id] });
       
       toast({
         title: "Trade Executed! 🎉",
-        description: `Successfully bought ${amount} ETH worth of ${token.symbol}. Transaction hash: ${txHash.slice(0, 10)}...`,
+        description: `Successfully bought ${tokenAmount.toFixed(2)} ${token.symbol} for ${amount} ETH`,
       });
     } catch (error: any) {
       console.error("Buy error:", error);

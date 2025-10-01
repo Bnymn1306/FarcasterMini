@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPriceAlertSchema, insertTokenSchema } from "@shared/schema";
+import { insertPriceAlertSchema, insertTokenSchema, insertTradeSchema, insertHoldingSchema } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 
@@ -108,6 +108,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users API
+  app.get("/api/users", async (req, res) => {
+    try {
+      const { walletAddress } = req.query;
+      if (!walletAddress || typeof walletAddress !== "string") {
+        return res.status(400).json({ error: "walletAddress required" });
+      }
+      
+      const user = await storage.getUserByWalletAddress(walletAddress);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
   app.post("/api/users", async (req, res) => {
     try {
       const user = await storage.createUser(req.body);
@@ -174,6 +193,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating token:", error);
       res.status(400).json({ error: "Failed to create token" });
+    }
+  });
+
+  // Trades API
+  app.post("/api/trades", async (req, res) => {
+    try {
+      const validatedData = insertTradeSchema.parse(req.body);
+      
+      if (parseFloat(validatedData.price) === 0) {
+        return res.status(400).json({ error: "Cannot trade token with zero price" });
+      }
+      
+      const amount = parseFloat(validatedData.amount);
+      if (!isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ error: "Invalid trade amount" });
+      }
+      
+      const trade = await storage.createTrade(validatedData);
+      res.json(trade);
+    } catch (error) {
+      console.error("Error creating trade:", error);
+      res.status(400).json({ error: "Failed to create trade" });
+    }
+  });
+
+  app.get("/api/trades/token/:tokenId", async (req, res) => {
+    try {
+      const { tokenId } = req.params;
+      const trades = await storage.getTradesByToken(tokenId);
+      res.json(trades);
+    } catch (error) {
+      console.error("Error fetching trades:", error);
+      res.status(500).json({ error: "Failed to fetch trades" });
+    }
+  });
+
+  // Holdings API
+  app.get("/api/holdings/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const holdings = await storage.getHoldingsByUser(userId);
+      
+      const holdingsWithTokens = await Promise.all(
+        holdings.map(async (holding) => {
+          const token = await storage.getToken(holding.tokenId);
+          return { ...holding, token };
+        })
+      );
+      
+      res.json(holdingsWithTokens);
+    } catch (error) {
+      console.error("Error fetching holdings:", error);
+      res.status(500).json({ error: "Failed to fetch holdings" });
+    }
+  });
+
+  app.post("/api/holdings", async (req, res) => {
+    try {
+      const validatedInput = insertHoldingSchema.parse({
+        userId: req.body.userId,
+        tokenId: req.body.tokenId,
+        amount: req.body.amount,
+        averageBuyPrice: req.body.price,
+      });
+
+      const parsedAmount = parseFloat(validatedInput.amount);
+      const parsedPrice = parseFloat(validatedInput.averageBuyPrice);
+
+      if (!isFinite(parsedAmount) || parsedAmount <= 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+      }
+
+      if (!isFinite(parsedPrice) || parsedPrice <= 0) {
+        return res.status(400).json({ error: "Invalid price - price must be greater than zero" });
+      }
+      
+      const existingHolding = await storage.getHolding(validatedInput.userId, validatedInput.tokenId);
+      
+      if (existingHolding) {
+        const currentAmount = parseFloat(existingHolding.amount);
+        const currentAvgPrice = parseFloat(existingHolding.averageBuyPrice);
+        const newAmount = parsedAmount;
+        const newPrice = parsedPrice;
+        
+        if (!isFinite(currentAmount) || !isFinite(currentAvgPrice) || currentAmount <= 0 || currentAvgPrice <= 0) {
+          return res.status(400).json({ error: "Existing holding has invalid data" });
+        }
+        
+        const totalAmount = currentAmount + newAmount;
+        const newAvgPrice = ((currentAmount * currentAvgPrice) + (newAmount * newPrice)) / totalAmount;
+        
+        const updated = await storage.updateHolding(existingHolding.id, {
+          amount: totalAmount.toString(),
+          averageBuyPrice: newAvgPrice.toString(),
+        });
+        
+        res.json(updated);
+      } else {
+        const holding = await storage.createHolding(validatedInput);
+        res.json(holding);
+      }
+    } catch (error) {
+      console.error("Error creating/updating holding:", error);
+      res.status(400).json({ error: "Failed to create/update holding" });
     }
   });
 
