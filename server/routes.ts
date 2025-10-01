@@ -249,10 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   <meta property="og:title" content="${token.name} (${token.symbol})" />
   <meta property="og:description" content="Price: $${token.currentPrice} | Market Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K | BasedMem Meme Coin" />
   <meta property="og:image" content="${frameImage}" />
-  <meta property="fc:frame" content="1" />
+  <meta property="fc:frame" content="vNext" />
   <meta property="fc:frame:image" content="${frameImage}" />
   <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
-  <meta property="fc:frame:post_url" content="${baseUrl}/api/frame/action/${id}" />
   <meta property="fc:frame:button:1" content="View on BasedMem" />
   <meta property="fc:frame:button:1:action" content="link" />
   <meta property="fc:frame:button:1:target" content="${baseUrl}/token/${id}" />
