@@ -63,9 +63,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsWalletConnected(true);
       setWalletAddress(address);
       
-      refreshBalance(address).catch(err => {
-        console.log("Failed to refresh balance on init:", err);
-      });
+      // Re-initialize provider on mount
+      (async () => {
+        try {
+          if (!cachedSDK) {
+            cachedSDK = (await import("@farcaster/frame-sdk")).default;
+          }
+          const ethProvider = cachedSDK.wallet.ethProvider;
+          if (ethProvider) {
+            ethersProvider = new BrowserProvider(ethProvider);
+            await refreshBalance(address);
+          } else if (typeof window.ethereum !== "undefined") {
+            ethersProvider = new BrowserProvider(window.ethereum);
+            await refreshBalance(address);
+          }
+        } catch (err) {
+          console.error("Failed to initialize provider on mount:", err);
+        }
+      })();
     }
     
     if (savedFarcaster) {
@@ -74,7 +89,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setFarcasterUsername(username);
       setFarcasterFid(fid);
     }
-  }, [refreshBalance]);
+  }, []);
 
   const connectWallet = useCallback(async () => {
     try {
