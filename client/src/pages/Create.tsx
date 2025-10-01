@@ -6,15 +6,31 @@ export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = async (data: any) => {
     console.log('Creating token:', data);
+    
     toast({
       title: "Token Launched! 🚀",
       description: `${data.name} (${data.symbol}) has been successfully created on Base.`,
     });
+
+    const baseUrl = window.location.origin;
+    const tokenUrl = `${baseUrl}/browse`;
+    const castText = `🚀 Just launched ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token is born!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+
+    const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
+
+    try {
+      const sdk = (await import("@farcaster/frame-sdk")).default;
+      await sdk.actions.openUrl(warpcastUrl);
+    } catch (error) {
+      console.log("SDK not available, opening in new tab:", error);
+      window.open(warpcastUrl, '_blank');
+    }
+
     setTimeout(() => {
       setLocation('/browse');
-    }, 2000);
+    }, 3000);
   };
 
   return (
