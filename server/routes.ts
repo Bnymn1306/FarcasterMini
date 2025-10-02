@@ -189,6 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Handle creatorWalletAddress -> creatorId conversion
       let tokenData = { ...req.body };
+      console.log("POST /api/tokens - incoming body:", req.body);
       
       if (tokenData.creatorWalletAddress && !tokenData.creatorId) {
         // Find or create user by wallet address
@@ -200,14 +201,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             walletAddress: tokenData.creatorWalletAddress,
             username: `User_${tokenData.creatorWalletAddress.slice(0, 6)}`,
           });
+          console.log("Created new user:", user.id);
+        } else {
+          console.log("Found existing user:", user.id);
         }
         
         tokenData.creatorId = user.id;
         delete tokenData.creatorWalletAddress;
+        console.log("After setting creatorId:", { creatorId: tokenData.creatorId, contractAddress: tokenData.contractAddress });
       }
       
       const validatedData = insertTokenSchema.parse(tokenData);
+      console.log("Validated token data:", validatedData);
+      
       const token = await storage.createToken(validatedData);
+      console.log("Created token in DB:", token);
       res.json(token);
     } catch (error) {
       console.error("Error creating token:", error);

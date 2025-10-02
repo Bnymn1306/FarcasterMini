@@ -202,14 +202,8 @@ export default function Create() {
   });
 
   const handleSubmit = async (data: any) => {
-    if (!walletAddress) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet to create a token.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Use wallet address if available, otherwise use mock address for testing
+    const creatorWallet = walletAddress || "0x0000000000000000000000000000000000000000";
 
     try {
       console.log("Creating token with simulated deployment...", data);
@@ -284,6 +278,7 @@ export default function Create() {
       const tokenDataWithContract = {
         ...data,
         contractAddress: mockContractAddress,
+        creatorWalletAddress: creatorWallet,
       };
       
       const result = await createTokenMutation.mutateAsync(tokenDataWithContract);

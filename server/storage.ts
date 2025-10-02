@@ -141,7 +141,7 @@ export class MemStorage implements IStorage {
       telegramUrl: insertToken.telegramUrl ?? null,
       websiteUrl: insertToken.websiteUrl ?? null,
       id,
-      contractAddress: null,
+      contractAddress: insertToken.contractAddress ?? null,
       currentPrice: "0",
       marketCap: "0",
       volume24h: "0",
@@ -365,7 +365,7 @@ export class DBStorage implements IStorage {
   async createToken(insertToken: InsertToken): Promise<Token> {
     const tokenWithDefaults = {
       ...insertToken,
-      contractAddress: null,
+      contractAddress: insertToken.contractAddress ?? null,
       currentPrice: "0",
       marketCap: "0",
       volume24h: "0",
