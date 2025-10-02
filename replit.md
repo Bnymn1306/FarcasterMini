@@ -190,12 +190,40 @@ The application follows comprehensive design guidelines defined in `design_guide
   - Script: `npm run deploy` (deploys TokenFactory to Base Sepolia)
   - Sets `VITE_FACTORY_CONTRACT_ADDRESS` for frontend to interact with factory
 
+### Phase 4: Base Mainnet Simulated Deployment (October 2, 2025)
+
+- **Simulated Token Deployment**: Implemented gasless token creation using daily check-in pattern
+  - Frontend generates deterministic mock contract address: `0x{hex(tokenName+symbol)}`
+  - Simulated transaction via `eth_sendTransaction` (self-transaction) shows wallet popup with 0.00003 ETH gas fee
+  - No real blockchain deployment - works on Base Mainnet without requiring ETH
+  - Mock contract address saved to database for UI display
+
+- **Critical Bug Fixes**:
+  - **Storage Override Bug**: Fixed `DBStorage.createToken()` and `MemStorage.createToken()` hardcoding `contractAddress: null`
+    - Changed to: `contractAddress: insertToken.contractAddress ?? null` (preserves incoming value)
+  - **Frontend Field Mismatch**: Fixed mutation sending wrong field name
+    - Changed from: `creatorId: walletAddress` → To: `creatorWalletAddress: walletAddress`
+  - **Backend Conversion**: Routes properly convert `creatorWalletAddress` → `creatorId` by finding/creating user
+
+- **Complete Flow**:
+  1. User fills token creation form on /create
+  2. Frontend generates mock contract address from token name+symbol
+  3. Simulated wallet popup shows 0.00003 ETH gas fee (like daily check-in)
+  4. POST /api/tokens with `creatorWalletAddress` and `contractAddress`
+  5. Backend finds/creates user by wallet, sets `creatorId`
+  6. Storage preserves both `contractAddress` and `creatorId` (no override)
+  7. Token appears on /browse page with valid contract address and creator attribution
+
+- **Mock Wallet Support**: Uses `0x0000000000000000000000000000000000000000` as fallback when no wallet connected
+
 ### Known Limitations / Future Enhancements
+- **Real Deployment**: Currently using simulated deployment - future: integrate TokenFactory contract for real Base Mainnet deployment
 - **Graduation Flow**: Contract has graduation logic, but Uniswap pool creation not yet implemented
 - **Platform Sell Transfers**: Backend `/api/sell` ETH payout requires `PLATFORM_PRIVATE_KEY` (currently commented out)
 - **Price Discovery**: Database still stores price/volume/market cap for UI display (contracts are source of truth for trades)
 - **Token Metadata**: IPFS/on-chain metadata storage not implemented (database stores name/symbol/description)
 - **Future Features**: 
+  - Real TokenFactory deployment on Base Mainnet (replace simulated deployment)
   - Automated Uniswap V2/V3 pool creation at graduation threshold
   - On-chain metadata via tokenURI standard
   - LP token locking mechanisms
