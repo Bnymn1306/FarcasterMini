@@ -117,6 +117,7 @@ export default function TokenDetail() {
           description: "Please connect your wallet first",
           variant: "destructive",
         });
+        setIsTrading(false);
         return;
       }
 
@@ -131,6 +132,7 @@ export default function TokenDetail() {
           description: "Please enter a valid amount",
           variant: "destructive",
         });
+        setIsTrading(false);
         return;
       }
 
@@ -139,14 +141,36 @@ export default function TokenDetail() {
         ? ethAmount / realPrice
         : 0;
 
-      toast({
-        title: "Confirm Transaction",
-        description: "Please approve the transaction in your wallet",
-      });
-
-      const provider = getProvider();
+      let provider = getProvider();
       if (!provider) {
-        throw new Error("Provider not available");
+        toast({
+          title: "Connecting Wallet...",
+          description: "Please wait, initializing wallet connection",
+        });
+        
+        try {
+          const { default: sdk } = await import("@farcaster/frame-sdk");
+          const ethProvider = sdk?.wallet?.ethProvider;
+          
+          if (!ethProvider) {
+            throw new Error("Please open this app in Farcaster to use wallet features");
+          }
+          
+          const { BrowserProvider } = await import("ethers");
+          provider = new BrowserProvider(ethProvider);
+          
+          toast({
+            title: "Wallet Connected",
+            description: "Please confirm the transaction in your wallet",
+          });
+        } catch (providerError: any) {
+          throw new Error(providerError.message || "Failed to connect wallet. Please open this app in Farcaster.");
+        }
+      } else {
+        toast({
+          title: "Confirm Transaction",
+          description: "Please approve the transaction in your wallet",
+        });
       }
 
       const signer = await provider.getSigner();
@@ -261,7 +285,13 @@ export default function TokenDetail() {
     setIsTrading(true);
     try {
       if (!isWalletConnected || !walletAddress) {
-        throw new Error("Wallet not connected");
+        toast({
+          title: "Wallet Not Connected",
+          description: "Please connect your wallet first",
+          variant: "destructive",
+        });
+        setIsTrading(false);
+        return;
       }
 
       if (!userData?.id) {
@@ -274,19 +304,47 @@ export default function TokenDetail() {
 
       const tokenAmount = parseFloat(amount);
       if (isNaN(tokenAmount) || tokenAmount <= 0) {
-        throw new Error("Invalid amount");
+        toast({
+          title: "Invalid Amount",
+          description: "Please enter a valid amount",
+          variant: "destructive",
+        });
+        setIsTrading(false);
+        return;
       }
 
       const ethValue = tokenAmount * parseFloat(enhancedToken.currentPrice);
 
-      toast({
-        title: "Confirm Transaction",
-        description: "Please approve the transaction in your wallet",
-      });
-
-      const provider = getProvider();
+      let provider = getProvider();
       if (!provider) {
-        throw new Error("Provider not available");
+        toast({
+          title: "Connecting Wallet...",
+          description: "Please wait, initializing wallet connection",
+        });
+        
+        try {
+          const { default: sdk } = await import("@farcaster/frame-sdk");
+          const ethProvider = sdk?.wallet?.ethProvider;
+          
+          if (!ethProvider) {
+            throw new Error("Please open this app in Farcaster to use wallet features");
+          }
+          
+          const { BrowserProvider } = await import("ethers");
+          provider = new BrowserProvider(ethProvider);
+          
+          toast({
+            title: "Wallet Connected",
+            description: "Please confirm the transaction in your wallet",
+          });
+        } catch (providerError: any) {
+          throw new Error(providerError.message || "Failed to connect wallet. Please open this app in Farcaster.");
+        }
+      } else {
+        toast({
+          title: "Confirm Transaction",
+          description: "Please approve the transaction in your wallet",
+        });
       }
 
       const signer = await provider.getSigner();
