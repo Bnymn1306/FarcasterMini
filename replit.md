@@ -124,8 +124,36 @@ The application follows comprehensive design guidelines defined in `design_guide
 
 - **TypeScript Configuration**: Added `vite-env.d.ts` with window.ethereum type definitions for Web3 compatibility
 
-### Known Limitations (Phase 1)
-- Tokens not yet deployed as real smart contracts (database-only for now)
-- Platform ETH transfers require manual PLATFORM_PRIVATE_KEY configuration
-- No bonding curve pricing yet (fixed prices from database)
-- Phase 2 will add: Smart contract deployment, bonding curves, Uniswap graduation
+### Phase 2: Wagmi Integration for Real Transactions (October 2, 2025)
+- **Wagmi + Viem Migration**: Replaced ethers.js with Wagmi for proper Farcaster Frame compatibility
+  - Installed `wagmi` and `viem` packages (v2.x)
+  - Created custom `frameConnector` following Farcaster's official demo pattern
+  - Configured Wagmi with Base blockchain (Chain ID: 8453) support
+  - Wrapped app in WagmiProvider alongside QueryClientProvider
+
+- **Real Transaction Flow**: Implemented proper blockchain transaction lifecycle
+  - `useSendTransaction` hook triggers wallet popup for user approval
+  - `useWaitForTransactionReceipt` monitors blockchain confirmation status
+  - Database updates ONLY occur after on-chain confirmation (via useEffect)
+  - Proper error handling for rejected transactions
+
+- **Buy Flow Improvements**:
+  - `handleBuy()` triggers transaction and exits immediately
+  - Pending purchase details stored in state (amount, tokenAmount, hash)
+  - useEffect watches `isConfirmed` flag
+  - Database operations (create user, record trade, update holdings) execute ONLY after blockchain confirms
+  - UI shows "Processing..." during transaction and confirmation phases
+  - Success toast displays after database successfully updated
+
+- **Transaction Lifecycle States**:
+  - User clicks Buy → Wallet popup appears
+  - User approves → Transaction broadcasts to blockchain (`isSendingTx`)
+  - Blockchain confirms → useWaitForTransactionReceipt detects (`isConfirmed`)
+  - Database updates → Success toast shown
+  - All failures properly handled with descriptive error messages
+
+### Known Limitations (Phase 2)
+- Tokens still database-only (not deployed as smart contracts yet)
+- Platform ETH transfers for Sell flow require PLATFORM_PRIVATE_KEY
+- Fixed pricing from database (bonding curves pending)
+- Phase 3 will add: ERC-20 token deployment, bonding curve pricing, Uniswap graduation at market cap threshold

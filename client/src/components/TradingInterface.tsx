@@ -16,6 +16,7 @@ interface TradingInterfaceProps {
   userTokenBalance?: string;
   onBuy?: (amount: string) => void;
   onSell?: (amount: string) => void;
+  isLoading?: boolean;
 }
 
 export function TradingInterface({ 
@@ -23,7 +24,8 @@ export function TradingInterface({
   userBalance = "1.5",
   userTokenBalance = "0",
   onBuy,
-  onSell 
+  onSell,
+  isLoading = false
 }: TradingInterfaceProps) {
   const [buyAmount, setBuyAmount] = useState("");
   const [sellAmount, setSellAmount] = useState("");
@@ -270,11 +272,11 @@ export function TradingInterface({
             onClick={handleBuy}
             className="w-full py-6 bg-chart-2 hover:bg-chart-2/90"
             size="lg"
-            disabled={!buyAmount || parseFloat(buyAmount) <= 0}
+            disabled={isLoading || !buyAmount || parseFloat(buyAmount) <= 0}
             data-testid="button-buy"
           >
             <ArrowDownUp className="h-5 w-5 mr-2" />
-            Buy {token.symbol}
+            {isLoading ? "Processing..." : `Buy ${token.symbol}`}
           </Button>
         </TabsContent>
 
@@ -350,11 +352,11 @@ export function TradingInterface({
             variant="destructive"
             className="w-full py-6"
             size="lg"
-            disabled={!sellAmount || parseFloat(sellAmount) <= 0}
+            disabled={isLoading || !sellAmount || parseFloat(sellAmount) <= 0}
             data-testid="button-sell"
           >
             <ArrowDownUp className="h-5 w-5 mr-2" />
-            Sell {token.symbol}
+            {isLoading ? "Processing..." : `Sell ${token.symbol}`}
           </Button>
         </TabsContent>
       </Tabs>
