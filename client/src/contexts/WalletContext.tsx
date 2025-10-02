@@ -248,16 +248,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       throw new Error(error);
     }
     
-    // Try Farcaster SDK using EIP-1193 provider (PRIMARY path for Farcaster Mini Apps)
-    const farcasterProvider = cachedSDK?.wallet?.ethProvider;
-    if (farcasterProvider && typeof farcasterProvider.request === 'function') {
-      console.log("Using Farcaster EIP-1193 provider");
+    // PRIORITY: Use window.ethereum if available (injected by Farcaster or MetaMask)
+    if (typeof window.ethereum !== 'undefined') {
+      console.log("✅ Using window.ethereum (injected wallet)");
       try {
         const valueWei = '0x' + parseEther(amount).toString(16);
-        console.log("Calling request method with:", { from: walletAddress, to, value: valueWei });
+        console.log("Transaction params:", { from: walletAddress, to, value: valueWei });
         
-        // Call the request - wallet popup should appear HERE
-        const txHash = await farcasterProvider.request({
+        // Request transaction via injected wallet (triggers popup)
+        const txHash = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [{
             from: walletAddress,
@@ -266,13 +265,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           }]
         });
         
-        console.log("✅ TX HASH RECEIVED:", txHash);
+        console.log("✅ TX HASH:", txHash);
         
-        // Wait for confirmation on blockchain
-        if (ethersProvider && txHash) {
+        // Wait for confirmation
+        if (ethersProvider) {
           try {
             await ethersProvider.waitForTransaction(txHash);
-            console.log("✅ Transaction mined on blockchain");
+            console.log("✅ Transaction confirmed");
           } catch (waitError) {
             console.warn("Could not wait for confirmation:", waitError);
           }
@@ -281,7 +280,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         await refreshBalance();
         return txHash;
       } catch (error: any) {
-        console.error("❌ Farcaster transaction error:", error);
+        console.error("❌ window.ethereum transaction error:", error);
         
         if (error.code === 4001 || error.message?.includes("reject") || error.message?.includes("denied")) {
           throw new Error("Transaction cancelled by user");
@@ -293,19 +292,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    // Fallback to MetaMask/browser wallet
-    console.log("Using MetaMask/browser wallet (fallback)");
+    // Fallback: Try ethersProvider
+    console.log("Using ethersProvider (fallback)");
     if (!ethersProvider) {
-      const error = "Wallet provider not initialized. Please reconnect your wallet.";
+      const error = "No wallet provider available. Please reconnect your wallet.";
       console.error(error);
       throw new Error(error);
     }
     
     try {
-      console.log("Getting signer from ethersProvider...");
       const signer = await ethersProvider.getSigner();
-      console.log("Signer obtained, sending transaction...");
-      
       const tx = await signer.sendTransaction({
         to,
         value: parseEther(amount),
@@ -318,7 +314,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       await refreshBalance();
       return tx.hash;
     } catch (error: any) {
-      console.error("MetaMask transaction failed:", error);
+      console.error("ethersProvider transaction failed:", error);
       
       if (error.code === "ACTION_REJECTED" || error.code === 4001) {
         throw new Error("Transaction cancelled by user");
