@@ -61,7 +61,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       console.error("Failed to refresh balance:", error);
       setWalletBalance("0.0000");
     }
-  }, [walletAddress]);
+  }, [walletAddress, ethersProvider]);
 
   useEffect(() => {
     const savedWallet = localStorage.getItem("basedmem_wallet");
@@ -117,6 +117,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setFarcasterFid(fid);
     }
   }, []);
+
+  // Auto-refresh balance when provider or address changes
+  useEffect(() => {
+    if (ethersProvider && walletAddress) {
+      console.log("🔄 Auto-refreshing balance - Provider:", !!ethersProvider, "Address:", walletAddress);
+      refreshBalance();
+    } else {
+      console.log("⚠️ Cannot refresh balance - Provider:", !!ethersProvider, "Address:", walletAddress);
+    }
+  }, [ethersProvider, walletAddress, refreshBalance]);
 
   const connectWallet = useCallback(async () => {
     try {
