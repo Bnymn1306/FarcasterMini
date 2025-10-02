@@ -288,8 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid amount" });
       }
 
-      if (!isFinite(parsedPrice) || parsedPrice <= 0) {
-        return res.status(400).json({ error: "Invalid price - price must be greater than zero" });
+      if (!isFinite(parsedPrice) || parsedPrice < 0) {
+        return res.status(400).json({ error: "Invalid price - price must be greater than or equal to zero" });
       }
       
       const existingHolding = await storage.getHolding(validatedInput.userId, validatedInput.tokenId);
