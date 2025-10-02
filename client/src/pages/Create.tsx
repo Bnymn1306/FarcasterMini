@@ -16,11 +16,48 @@ export default function Create() {
   const { walletAddress } = useWallet();
   const [pendingToken, setPendingToken] = useState<any>(null);
 
-  const { data: hash, writeContract, isPending: isSendingTx, error: txError } = useWriteContract();
+  const { data: hash, writeContract, isPending: isSendingTx, error: txError, isError: isTxError } = useWriteContract();
   
-  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isReceiptError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
   });
+
+  // Handle transaction errors
+  useEffect(() => {
+    if (isTxError && txError && pendingToken) {
+      console.error("Transaction error:", txError);
+      toast({
+        title: "Transaction Failed",
+        description: txError.message || "Failed to send transaction",
+        variant: "destructive",
+      });
+      setPendingToken(null);
+    }
+  }, [isTxError, txError, pendingToken, toast]);
+
+  // Handle receipt errors
+  useEffect(() => {
+    if (isReceiptError && receiptError && pendingToken) {
+      console.error("Receipt error:", receiptError);
+      toast({
+        title: "Transaction Failed",
+        description: "Transaction was rejected or failed on blockchain",
+        variant: "destructive",
+      });
+      setPendingToken(null);
+    }
+  }, [isReceiptError, receiptError, pendingToken, toast]);
+
+  // Log transaction hash when available
+  useEffect(() => {
+    if (hash) {
+      console.log("Transaction hash:", hash);
+      toast({
+        title: "Transaction Submitted",
+        description: "Waiting for blockchain confirmation...",
+      });
+    }
+  }, [hash, toast]);
 
   useEffect(() => {
     if (isConfirmed && pendingToken && hash && receipt) {
