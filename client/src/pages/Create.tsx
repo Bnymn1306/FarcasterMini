@@ -84,8 +84,10 @@ export default function Create() {
         description: "Please approve the transaction in your Farcaster wallet",
       });
 
-      // Send transaction via Farcaster wallet
-      const tx = await factoryContract.createToken(data.name, data.symbol);
+      // Send transaction via Farcaster wallet (manual gas limit for Farcaster compatibility)
+      const tx = await factoryContract.createToken(data.name, data.symbol, {
+        gasLimit: 5000000 // High limit for contract deployment
+      });
       
       const txHash = tx.hash;
       console.log("Transaction hash:", txHash);
