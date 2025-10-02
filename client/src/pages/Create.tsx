@@ -151,8 +151,7 @@ export default function Create() {
 
   const createTokenMutation = useMutation({
     mutationFn: async (data: any) => {
-      const tokenData: InsertToken = {
-        creatorId: walletAddress || null,
+      const tokenData: any = {
         name: data.name,
         symbol: data.symbol,
         description: data.description || null,
@@ -162,6 +161,7 @@ export default function Create() {
         twitterUrl: data.twitterUrl || null,
         telegramUrl: data.telegramUrl || null,
         websiteUrl: data.websiteUrl || null,
+        creatorWalletAddress: data.creatorWalletAddress || walletAddress || null,
       };
 
       let response;
