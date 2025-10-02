@@ -9,11 +9,11 @@ import { ExternalLink, Twitter, Send, Globe } from "lucide-react";
 import type { Token } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { SiFarcaster } from "react-icons/si";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/contexts/WalletContext";
 import { BONDING_CURVE_TOKEN_ABI } from "@/lib/contracts";
-import { Contract, parseEther } from "ethers";
+import { Contract, parseEther, formatEther } from "ethers";
 import { queryClient } from "@/lib/queryClient";
 
 export default function TokenDetail() {
@@ -56,6 +56,33 @@ export default function TokenDetail() {
     enabled: !!userData?.id && !!params?.id,
   });
 
+  const { data: contractStats } = useQuery({
+    queryKey: ["/api/contract-stats", token?.contractAddress],
+    queryFn: async () => {
+      if (!token?.contractAddress) return null;
+      
+      try {
+        const { JsonRpcProvider } = await import("ethers");
+        const publicProvider = new JsonRpcProvider("https://mainnet.base.org");
+
+        const contract = new Contract(token.contractAddress, BONDING_CURVE_TOKEN_ABI, publicProvider);
+        const stats = await contract.getStats();
+        
+        return {
+          price: formatEther(stats.price),
+          reserve: formatEther(stats.reserve),
+          circulating: stats.circulating.toString(),
+          isGraduated: stats.isGraduated,
+        };
+      } catch (error) {
+        console.error("Error fetching contract stats:", error);
+        return null;
+      }
+    },
+    enabled: !!token?.contractAddress,
+    refetchInterval: 10000,
+  });
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -76,6 +103,11 @@ export default function TokenDetail() {
     );
   }
 
+  const enhancedToken = {
+    ...token,
+    currentPrice: contractStats?.price || token.currentPrice || "0",
+  };
+
   const handleBuy = async (amount: string) => {
     setIsTrading(true);
     try {
@@ -88,7 +120,7 @@ export default function TokenDetail() {
         return;
       }
 
-      if (!token.contractAddress) {
+      if (!enhancedToken.contractAddress) {
         throw new Error("Token has no contract address");
       }
 
@@ -102,9 +134,10 @@ export default function TokenDetail() {
         return;
       }
 
-      const estimatedTokenAmount = token.currentPrice && parseFloat(token.currentPrice) > 0 
-        ? ethAmount / parseFloat(token.currentPrice)
-        : ethAmount * 1000;
+      const realPrice = parseFloat(enhancedToken.currentPrice);
+      const estimatedTokenAmount = realPrice > 0 
+        ? ethAmount / realPrice
+        : 0;
 
       toast({
         title: "Confirm Transaction",
@@ -117,9 +150,9 @@ export default function TokenDetail() {
       }
 
       const signer = await provider.getSigner();
-      const contract = new Contract(token.contractAddress, BONDING_CURVE_TOKEN_ABI, signer);
+      const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, signer);
 
-      console.log("Calling BondingCurveToken.buy() on contract:", token.contractAddress);
+      console.log("Calling BondingCurveToken.buy() on contract:", enhancedToken.contractAddress);
       
       const tx = await contract.buy({ value: parseEther(amount) });
       
@@ -158,10 +191,10 @@ export default function TokenDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          tokenId: token.id,
+          tokenId: enhancedToken.id,
           type: "buy",
           amount: estimatedTokenAmount.toString(),
-          price: token.currentPrice,
+          price: enhancedToken.currentPrice,
           totalValue: amount,
           gasFee,
         }),
@@ -176,9 +209,9 @@ export default function TokenDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          tokenId: token.id,
+          tokenId: enhancedToken.id,
           amount: estimatedTokenAmount.toString(),
-          price: token.currentPrice,
+          price: enhancedToken.currentPrice,
         }),
       });
 
@@ -192,15 +225,31 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 🎉",
-        description: `Successfully bought ${estimatedTokenAmount.toFixed(2)} ${token.symbol} for ${amount} ETH`,
+        description: `Successfully bought ${estimatedTokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${amount} ETH`,
       });
     } catch (error: any) {
-      console.error("Buy error:", error);
+      console.error("Buy error - full details:", {
+        message: error.message,
+        code: error.code,
+        data: error.data,
+        reason: error.reason,
+        transaction: error.transaction,
+        error: error,
+      });
+      
+      let errorMessage = "Failed to send transaction";
+      
+      if (error.message?.includes("rejected") || error.message?.includes("denied") || error.code === "ACTION_REJECTED") {
+        errorMessage = "Transaction rejected by user";
+      } else if (error.reason) {
+        errorMessage = error.reason;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Transaction Failed",
-        description: error.message?.includes("rejected") || error.message?.includes("denied") 
-          ? "Transaction rejected by user" 
-          : error.message || "Failed to send transaction",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -219,7 +268,7 @@ export default function TokenDetail() {
         throw new Error("User not found");
       }
 
-      if (!token.contractAddress) {
+      if (!enhancedToken.contractAddress) {
         throw new Error("Token has no contract address");
       }
 
@@ -228,7 +277,7 @@ export default function TokenDetail() {
         throw new Error("Invalid amount");
       }
 
-      const ethValue = tokenAmount * parseFloat(token.currentPrice);
+      const ethValue = tokenAmount * parseFloat(enhancedToken.currentPrice);
 
       toast({
         title: "Confirm Transaction",
@@ -241,9 +290,9 @@ export default function TokenDetail() {
       }
 
       const signer = await provider.getSigner();
-      const contract = new Contract(token.contractAddress, BONDING_CURVE_TOKEN_ABI, signer);
+      const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, signer);
 
-      console.log("Calling BondingCurveToken.sell() on contract:", token.contractAddress);
+      console.log("Calling BondingCurveToken.sell() on contract:", enhancedToken.contractAddress);
       
       const tx = await contract.sell(BigInt(Math.floor(tokenAmount)));
 
@@ -262,10 +311,10 @@ export default function TokenDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: userData.id,
-          tokenId: token.id,
+          tokenId: enhancedToken.id,
           type: "sell",
           amount: tokenAmount.toString(),
-          price: token.currentPrice,
+          price: enhancedToken.currentPrice,
           totalValue: ethValue.toString(),
           gasFee,
         }),
@@ -296,15 +345,31 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
+        description: `Successfully sold ${tokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${ethValue.toFixed(4)} ETH`,
       });
     } catch (error: any) {
-      console.error("Sell error:", error);
+      console.error("Sell error - full details:", {
+        message: error.message,
+        code: error.code,
+        data: error.data,
+        reason: error.reason,
+        transaction: error.transaction,
+        error: error,
+      });
+      
+      let errorMessage = "Failed to execute trade";
+      
+      if (error.message?.includes("rejected") || error.message?.includes("denied") || error.code === "ACTION_REJECTED") {
+        errorMessage = "Transaction rejected by user";
+      } else if (error.reason) {
+        errorMessage = error.reason;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Transaction Failed",
-        description: error.message?.includes("rejected") || error.message?.includes("denied") 
-          ? "Transaction rejected by user" 
-          : error.message || "Failed to execute trade",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -316,15 +381,15 @@ export default function TokenDetail() {
     console.log('Creating alert:', data);
     toast({
       title: "Uyarı Oluşturuldu! 🔔",
-      description: `${token.symbol} için fiyat uyarısı başarıyla ayarlandı. Farcaster profilinize bildirim gönderilecek.`,
+      description: `${enhancedToken.symbol} için fiyat uyarısı başarıyla ayarlandı. Farcaster profilinize bildirim gönderilecek.`,
     });
   };
 
   const shareToFarcaster = () => {
     const baseUrl = window.location.origin;
-    const frameUrl = `${baseUrl}/frame/token/${token.id}`;
-    const priceChange = parseFloat(token.priceChange24h);
-    const text = `Check out ${token.name} ($${token.symbol}) on BasedMem!\n\nPrice: $${token.currentPrice}\nMarket Cap: $${(parseFloat(token.marketCap) / 1000).toFixed(0)}K\nPrice Change 24h: ${priceChange >= 0 ? '+' : ''}${token.priceChange24h}%\n\n#BasedMem #MemeCoins`;
+    const frameUrl = `${baseUrl}/frame/token/${enhancedToken.id}`;
+    const priceChange = parseFloat(enhancedToken.priceChange24h);
+    const text = `Check out ${enhancedToken.name} ($${enhancedToken.symbol}) on BasedMem!\n\nPrice: $${enhancedToken.currentPrice}\nMarket Cap: $${(parseFloat(enhancedToken.marketCap) / 1000).toFixed(0)}K\nPrice Change 24h: ${priceChange >= 0 ? '+' : ''}${enhancedToken.priceChange24h}%\n\n#BasedMem #MemeCoins`;
     
     const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(frameUrl)}`;
     window.open(warpcastUrl, '_blank');
@@ -344,7 +409,7 @@ export default function TokenDetail() {
         <div className="order-first lg:order-last lg:col-span-1">
           <div className="lg:sticky lg:top-24">
             <TradingInterface 
-              token={token}
+              token={enhancedToken}
               userBalance={walletBalance}
               userTokenBalance={userHolding?.amount || "0"}
               onBuy={handleBuy}
@@ -360,38 +425,38 @@ export default function TokenDetail() {
             <div className="flex items-start justify-between gap-3 mb-4 lg:mb-6">
               <div className="flex items-center gap-3 lg:gap-4">
                 <Avatar className="h-14 w-14 lg:h-20 lg:w-20 ring-2 lg:ring-4 ring-primary/20">
-                  <AvatarImage src={token.logoUrl || undefined} alt={token.name} />
+                  <AvatarImage src={enhancedToken.logoUrl || undefined} alt={enhancedToken.name} />
                   <AvatarFallback className="text-xl lg:text-2xl font-bold">
-                    {token.symbol.slice(0, 2)}
+                    {enhancedToken.symbol.slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-xl lg:text-3xl font-black">{token.name}</h1>
-                    {token.isVerified && (
+                    <h1 className="text-xl lg:text-3xl font-black">{enhancedToken.name}</h1>
+                    {enhancedToken.isVerified && (
                       <Badge className="bg-primary/20 text-primary text-xs">Verified</Badge>
                     )}
                   </div>
-                  <p className="text-sm lg:text-lg text-muted-foreground uppercase">${token.symbol}</p>
+                  <p className="text-sm lg:text-lg text-muted-foreground uppercase">${enhancedToken.symbol}</p>
                   
                   <div className="flex items-center gap-1 lg:gap-2 mt-2">
-                    {token.twitterUrl && (
-                      <a href={token.twitterUrl} target="_blank" rel="noopener noreferrer">
+                    {enhancedToken.twitterUrl && (
+                      <a href={enhancedToken.twitterUrl} target="_blank" rel="noopener noreferrer">
                         <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-twitter">
                           <Twitter className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
                       </a>
                     )}
-                    {token.telegramUrl && (
-                      <a href={token.telegramUrl} target="_blank" rel="noopener noreferrer">
+                    {enhancedToken.telegramUrl && (
+                      <a href={enhancedToken.telegramUrl} target="_blank" rel="noopener noreferrer">
                         <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-telegram">
                           <Send className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
                       </a>
                     )}
-                    {token.websiteUrl && (
-                      <a href={token.websiteUrl} target="_blank" rel="noopener noreferrer">
+                    {enhancedToken.websiteUrl && (
+                      <a href={enhancedToken.websiteUrl} target="_blank" rel="noopener noreferrer">
                         <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-website">
                           <Globe className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
@@ -407,7 +472,7 @@ export default function TokenDetail() {
                       <SiFarcaster className="h-3 w-3 lg:h-4 lg:w-4" />
                       <span className="text-xs hidden lg:inline">Share</span>
                     </Button>
-                    <PriceAlertDialog token={token} onCreateAlert={handleCreateAlert} />
+                    <PriceAlertDialog token={enhancedToken} onCreateAlert={handleCreateAlert} />
                   </div>
                 </div>
               </div>
@@ -416,26 +481,26 @@ export default function TokenDetail() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 mb-4 lg:mb-6">
               <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Price</p>
-                <p className="font-mono font-semibold text-sm lg:text-lg">${token.currentPrice}</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${enhancedToken.currentPrice}</p>
               </div>
               <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Market Cap</p>
-                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(token.marketCap) / 1000).toFixed(0)}K</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(enhancedToken.marketCap) / 1000).toFixed(0)}K</p>
               </div>
               <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Volume 24h</p>
-                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(token.volume24h) / 1000).toFixed(0)}K</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(enhancedToken.volume24h) / 1000).toFixed(0)}K</p>
               </div>
               <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Holders</p>
-                <p className="font-mono font-semibold text-sm lg:text-lg">{token.holderCount}</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">{enhancedToken.holderCount}</p>
               </div>
             </div>
 
             <div className="hidden lg:block">
               <h3 className="font-bold text-lg mb-2">About</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {token.description}
+                {enhancedToken.description}
               </p>
             </div>
 
@@ -444,7 +509,7 @@ export default function TokenDetail() {
                 <span className="text-muted-foreground">Contract Address</span>
                 <div className="flex items-center gap-2">
                   <code className="font-mono text-xs bg-muted/30 px-2 py-1 rounded">
-                    {token.contractAddress?.slice(0, 10)}...{token.contractAddress?.slice(-8)}
+                    {enhancedToken.contractAddress?.slice(0, 10)}...{enhancedToken.contractAddress?.slice(-8)}
                   </code>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                     <ExternalLink className="h-3 w-3" />
@@ -466,7 +531,7 @@ export default function TokenDetail() {
                     >
                       {trade.type.toUpperCase()}
                     </Badge>
-                    <span className="font-mono text-sm">{trade.amount} {token.symbol}</span>
+                    <span className="font-mono text-sm">{trade.amount} {enhancedToken.symbol}</span>
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-sm">${trade.price}</p>
