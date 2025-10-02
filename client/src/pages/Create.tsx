@@ -5,9 +5,9 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { InsertToken } from "@shared/schema";
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useConnect } from "wagmi";
 import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
-import { parseEther, decodeEventLog } from "viem";
+import { decodeEventLog } from "viem";
 import { useEffect, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { base } from "wagmi/chains";
@@ -17,13 +17,22 @@ export default function Create() {
   const [, setLocation] = useLocation();
   const { walletAddress } = useWallet();
   const [pendingToken, setPendingToken] = useState<any>(null);
-  const { connector } = useAccount();
+  const { isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
 
   const { data: hash, writeContract, isPending: isSendingTx, error: txError, isError: isTxError } = useWriteContract();
   
   const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isReceiptError, error: receiptError } = useWaitForTransactionReceipt({
     hash,
   });
+
+  // Auto-connect Wagmi connector if wallet is connected but Wagmi isn't
+  useEffect(() => {
+    if (walletAddress && !isConnected && connectors.length > 0) {
+      console.log("Auto-connecting Wagmi connector...");
+      connect({ connector: connectors[0] });
+    }
+  }, [walletAddress, isConnected, connectors, connect]);
 
   // Handle transaction errors
   useEffect(() => {

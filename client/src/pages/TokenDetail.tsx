@@ -13,7 +13,7 @@ import sdk from "@farcaster/frame-sdk";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/contexts/WalletContext";
-import { useSendTransaction, useWaitForTransactionReceipt, useAccount, useWriteContract } from "wagmi";
+import { useSendTransaction, useWaitForTransactionReceipt, useAccount, useWriteContract, useConnect } from "wagmi";
 import { parseEther } from "viem";
 import { useEffect } from "react";
 import { BONDING_CURVE_TOKEN_ABI } from "@/lib/contracts";
@@ -34,6 +34,8 @@ export default function TokenDetail() {
     hash: `0x${string}`;
   } | null>(null);
   const { walletBalance, walletAddress, isWalletConnected, sendETH, refreshBalance } = useWallet();
+  const { isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   
   const { sendTransactionAsync, data: txHash, isPending: isSendingTx } = useSendTransaction();
   const { writeContractAsync, data: contractTxHash, isPending: isWritingContract } = useWriteContract();
@@ -41,6 +43,14 @@ export default function TokenDetail() {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash: txHash || contractTxHash,
   });
+
+  // Auto-connect Wagmi connector if wallet is connected but Wagmi isn't
+  useEffect(() => {
+    if (walletAddress && !isConnected && connectors.length > 0) {
+      console.log("Auto-connecting Wagmi connector for trading...");
+      connect({ connector: connectors[0] });
+    }
+  }, [walletAddress, isConnected, connectors, connect]);
 
   const { data: token, isLoading, isError } = useQuery<Token>({
     queryKey: ["/api/tokens", params?.id],
