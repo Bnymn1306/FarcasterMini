@@ -14,6 +14,7 @@ const STORAGE_KEY = 'basedmem_create_token_draft';
 
 interface CreateTokenFormProps {
   onSubmit?: (data: TokenFormData) => void;
+  disabled?: boolean;
 }
 
 export interface TokenFormData {
@@ -27,7 +28,7 @@ export interface TokenFormData {
   websiteUrl: string;
 }
 
-export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
+export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: CreateTokenFormProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -272,11 +273,11 @@ export function CreateTokenForm({ onSubmit }: CreateTokenFormProps) {
               type="submit"
               className="w-full gap-2 py-6"
               size="lg"
-              disabled={isCreating}
+              disabled={isCreating || externalDisabled}
               data-testid="button-create-token"
             >
               <Rocket className="h-5 w-5" />
-              {isCreating ? "Creating..." : "Launch Token"}
+              {isCreating || externalDisabled ? "Processing..." : "Launch Token"}
             </Button>
           </div>
         </form>

@@ -13,9 +13,10 @@ import sdk from "@farcaster/frame-sdk";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/contexts/WalletContext";
-import { useSendTransaction, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useSendTransaction, useWaitForTransactionReceipt, useAccount, useWriteContract } from "wagmi";
 import { parseEther } from "viem";
 import { useEffect } from "react";
+import { BONDING_CURVE_TOKEN_ABI } from "@/lib/contracts";
 
 export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
@@ -26,11 +27,18 @@ export default function TokenDetail() {
     tokenAmount: number;
     hash: `0x${string}`;
   } | null>(null);
+  
+  const [pendingSale, setPendingSale] = useState<{
+    tokenAmount: number;
+    hash: `0x${string}`;
+  } | null>(null);
   const { walletBalance, walletAddress, isWalletConnected, sendETH, refreshBalance } = useWallet();
   
   const { sendTransactionAsync, data: txHash, isPending: isSendingTx } = useSendTransaction();
+  const { writeContractAsync, data: contractTxHash, isPending: isWritingContract } = useWriteContract();
+  
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash,
+    hash: txHash || contractTxHash,
   });
 
   const { data: token, isLoading, isError } = useQuery<Token>({
@@ -157,6 +165,78 @@ export default function TokenDetail() {
     processPurchase();
   }, [isConfirmed, pendingPurchase, walletAddress, token, toast, refreshBalance]);
 
+  // Handle post-confirmation database updates for SELL
+  useEffect(() => {
+    const processSale = async () => {
+      if (!isConfirmed || !pendingSale || !walletAddress || !token || !userData) return;
+
+      try {
+        const { tokenAmount } = pendingSale;
+        const ethValue = tokenAmount * parseFloat(token.currentPrice);
+        const gasFee = "0.00012";
+        const { queryClient } = await import("@/lib/queryClient");
+
+        // Record trade
+        await fetch("/api/trades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userData.id,
+            tokenId: token.id,
+            type: "sell",
+            amount: tokenAmount.toString(),
+            price: token.currentPrice,
+            totalValue: ethValue.toString(),
+            gasFee,
+          }),
+        });
+
+        // Update holdings (reduce or delete)
+        const currentHolding = userHolding;
+        if (currentHolding) {
+          const newAmount = parseFloat(currentHolding.amount) - tokenAmount;
+          
+          if (newAmount <= 0.001) {
+            // Delete holding if sold all
+            await fetch(`/api/holdings/${currentHolding.id}`, {
+              method: "DELETE",
+            });
+          } else {
+            // Update holding amount
+            await fetch(`/api/holdings/${currentHolding.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount: newAmount.toString(),
+              }),
+            });
+          }
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
+        await refreshBalance();
+
+        toast({
+          title: "Trade Executed! 💰",
+          description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
+        });
+
+        setPendingSale(null);
+      } catch (error: any) {
+        console.error("Post-sale confirmation error:", error);
+        toast({
+          title: "Database Update Failed",
+          description: "Transaction confirmed but failed to update records. Please contact support.",
+          variant: "destructive",
+        });
+        setPendingSale(null);
+      }
+    };
+
+    processSale();
+  }, [isConfirmed, pendingSale, walletAddress, token, userData, userHolding, toast, refreshBalance, params?.id]);
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -209,19 +289,33 @@ export default function TokenDetail() {
 
       const tokenAmount = ethAmount / parseFloat(token.currentPrice);
       
-      // Platform wallet address (BasedMem treasury)
-      const PLATFORM_WALLET = "0x8988C0418F2D4B0CB8823E330e2e9A7D3bC83C17";
-      
       toast({
         title: "Confirm Transaction",
         description: "Please approve the transaction in your wallet",
       });
 
-      // Trigger Wagmi transaction - useEffect will handle post-confirmation
-      const hash = await sendTransactionAsync({
-        to: PLATFORM_WALLET as `0x${string}`,
-        value: parseEther(amount),
-      });
+      let hash: `0x${string}`;
+
+      // If token has smart contract deployed, call contract.buy()
+      if (token.contractAddress && token.contractAddress !== "") {
+        console.log("Calling BondingCurveToken.buy() on contract:", token.contractAddress);
+        
+        hash = await writeContractAsync({
+          address: token.contractAddress as `0x${string}`,
+          abi: BONDING_CURVE_TOKEN_ABI,
+          functionName: 'buy',
+          value: parseEther(amount),
+        });
+      } else {
+        // Fallback: Send ETH to platform wallet (for tokens without contract)
+        console.log("Token has no contract, sending ETH to platform wallet");
+        const PLATFORM_WALLET = "0x8988C0418F2D4B0CB8823E330e2e9A7D3bC83C17";
+        
+        hash = await sendTransactionAsync({
+          to: PLATFORM_WALLET as `0x${string}`,
+          value: parseEther(amount),
+        });
+      }
       
       // Store pending purchase details for useEffect to process after confirmation
       setPendingPurchase({
@@ -265,49 +359,78 @@ export default function TokenDetail() {
       const ethValue = tokenAmount * parseFloat(token.currentPrice);
 
       toast({
-        title: "Processing Sell...",
-        description: `Selling ${tokenAmount.toFixed(2)} ${token.symbol} for ${ethValue.toFixed(4)} ETH`,
+        title: "Confirm Transaction",
+        description: "Please approve the transaction in your wallet",
       });
 
-      // Backend will handle: validate holdings, update DB, send real ETH
-      const sellResponse = await fetch("/api/sell", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userData.id,
-          tokenId: token.id,
-          tokenAmount: tokenAmount.toString(),
-          walletAddress,
-        }),
-      });
+      let hash: `0x${string}`;
 
-      if (!sellResponse.ok) {
-        const error = await sellResponse.json();
-        throw new Error(error.message || "Failed to execute sell");
+      // If token has smart contract deployed, call contract.sell()
+      if (token.contractAddress && token.contractAddress !== "") {
+        console.log("Calling BondingCurveToken.sell() on contract:", token.contractAddress);
+        
+        hash = await writeContractAsync({
+          address: token.contractAddress as `0x${string}`,
+          abi: BONDING_CURVE_TOKEN_ABI,
+          functionName: 'sell',
+          args: [BigInt(Math.floor(tokenAmount))],
+        });
+
+        // Store pending sale for useEffect to process after confirmation
+        setPendingSale({
+          tokenAmount,
+          hash,
+        });
+
+        toast({
+          title: "Transaction Broadcasted! ⏳",
+          description: "Waiting for blockchain confirmation...",
+        });
+      } else {
+        // Fallback: Use backend API (for tokens without contract)
+        console.log("Token has no contract, using backend API for sell");
+        
+        const sellResponse = await fetch("/api/sell", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userData.id,
+            tokenId: token.id,
+            tokenAmount: tokenAmount.toString(),
+            walletAddress,
+          }),
+        });
+
+        if (!sellResponse.ok) {
+          const error = await sellResponse.json();
+          throw new Error(error.message || "Failed to execute sell");
+        }
+
+        const result = await sellResponse.json();
+        console.log("Sell completed:", result);
+
+        const { queryClient } = await import("@/lib/queryClient");
+        await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/holdings", walletAddress] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
+        
+        await refreshBalance();
+        
+        toast({
+          title: "Trade Executed! 💰",
+          description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol}. ETH sent: ${result.ethSent}`,
+        });
       }
-
-      const result = await sellResponse.json();
-      console.log("Sell completed:", result);
-
-      const { queryClient } = await import("@/lib/queryClient");
-      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", walletAddress] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
-      
-      // Refresh wallet balance
-      await refreshBalance();
-      
-      toast({
-        title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol}. ETH sent: ${result.ethSent}`,
-      });
     } catch (error: any) {
       console.error("Sell error:", error);
       toast({
-        title: "Trade Failed",
-        description: error.message || "Failed to execute trade",
+        title: "Transaction Failed",
+        description: error.message?.includes("rejected") || error.message?.includes("denied") 
+          ? "Transaction rejected by user" 
+          : error.message || "Failed to execute trade",
         variant: "destructive",
       });
+      setPendingSale(null);
     } finally {
       setIsTrading(false);
     }

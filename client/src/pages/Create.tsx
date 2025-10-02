@@ -5,11 +5,65 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { InsertToken } from "@shared/schema";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
+import { parseEther } from "viem";
+import { useEffect, useState } from "react";
 
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { walletAddress } = useWallet();
+  const [pendingToken, setPendingToken] = useState<any>(null);
+
+  const { data: hash, writeContract, isPending: isSendingTx, error: txError } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  useEffect(() => {
+    if (isConfirmed && pendingToken && hash) {
+      console.log("Transaction confirmed, saving token to database...");
+      
+      createTokenMutation.mutateAsync(pendingToken)
+        .then(() => {
+          toast({
+            title: "Token Deployed! 🚀",
+            description: `${pendingToken.name} (${pendingToken.symbol}) has been deployed to Base blockchain!`,
+          });
+
+          const baseUrl = window.location.origin;
+          const tokenUrl = `${baseUrl}/browse`;
+          const castText = `🚀 Just deployed ${pendingToken.name} ($${pendingToken.symbol}) on Base!\n\n${pendingToken.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(pendingToken.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+
+          const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
+
+          try {
+            import("@farcaster/frame-sdk").then((module) => {
+              module.default.actions.openUrl(warpcastUrl);
+            });
+          } catch (error) {
+            console.log("SDK not available, opening in new tab:", error);
+            window.open(warpcastUrl, '_blank');
+          }
+
+          setTimeout(() => {
+            setLocation('/browse');
+          }, 3000);
+        })
+        .catch((error) => {
+          console.error("Error saving token:", error);
+          toast({
+            title: "Database Error",
+            description: "Token deployed but failed to save to database.",
+            variant: "destructive",
+          });
+        });
+      
+      setPendingToken(null);
+    }
+  }, [isConfirmed, pendingToken, hash]);
 
   const createTokenMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -63,37 +117,65 @@ export default function Create() {
   });
 
   const handleSubmit = async (data: any) => {
-    try {
-      console.log("Submitting token to API:", data);
-      const result = await createTokenMutation.mutateAsync(data);
-      console.log("Token saved successfully:", result);
-      
+    if (!walletAddress) {
       toast({
-        title: "Token Launched! 🚀",
-        description: `${data.name} (${data.symbol}) has been successfully created on Base.`,
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to create a token.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!FACTORY_CONTRACT_ADDRESS || FACTORY_CONTRACT_ADDRESS === "") {
+      console.warn("Factory contract not deployed, saving to database only...");
+      
+      try {
+        const result = await createTokenMutation.mutateAsync(data);
+        console.log("Token saved to database:", result);
+        
+        toast({
+          title: "Token Created! ✅",
+          description: `${data.name} (${data.symbol}) saved to database. Deploy smart contract to enable trading.`,
+        });
+
+        setTimeout(() => {
+          setLocation('/browse');
+        }, 2000);
+      } catch (error: any) {
+        console.error("Error saving token:", error);
+        toast({
+          title: "Save Failed",
+          description: error?.message || "Failed to save token",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    try {
+      console.log("Deploying token contract...", data);
+      
+      setPendingToken(data);
+
+      writeContract({
+        address: FACTORY_CONTRACT_ADDRESS as `0x${string}`,
+        abi: TOKEN_FACTORY_ABI,
+        functionName: 'createToken',
+        args: [
+          data.name,
+          data.symbol,
+          BigInt(data.totalSupply),
+        ],
       });
 
-      const baseUrl = window.location.origin;
-      const tokenUrl = `${baseUrl}/browse`;
-      const castText = `🚀 Just launched ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token is born!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
-
-      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
-
-      try {
-        const sdk = (await import("@farcaster/frame-sdk")).default;
-        await sdk.actions.openUrl(warpcastUrl);
-      } catch (error) {
-        console.log("SDK not available, opening in new tab:", error);
-        window.open(warpcastUrl, '_blank');
-      }
-
-      setTimeout(() => {
-        setLocation('/browse');
-      }, 3000);
+      toast({
+        title: "Transaction Sent",
+        description: "Please confirm the transaction in your wallet...",
+      });
     } catch (error: any) {
-      console.error("Error saving token:", error);
+      console.error("Error deploying token:", error);
       
-      let errorMessage = "Failed to save token to database";
+      let errorMessage = "Failed to deploy token contract";
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.toString) {
@@ -101,21 +183,32 @@ export default function Create() {
       }
       
       toast({
-        title: "Save Failed",
+        title: "Deployment Failed",
         description: errorMessage,
         variant: "destructive",
       });
+      
+      setPendingToken(null);
     }
   };
+
+  const isProcessing = isSendingTx || isConfirming || createTokenMutation.isPending;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-black mb-2">Launch Your Meme Token</h1>
         <p className="text-muted-foreground">Create and deploy your token in under 60 seconds</p>
+        {isProcessing && (
+          <p className="text-sm text-primary mt-2 font-medium">
+            {isSendingTx && "⏳ Sending transaction..."}
+            {isConfirming && "⏳ Waiting for blockchain confirmation..."}
+            {createTokenMutation.isPending && "💾 Saving to database..."}
+          </p>
+        )}
       </div>
       
-      <CreateTokenForm onSubmit={handleSubmit} />
+      <CreateTokenForm onSubmit={handleSubmit} disabled={isProcessing} />
     </div>
   );
 }
