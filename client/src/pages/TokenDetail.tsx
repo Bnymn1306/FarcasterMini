@@ -178,7 +178,10 @@ export default function TokenDetail() {
 
       console.log("Calling BondingCurveToken.buy() on contract:", enhancedToken.contractAddress);
       
-      const tx = await contract.buy({ value: parseEther(amount) });
+      const tx = await contract.buy({ 
+        value: parseEther(amount),
+        gasLimit: 300000
+      });
       
       toast({
         title: "Transaction Broadcasted! ⏳",
@@ -352,7 +355,9 @@ export default function TokenDetail() {
 
       console.log("Calling BondingCurveToken.sell() on contract:", enhancedToken.contractAddress);
       
-      const tx = await contract.sell(BigInt(Math.floor(tokenAmount)));
+      const tx = await contract.sell(BigInt(Math.floor(tokenAmount)), {
+        gasLimit: 300000
+      });
 
       toast({
         title: "Transaction Broadcasted! ⏳",
