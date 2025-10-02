@@ -268,15 +268,6 @@ export default function TokenDetail() {
         return;
       }
 
-      if (!token || parseFloat(token.currentPrice) === 0) {
-        toast({
-          title: "Invalid Price",
-          description: "Token price is not set yet. Please try again later.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const ethAmount = parseFloat(amount);
       if (isNaN(ethAmount) || ethAmount <= 0) {
         toast({
@@ -287,7 +278,11 @@ export default function TokenDetail() {
         return;
       }
 
-      const tokenAmount = ethAmount / parseFloat(token.currentPrice);
+      // Token amount will be calculated by bonding curve contract
+      // Using database price as estimate only (contract has actual bonding curve logic)
+      const estimatedTokenAmount = token.currentPrice && parseFloat(token.currentPrice) > 0 
+        ? ethAmount / parseFloat(token.currentPrice)
+        : ethAmount * 1000; // Fallback estimate if no price set
       
       toast({
         title: "Confirm Transaction",
@@ -313,7 +308,7 @@ export default function TokenDetail() {
       // Store pending purchase details for useEffect to process after confirmation
       setPendingPurchase({
         amount,
-        tokenAmount,
+        tokenAmount: estimatedTokenAmount,
         hash,
       });
       
