@@ -97,7 +97,6 @@ export const insertTokenSchema = createInsertSchema(tokens).omit({
   volume24h: true,
   priceChange24h: true,
   holderCount: true,
-  contractAddress: true,
   isVerified: true,
   createdAt: true,
 });
