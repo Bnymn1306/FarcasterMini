@@ -10,6 +10,9 @@ import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
 import { parseEther, decodeEventLog } from "viem";
 import { useEffect, useState } from "react";
 
+// Debug: Check if factory address is loaded
+console.log("FACTORY_CONTRACT_ADDRESS:", FACTORY_CONTRACT_ADDRESS);
+
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
