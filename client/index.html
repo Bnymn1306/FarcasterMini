@@ -45,6 +45,59 @@
         }
       }
     }' />
+    <!-- OVERLAY DESTROYER: Kill error overlay iframes immediately -->
+    <script>
+      (function destroyOverlay() {
+        // Aggressively remove error overlay iframes/divs
+        function nuke() {
+          // Remove Replit runtime error modal iframe
+          document.querySelectorAll('iframe').forEach(function(iframe) {
+            var src = iframe.src || '';
+            var style = iframe.getAttribute('style') || '';
+            var computed = iframe.style ? iframe.style.position : '';
+            
+            // Kill if: has vite-plugin in src, OR is fixed position
+            if (src.indexOf('vite-plugin') !== -1 || 
+                style.indexOf('position: fixed') !== -1 ||
+                computed === 'fixed') {
+              iframe.remove();
+            }
+          });
+
+          // Remove high z-index divs (likely overlays)
+          document.querySelectorAll('div').forEach(function(div) {
+            var style = window.getComputedStyle(div);
+            var zIndex = parseInt(style.zIndex);
+            if (zIndex > 2000000000 && style.position === 'fixed') {
+              div.remove();
+            }
+          });
+        }
+
+        // Run immediately
+        nuke();
+        
+        // Run every 20ms for 5 seconds
+        var count = 0;
+        var interval = setInterval(function() {
+          nuke();
+          count++;
+          if (count > 250) clearInterval(interval); // Stop after 5 seconds
+        }, 20);
+
+        // Also watch for new additions
+        if (typeof MutationObserver !== 'undefined') {
+          var observer = new MutationObserver(nuke);
+          observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+          });
+          
+          // Disconnect after 5 seconds
+          setTimeout(function() { observer.disconnect(); }, 5000);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
