@@ -228,10 +228,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertTradeSchema.parse(req.body);
       
-      if (parseFloat(validatedData.price) === 0) {
-        return res.status(400).json({ error: "Cannot trade token with zero price" });
-      }
-      
       const amount = parseFloat(validatedData.amount);
       if (!isFinite(amount) || amount <= 0) {
         return res.status(400).json({ error: "Invalid trade amount" });
