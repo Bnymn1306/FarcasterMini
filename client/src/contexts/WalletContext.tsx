@@ -19,8 +19,8 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-const BASE_CHAIN_ID = 84532; // Base Sepolia Testnet
-const BASE_RPC_URL = "https://sepolia.base.org";
+const BASE_CHAIN_ID = 8453; // Base Mainnet
+const BASE_RPC_URL = "https://mainnet.base.org";
 
 let cachedSDK: any = null;
 let ethersProvider: BrowserProvider | null = null;
