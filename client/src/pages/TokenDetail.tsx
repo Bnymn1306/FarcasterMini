@@ -231,6 +231,7 @@ export default function TokenDetail() {
       }
 
       console.log("Transaction confirmed successfully:", receipt.hash);
+      console.log("Total logs in receipt:", receipt.logs.length);
 
       // Extract actual token amount from TokensPurchased event
       const { Interface } = await import("ethers");
@@ -241,6 +242,9 @@ export default function TokenDetail() {
       const contractLogs = receipt.logs.filter(
         log => log.address.toLowerCase() === enhancedToken.contractAddress!.toLowerCase()
       );
+      
+      console.log("Contract address:", enhancedToken.contractAddress);
+      console.log("Filtered logs for this contract:", contractLogs.length);
 
       for (const log of contractLogs) {
         try {
@@ -249,11 +253,15 @@ export default function TokenDetail() {
             data: log.data
           });
           
+          console.log("Parsed event:", parsed?.name);
+          
           if (parsed && parsed.name === 'TokensPurchased') {
+            console.log("Raw tokenAmount from event (wei):", parsed.args.tokenAmount.toString());
+            
             // Convert from wei to token amount (18 decimals)
             const { formatUnits } = await import("ethers");
             actualTokenAmount = formatUnits(parsed.args.tokenAmount, 18);
-            console.log("Actual tokens purchased from event:", actualTokenAmount);
+            console.log("Formatted token amount:", actualTokenAmount);
             break;
           }
         } catch (e) {
@@ -261,8 +269,10 @@ export default function TokenDetail() {
         }
       }
 
+      console.log("Final actualTokenAmount before validation:", actualTokenAmount);
+
       if (actualTokenAmount === "0") {
-        throw new Error("Failed to extract token amount from transaction");
+        throw new Error("Failed to extract token amount from transaction. Please check BaseScan.");
       }
 
       const gasFee = "0.00012";
