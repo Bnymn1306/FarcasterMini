@@ -183,12 +183,40 @@ export default function TokenDetail() {
         gasLimit: 300000
       });
       
+      const txHash = tx.hash;
+      console.log("Transaction submitted:", txHash);
+
       toast({
-        title: "Transaction Broadcasted! ⏳",
-        description: "Waiting for blockchain confirmation...",
+        title: "Transaction Submitted! 🚀",
+        description: `Hash: ${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 8)}`,
       });
 
-      const receipt = await tx.wait();
+      // Wait for transaction without using ethers .wait() (Farcaster doesn't support eth_getTransactionReceipt)
+      // Poll manually using Base RPC
+      const { JsonRpcProvider } = await import("ethers");
+      const baseProvider = new JsonRpcProvider("https://mainnet.base.org");
+      
+      let receipt = null;
+      let attempts = 0;
+      while (!receipt && attempts < 30) {
+        try {
+          receipt = await baseProvider.getTransactionReceipt(txHash);
+          if (receipt) break;
+        } catch (e) {
+          // Transaction not yet mined
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+      }
+
+      if (!receipt) {
+        toast({
+          title: "Transaction Pending ⏳",
+          description: "Check BaseScan for confirmation",
+        });
+        return;
+      }
+
       console.log("Transaction confirmed:", receipt.hash);
 
       const gasFee = "0.00012";
@@ -359,12 +387,40 @@ export default function TokenDetail() {
         gasLimit: 300000
       });
 
+      const txHash = tx.hash;
+      console.log("Transaction submitted:", txHash);
+
       toast({
-        title: "Transaction Broadcasted! ⏳",
-        description: "Waiting for blockchain confirmation...",
+        title: "Transaction Submitted! 🚀",
+        description: `Hash: ${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 8)}`,
       });
 
-      const receipt = await tx.wait();
+      // Wait for transaction without using ethers .wait() (Farcaster doesn't support eth_getTransactionReceipt)
+      // Poll manually using Base RPC
+      const { JsonRpcProvider } = await import("ethers");
+      const baseProvider = new JsonRpcProvider("https://mainnet.base.org");
+      
+      let receipt = null;
+      let attempts = 0;
+      while (!receipt && attempts < 30) {
+        try {
+          receipt = await baseProvider.getTransactionReceipt(txHash);
+          if (receipt) break;
+        } catch (e) {
+          // Transaction not yet mined
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+      }
+
+      if (!receipt) {
+        toast({
+          title: "Transaction Pending ⏳",
+          description: "Check BaseScan for confirmation",
+        });
+        return;
+      }
+
       console.log("Transaction confirmed:", receipt.hash);
 
       const gasFee = "0.00012";
