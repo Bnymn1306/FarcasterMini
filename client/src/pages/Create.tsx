@@ -123,7 +123,18 @@ export default function Create() {
         return;
       }
 
-      console.log("Transaction confirmed:", receipt);
+      // Check if transaction succeeded or reverted
+      if (receipt.status === 0) {
+        toast({
+          title: "Transaction Failed ❌",
+          description: "The deployment was reverted. Check BaseScan for details.",
+          variant: "destructive",
+        });
+        setIsDeploying(false);
+        return;
+      }
+
+      console.log("Transaction confirmed successfully:", receipt);
 
       // Extract contract address from TokenCreated event
       const iface = new Interface(TOKEN_FACTORY_ABI);

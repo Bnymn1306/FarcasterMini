@@ -217,7 +217,17 @@ export default function TokenDetail() {
         return;
       }
 
-      console.log("Transaction confirmed:", receipt.hash);
+      // Check if transaction succeeded or reverted
+      if (receipt.status === 0) {
+        toast({
+          title: "Transaction Failed ❌",
+          description: "The transaction was reverted. Check BaseScan for details.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Transaction confirmed successfully:", receipt.hash);
 
       const gasFee = "0.00012";
 
@@ -428,7 +438,17 @@ export default function TokenDetail() {
         return;
       }
 
-      console.log("Transaction confirmed:", receipt.hash);
+      // Check if transaction succeeded or reverted
+      if (receipt.status === 0) {
+        toast({
+          title: "Transaction Failed ❌",
+          description: "The transaction was reverted. Check BaseScan for details.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Transaction confirmed successfully:", receipt.hash);
 
       const gasFee = "0.00012";
 
