@@ -4,161 +4,16 @@ import { useLocation } from "wouter";
 import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import type { InsertToken } from "@shared/schema";
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useConnect } from "wagmi";
 import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
-import { decodeEventLog } from "viem";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import sdk from "@farcaster/frame-sdk";
-import { base } from "wagmi/chains";
+import { Contract, Interface } from "ethers";
 
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { walletAddress } = useWallet();
-  const [pendingToken, setPendingToken] = useState<any>(null);
-  const { isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-
-  const { data: hash, writeContract, isPending: isSendingTx, error: txError, isError: isTxError } = useWriteContract();
-  
-  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed, isError: isReceiptError, error: receiptError } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  // Auto-connect Wagmi connector if wallet is connected but Wagmi isn't
-  useEffect(() => {
-    if (walletAddress && !isConnected && connectors.length > 0) {
-      console.log("Auto-connecting Wagmi connector...");
-      connect({ connector: connectors[0] });
-    }
-  }, [walletAddress, isConnected, connectors, connect]);
-
-  // Handle transaction errors
-  useEffect(() => {
-    if (isTxError && txError && pendingToken) {
-      console.error("Transaction error:", txError);
-      toast({
-        title: "Transaction Failed",
-        description: txError.message || "Failed to send transaction",
-        variant: "destructive",
-      });
-      setPendingToken(null);
-    }
-  }, [isTxError, txError, pendingToken, toast]);
-
-  // Handle receipt errors
-  useEffect(() => {
-    if (isReceiptError && receiptError && pendingToken) {
-      console.error("Receipt error:", receiptError);
-      toast({
-        title: "Transaction Failed",
-        description: "Transaction was rejected or failed on blockchain",
-        variant: "destructive",
-      });
-      setPendingToken(null);
-    }
-  }, [isReceiptError, receiptError, pendingToken, toast]);
-
-  // Log transaction hash when available
-  useEffect(() => {
-    if (hash) {
-      console.log("Transaction hash:", hash);
-      toast({
-        title: "Transaction Submitted",
-        description: "Waiting for blockchain confirmation...",
-      });
-    }
-  }, [hash, toast]);
-
-  useEffect(() => {
-    if (isConfirmed && pendingToken && hash && receipt) {
-      console.log("Transaction confirmed, extracting contract address...");
-      
-      // Extract contract address from TokenCreated event logs
-      let contractAddress = "";
-      
-      try {
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({
-              abi: TOKEN_FACTORY_ABI,
-              data: log.data,
-              topics: log.topics,
-            });
-            
-            if (decoded.eventName === 'TokenCreated') {
-              contractAddress = (decoded.args as any).tokenAddress;
-              console.log("Contract address from event:", contractAddress);
-              break;
-            }
-          } catch (e) {
-            // Not our event, skip
-            continue;
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing event logs:", error);
-      }
-      
-      // CRITICAL: Ensure contract address was extracted
-      if (!contractAddress) {
-        console.error("Failed to extract contract address from event logs");
-        toast({
-          title: "Deployment Error",
-          description: "Could not extract contract address from transaction. Please try again.",
-          variant: "destructive",
-        });
-        setPendingToken(null);
-        return;
-      }
-      
-      console.log("Saving token to database with contract address:", contractAddress);
-      
-      // Add contract address to token data
-      const tokenDataWithContract = {
-        ...pendingToken,
-        contractAddress: contractAddress,
-      };
-      
-      createTokenMutation.mutateAsync(tokenDataWithContract)
-        .then(() => {
-          toast({
-            title: "Token Deployed! 🚀",
-            description: `${pendingToken.name} (${pendingToken.symbol}) has been deployed to Base blockchain!`,
-          });
-
-          const baseUrl = window.location.origin;
-          const tokenUrl = `${baseUrl}/browse`;
-          const castText = `🚀 Just deployed ${pendingToken.name} ($${pendingToken.symbol}) on Base!\n\n${pendingToken.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(pendingToken.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
-
-          const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
-
-          try {
-            import("@farcaster/frame-sdk").then((module) => {
-              module.default.actions.openUrl(warpcastUrl);
-            });
-          } catch (error) {
-            console.log("SDK not available, opening in new tab:", error);
-            window.open(warpcastUrl, '_blank');
-          }
-
-          setTimeout(() => {
-            setLocation('/browse');
-          }, 3000);
-        })
-        .catch((error) => {
-          console.error("Error saving token:", error);
-          toast({
-            title: "Database Error",
-            description: "Token deployed but failed to save to database.",
-            variant: "destructive",
-          });
-        });
-      
-      setPendingToken(null);
-    }
-  }, [isConfirmed, pendingToken, hash, receipt]);
+  const { walletAddress, getProvider } = useWallet();
+  const [isDeploying, setIsDeploying] = useState(false);
 
   const createTokenMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -175,37 +30,18 @@ export default function Create() {
         creatorWalletAddress: data.creatorWalletAddress || walletAddress || null,
       };
 
-      let response;
-      try {
-        response = await fetch("/api/tokens", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tokenData),
-        });
-      } catch (networkError: any) {
-        console.error("Network error:", networkError);
-        throw new Error(`Network error: ${networkError.message || 'Unable to reach server'}`);
-      }
+      const response = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tokenData),
+      });
 
       if (!response.ok) {
-        let errorMessage = `Server error: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
-      try {
-        return await response.json();
-      } catch (parseError) {
-        console.error("Failed to parse response:", parseError);
-        throw new Error("Server returned invalid response");
-      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tokens"] });
@@ -216,56 +52,133 @@ export default function Create() {
     if (!walletAddress) {
       toast({
         title: "Wallet Not Connected",
-        description: "Please connect your wallet to deploy a token",
+        description: "Please connect your Farcaster wallet to deploy a token",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const provider = getProvider();
+    if (!provider) {
+      toast({
+        title: "Provider Not Available",
+        description: "Please ensure Farcaster wallet is connected",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      console.log("Deploying token via TokenFactory contract...", data);
-      
-      setPendingToken(data);
+      setIsDeploying(true);
+      console.log("Deploying token via TokenFactory (Farcaster wallet)...", data);
 
-      // Call TokenFactory.createToken() - real blockchain deployment
-      writeContract({
-        address: FACTORY_CONTRACT_ADDRESS as `0x${string}`,
-        abi: TOKEN_FACTORY_ABI,
-        functionName: 'createToken',
-        args: [data.name, data.symbol],
-        chainId: base.id,
+      const signer = await provider.getSigner();
+      const factoryContract = new Contract(
+        FACTORY_CONTRACT_ADDRESS,
+        TOKEN_FACTORY_ABI,
+        signer
+      );
+
+      toast({
+        title: "Confirm in Wallet",
+        description: "Please approve the transaction in your Farcaster wallet",
       });
 
-      // useEffect will handle the rest after blockchain confirmation
+      // Send transaction via Farcaster wallet
+      const tx = await factoryContract.createToken(data.name, data.symbol);
+      
+      toast({
+        title: "Transaction Submitted",
+        description: "Waiting for blockchain confirmation...",
+      });
+
+      console.log("Transaction hash:", tx.hash);
+
+      // Wait for confirmation
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+
+      // Extract contract address from TokenCreated event
+      const iface = new Interface(TOKEN_FACTORY_ABI);
+      let contractAddress = "";
+
+      for (const log of receipt.logs) {
+        try {
+          const parsed = iface.parseLog({
+            topics: log.topics as string[],
+            data: log.data
+          });
+          
+          if (parsed && parsed.name === 'TokenCreated') {
+            contractAddress = parsed.args.tokenAddress;
+            console.log("Contract address from event:", contractAddress);
+            break;
+          }
+        } catch (e) {
+          // Not our event, skip
+        }
+      }
+
+      if (!contractAddress) {
+        throw new Error("Failed to extract contract address from transaction");
+      }
+
+      // Save to database with contract address
+      const tokenDataWithContract = {
+        ...data,
+        contractAddress,
+      };
+
+      await createTokenMutation.mutateAsync(tokenDataWithContract);
+
+      toast({
+        title: "Token Deployed! 🚀",
+        description: `${data.name} (${data.symbol}) deployed to Base blockchain!`,
+      });
+
+      // Open Warpcast compose
+      const baseUrl = window.location.origin;
+      const tokenUrl = `${baseUrl}/browse`;
+      const castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
+
+      try {
+        sdk.actions.openUrl(warpcastUrl);
+      } catch (error) {
+        console.log("SDK not available, opening in new tab");
+        window.open(warpcastUrl, '_blank');
+      }
+
+      setTimeout(() => {
+        setLocation('/browse');
+      }, 2000);
+
     } catch (error: any) {
       console.error("Error creating token:", error);
       
       toast({
-        title: "Creation Failed",
-        description: error?.message || "Failed to create token",
+        title: "Deployment Failed",
+        description: error?.message || "Failed to deploy token",
         variant: "destructive",
       });
-      
-      setPendingToken(null);
+    } finally {
+      setIsDeploying(false);
     }
   };
-
-  const isProcessing = createTokenMutation.isPending || pendingToken !== null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-black mb-2">Launch Your Meme Token</h1>
         <p className="text-muted-foreground">Create and deploy your token in under 60 seconds</p>
-        {isProcessing && (
+        {isDeploying && (
           <p className="text-sm text-primary mt-2 font-medium">
-            {pendingToken && "⏳ Processing deployment..."}
-            {createTokenMutation.isPending && "💾 Saving to database..."}
+            ⏳ Deploying via Farcaster wallet...
           </p>
         )}
       </div>
       
-      <CreateTokenForm onSubmit={handleSubmit} disabled={isProcessing} />
+      <CreateTokenForm onSubmit={handleSubmit} disabled={isDeploying} data-testid="form-create-token" />
     </div>
   );
 }
