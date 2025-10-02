@@ -45,16 +45,31 @@ export default function Create() {
             }
           } catch (e) {
             // Not our event, skip
+            continue;
           }
         }
       } catch (error) {
         console.error("Error parsing event logs:", error);
       }
       
+      // CRITICAL: Ensure contract address was extracted
+      if (!contractAddress) {
+        console.error("Failed to extract contract address from event logs");
+        toast({
+          title: "Deployment Error",
+          description: "Could not extract contract address from transaction. Please try again.",
+          variant: "destructive",
+        });
+        setPendingToken(null);
+        return;
+      }
+      
+      console.log("Saving token to database with contract address:", contractAddress);
+      
       // Add contract address to token data
       const tokenDataWithContract = {
         ...pendingToken,
-        contractAddress: contractAddress || null,
+        contractAddress: contractAddress,
       };
       
       createTokenMutation.mutateAsync(tokenDataWithContract)
