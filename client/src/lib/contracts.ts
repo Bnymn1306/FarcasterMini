@@ -1,7 +1,7 @@
 // FULL ABIs extracted directly from compiled Hardhat artifacts
 // DO NOT modify - these must match exactly with deployed contracts
 
-export const FACTORY_CONTRACT_ADDRESS = "0xfBCe5D06a4fB74325e2154d2dc6b998AC5e91A5c";
+export const FACTORY_CONTRACT_ADDRESS = "0xe1B773DdaDbc22C81e2eab319137a376d0915Cdd";
 
 // TokenFactory ABI - COMPLETE from artifacts/contracts/TokenFactory.sol/TokenFactory.json
 export const TOKEN_FACTORY_ABI = [
