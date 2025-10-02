@@ -202,114 +202,29 @@ export default function Create() {
   });
 
   const handleSubmit = async (data: any) => {
-    // Use wallet address if available, otherwise use mock address for testing
-    const creatorWallet = walletAddress || "0x0000000000000000000000000000000000000000";
+    if (!walletAddress) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to deploy a token",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      console.log("Creating token with simulated deployment...", data);
+      console.log("Deploying token via TokenFactory contract...", data);
       
       setPendingToken(data);
 
-      // Generate deterministic mock contract address from token name + symbol
-      const tokenString = data.name + data.symbol;
-      const mockContractAddress = `0x${tokenString
-        .split('')
-        .map((c) => c.charCodeAt(0).toString(16))
-        .join('')
-        .padEnd(40, '0')
-        .slice(0, 40)}`;
-      
-      console.log("Mock contract address:", mockContractAddress);
-
-      // Check if SDK is available for simulated transaction
-      const hasSDK = typeof sdk !== 'undefined' && sdk.wallet?.ethProvider;
-      
-      if (hasSDK) {
-        try {
-          // Simulate deployment transaction (same approach as daily check-in)
-          const gasFeeInWei = "0x1B48EB57E000" as `0x${string}`; // 0.00003 ETH
-          const provider = sdk.wallet.ethProvider;
-          const accounts = await provider.request({ method: "eth_accounts" });
-          
-          if (!accounts || accounts.length === 0) {
-            throw new Error("Wallet not connected");
-          }
-          
-          const fromAddress = accounts[0];
-          
-          // Send simulated transaction (self-transaction for gas fee)
-          const txHash = await provider.request({
-            method: "eth_sendTransaction",
-            params: [{
-              from: fromAddress,
-              to: fromAddress,
-              value: gasFeeInWei,
-              data: "0x" as `0x${string}`,
-            }],
-          });
-          
-          console.log("Simulated deployment transaction:", txHash);
-          
-          toast({
-            title: "Transaction Submitted",
-            description: "Waiting for confirmation...",
-          });
-        } catch (txError: any) {
-          console.error("Transaction error:", txError);
-          
-          if (txError.message?.includes("rejected") || txError.message?.includes("denied")) {
-            toast({
-              title: "Transaction Cancelled",
-              description: "You rejected the transaction",
-              variant: "destructive",
-            });
-            setPendingToken(null);
-            return;
-          }
-          
-          // Continue with database save even if transaction fails
-          console.warn("Transaction failed, continuing with database save...");
-        }
-      } else {
-        console.log("SDK not available, skipping simulated transaction");
-      }
-      
-      // Save to database with mock contract address
-      const tokenDataWithContract = {
-        ...data,
-        contractAddress: mockContractAddress,
-        creatorWalletAddress: creatorWallet,
-      };
-      
-      const result = await createTokenMutation.mutateAsync(tokenDataWithContract);
-      console.log("Token saved to database:", result);
-      
-      toast({
-        title: "Token Deployed! 🚀",
-        description: `${data.name} (${data.symbol}) has been deployed to Base blockchain!`,
+      // Call TokenFactory.createToken() - real blockchain deployment
+      writeContract({
+        address: FACTORY_CONTRACT_ADDRESS as `0x${string}`,
+        abi: TOKEN_FACTORY_ABI,
+        functionName: 'createToken',
+        args: [data.name, data.symbol],
       });
 
-      const baseUrl = window.location.origin;
-      const tokenUrl = `${baseUrl}/browse`;
-      const castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
-
-      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
-
-      try {
-        if (hasSDK) {
-          sdk.actions.openUrl(warpcastUrl);
-        } else {
-          window.open(warpcastUrl, '_blank');
-        }
-      } catch (error) {
-        console.log("Could not open Warpcast:", error);
-      }
-
-      setTimeout(() => {
-        setLocation('/browse');
-      }, 3000);
-      
-      setPendingToken(null);
+      // useEffect will handle the rest after blockchain confirmation
     } catch (error: any) {
       console.error("Error creating token:", error);
       

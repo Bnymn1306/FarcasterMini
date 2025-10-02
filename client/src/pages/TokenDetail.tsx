@@ -296,15 +296,17 @@ export default function TokenDetail() {
 
       let hash: `0x${string}`;
 
-      // Check if contract is mock (simulated) - mock contracts end with many zeros
-      const isMockContract = token.contractAddress && token.contractAddress.endsWith('00000000');
+      // Call BondingCurveToken.buy() on the token's contract
+      if (!token.contractAddress) {
+        throw new Error("Token has no contract address");
+      }
+
+      console.log("Calling BondingCurveToken.buy() on contract:", token.contractAddress);
       
-      // Always use platform wallet for mock/simulated contracts
-      const PLATFORM_WALLET = "0x8988C0418F2D4B0CB8823E330e2e9A7D3bC83C17";
-      
-      console.log("Sending ETH to platform wallet for token purchase");
-      hash = await sendTransactionAsync({
-        to: PLATFORM_WALLET as `0x${string}`,
+      hash = await writeContractAsync({
+        address: token.contractAddress as `0x${string}`,
+        abi: BONDING_CURVE_TOKEN_ABI,
+        functionName: 'buy',
         value: parseEther(amount),
       });
       
@@ -354,38 +356,29 @@ export default function TokenDetail() {
         description: "Please approve the transaction in your wallet",
       });
 
-      // Always use backend API for sells (works with mock/simulated contracts)
-      console.log("Using backend API for sell");
-      
-      const sellResponse = await fetch("/api/sell", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userData.id,
-          tokenId: token.id,
-          tokenAmount: tokenAmount.toString(),
-          walletAddress,
-        }),
-      });
-
-      if (!sellResponse.ok) {
-        const error = await sellResponse.json();
-        throw new Error(error.message || "Failed to execute sell");
+      // Call BondingCurveToken.sell() on the token's contract
+      if (!token.contractAddress) {
+        throw new Error("Token has no contract address");
       }
 
-      const result = await sellResponse.json();
-      console.log("Sell completed:", result);
+      console.log("Calling BondingCurveToken.sell() on contract:", token.contractAddress);
+      
+      const hash = await writeContractAsync({
+        address: token.contractAddress as `0x${string}`,
+        abi: BONDING_CURVE_TOKEN_ABI,
+        functionName: 'sell',
+        args: [BigInt(Math.floor(tokenAmount))],
+      });
 
-      const { queryClient } = await import("@/lib/queryClient");
-      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/holdings", walletAddress] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", userData.id, params?.id] });
-      
-      await refreshBalance();
-      
+      // Store pending sale for useEffect to process after confirmation
+      setPendingSale({
+        tokenAmount,
+        hash,
+      });
+
       toast({
-        title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmount.toFixed(2)} ${token.symbol}. ETH sent: ${result.ethSent}`,
+        title: "Transaction Broadcasted! ⏳",
+        description: "Waiting for blockchain confirmation...",
       });
     } catch (error: any) {
       console.error("Sell error:", error);
