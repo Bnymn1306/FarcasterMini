@@ -152,8 +152,51 @@ The application follows comprehensive design guidelines defined in `design_guide
   - Database updates → Success toast shown
   - All failures properly handled with descriptive error messages
 
-### Known Limitations (Phase 2)
-- Tokens still database-only (not deployed as smart contracts yet)
-- Platform ETH transfers for Sell flow require PLATFORM_PRIVATE_KEY
-- Fixed pricing from database (bonding curves pending)
-- Phase 3 will add: ERC-20 token deployment, bonding curve pricing, Uniswap graduation at market cap threshold
+### Phase 3: Smart Contract Integration - ERC-20 + Bonding Curve (October 2, 2025)
+
+- **Smart Contract Architecture**: Implemented production-ready Solidity contracts for real DEX functionality
+  - **TokenFactory.sol**: Factory pattern for deploying new BondingCurveToken instances
+    - `createToken(name, symbol)` deploys new ERC-20 token and returns contract address
+    - Emits `TokenCreated(address, name, symbol, creator, timestamp)` event
+    - Tracks all deployed tokens via `allTokens` array
+  - **BondingCurveToken.sol**: Full ERC-20 implementation with linear bonding curve pricing
+    - Linear pricing: `K_MULTIPLIER = 1e15` (price increases with circulating supply)
+    - `buy()` payable function - sends ETH, receives tokens based on bonding curve
+    - `sell(tokenAmount)` function - burns tokens, returns ETH based on bonding curve
+    - `getBuyPrice(tokenAmount)` and `getSellPrice(tokenAmount)` view functions for price quotes
+    - Graduation threshold at 10 ETH reserve balance (ready for Uniswap listing)
+    - Events: `TokensPurchased`, `TokensSold`, `Graduated`
+
+- **Frontend Integration**: ABIs extracted directly from Hardhat compilation artifacts
+  - `client/src/lib/contracts.ts` contains FULL ABIs (521 lines for BondingCurveToken)
+  - Complete ERC-20 standard interface: transfer, approve, allowance, balanceOf, totalSupply, etc.
+  - All bonding curve custom functions included
+  - ABIs match deployed contracts exactly to prevent signature drift
+
+- **Create Token Flow**: Real blockchain deployment via Wagmi hooks
+  - User fills form → `useWriteContract` calls `TokenFactory.createToken()`
+  - Transaction confirmed → Event logs parsed to extract deployed contract address
+  - Contract address saved to database via `useEffect` ONLY after blockchain confirmation
+  - Error handling: Toast notification if event parsing fails, prevents null addresses in DB
+
+- **Buy/Sell Flow**: Real bonding curve pricing via smart contract calls
+  - **Buy**: `useReadContract` fetches price via `getBuyPrice()` → User approves → `buy()` payable call
+  - **Sell**: `useReadContract` fetches price via `getSellPrice()` → User approves → `sell()` call
+  - Transaction lifecycle: Wallet popup → Blockchain confirmation → Database update → Success toast
+  - All state updates via `useWaitForTransactionReceipt` polling
+
+- **Deployment Instructions**: Documented in DEPLOYMENT.md
+  - Requires `BASE_SEPOLIA_RPC_URL` and `DEPLOYER_PRIVATE_KEY` environment variables
+  - Script: `npm run deploy` (deploys TokenFactory to Base Sepolia)
+  - Sets `VITE_FACTORY_CONTRACT_ADDRESS` for frontend to interact with factory
+
+### Known Limitations / Future Enhancements
+- **Graduation Flow**: Contract has graduation logic, but Uniswap pool creation not yet implemented
+- **Platform Sell Transfers**: Backend `/api/sell` ETH payout requires `PLATFORM_PRIVATE_KEY` (currently commented out)
+- **Price Discovery**: Database still stores price/volume/market cap for UI display (contracts are source of truth for trades)
+- **Token Metadata**: IPFS/on-chain metadata storage not implemented (database stores name/symbol/description)
+- **Future Features**: 
+  - Automated Uniswap V2/V3 pool creation at graduation threshold
+  - On-chain metadata via tokenURI standard
+  - LP token locking mechanisms
+  - Cross-chain bridging to mainnet Base
