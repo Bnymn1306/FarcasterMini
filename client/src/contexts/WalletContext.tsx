@@ -23,7 +23,6 @@ const BASE_CHAIN_ID = 8453; // Base Mainnet
 const BASE_RPC_URL = "https://mainnet.base.org";
 
 let cachedSDK: any = null;
-let ethersProvider: BrowserProvider | null = null;
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -32,10 +31,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isFarcasterConnected, setIsFarcasterConnected] = useState(false);
   const [farcasterUsername, setFarcasterUsername] = useState("");
   const [farcasterFid, setFarcasterFid] = useState("");
+  const [ethersProvider, setEthersProvider] = useState<BrowserProvider | null>(null);
 
   const getProvider = useCallback((): BrowserProvider | null => {
     return ethersProvider;
-  }, []);
+  }, [ethersProvider]);
 
   const refreshBalance = useCallback(async (address?: string) => {
     try {
@@ -86,12 +86,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           
           if (ethProvider) {
             console.log("Using Farcaster provider for restore");
-            ethersProvider = new BrowserProvider(ethProvider);
+            const provider = new BrowserProvider(ethProvider);
+            setEthersProvider(provider);
             
             // Wait a bit for provider to be ready
             setTimeout(async () => {
               try {
-                const balance = await ethersProvider!.getBalance(address);
+                const balance = await provider.getBalance(address);
                 const balanceEth = formatEther(balance);
                 const formatted = parseFloat(balanceEth).toFixed(4);
                 console.log("Balance fetched:", formatted, "ETH");
@@ -133,7 +134,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (ethProvider) {
         console.log("Using Farcaster wallet provider");
         // Use Farcaster's provider
-        ethersProvider = new BrowserProvider(ethProvider);
+        const provider = new BrowserProvider(ethProvider);
+        setEthersProvider(provider);
         
         // Request accounts
         const accounts = await ethProvider.request({ method: "eth_requestAccounts" });
@@ -228,7 +230,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setIsWalletConnected(false);
     setWalletAddress("");
     setWalletBalance("0.0000");
-    ethersProvider = null;
+    setEthersProvider(null);
     localStorage.removeItem("basedmem_wallet");
   }, []);
 
