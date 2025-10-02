@@ -64,16 +64,43 @@ contract BondingCurveToken is ERC20, Ownable {
         require(!graduated, "Token has graduated");
         require(msg.value > 0, "Must send ETH");
         
-        // Calculate how many tokens can be bought with sent ETH
-        // Binary search for token amount (simplified: use approximation)
-        uint256 tokenAmount = (msg.value * INITIAL_SUPPLY) / (K_MULTIPLIER * (circulatingSupply + 1));
+        // Use iterative approach to find correct token amount
+        // Start with estimate at minimum price
+        uint256 minPrice = K_MULTIPLIER / 1000;
+        uint256 tokenAmount = (msg.value * 1e18) / minPrice;
         
-        // Refine: calculate exact cost and adjust
-        uint256 actualCost = getBuyPrice(tokenAmount);
-        if (actualCost > msg.value) {
-            tokenAmount = (tokenAmount * msg.value) / actualCost;
+        // Cap at remaining supply
+        uint256 remainingSupply = INITIAL_SUPPLY - circulatingSupply;
+        if (tokenAmount > remainingSupply) {
+            tokenAmount = remainingSupply;
         }
         
+        // Refine using actual bonding curve price (max 5 iterations)
+        for (uint i = 0; i < 5; i++) {
+            uint256 actualCost = getBuyPrice(tokenAmount);
+            
+            if (actualCost <= msg.value) {
+                // Can afford this amount, try slightly more
+                uint256 deficit = msg.value - actualCost;
+                if (deficit == 0) break;
+                
+                uint256 avgPrice = (K_MULTIPLIER * (circulatingSupply + tokenAmount/2)) / INITIAL_SUPPLY;
+                if (avgPrice < minPrice) avgPrice = minPrice;
+                
+                uint256 additionalTokens = (deficit * 1e18) / avgPrice;
+                if (additionalTokens == 0) break;
+                
+                tokenAmount += additionalTokens;
+                if (tokenAmount > remainingSupply) tokenAmount = remainingSupply;
+            } else {
+                // Too expensive, reduce amount
+                tokenAmount = (tokenAmount * msg.value) / actualCost;
+            }
+        }
+        
+        // Final validation
+        uint256 finalCost = getBuyPrice(tokenAmount);
+        require(finalCost <= msg.value, "Insufficient ETH");
         require(tokenAmount > 0, "Invalid token amount");
         require(balanceOf(address(this)) >= tokenAmount, "Insufficient token supply");
         require(circulatingSupply + tokenAmount <= INITIAL_SUPPLY, "Exceeds supply");
