@@ -272,59 +272,73 @@ export default function TokenDetail() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="p-6">
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20 ring-4 ring-primary/20">
+    <div className="max-w-7xl mx-auto px-4 py-4 lg:py-8">
+      <div className="grid lg:grid-cols-3 gap-4 lg:gap-8">
+        {/* Trading Interface - First on mobile, last on desktop */}
+        <div className="order-first lg:order-last lg:col-span-1">
+          <div className="lg:sticky lg:top-24">
+            <TradingInterface 
+              token={token}
+              userBalance={walletBalance}
+              userTokenBalance={userHolding?.amount || "0"}
+              onBuy={handleBuy}
+              onSell={handleSell}
+            />
+          </div>
+        </div>
+
+        {/* Token Details */}
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+          <Card className="p-4 lg:p-6">
+            <div className="flex items-start justify-between gap-3 mb-4 lg:mb-6">
+              <div className="flex items-center gap-3 lg:gap-4">
+                <Avatar className="h-14 w-14 lg:h-20 lg:w-20 ring-2 lg:ring-4 ring-primary/20">
                   <AvatarImage src={token.logoUrl || undefined} alt={token.name} />
-                  <AvatarFallback className="text-2xl font-bold">
+                  <AvatarFallback className="text-xl lg:text-2xl font-bold">
                     {token.symbol.slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-3xl font-black">{token.name}</h1>
+                    <h1 className="text-xl lg:text-3xl font-black">{token.name}</h1>
                     {token.isVerified && (
-                      <Badge className="bg-primary/20 text-primary">Verified</Badge>
+                      <Badge className="bg-primary/20 text-primary text-xs">Verified</Badge>
                     )}
                   </div>
-                  <p className="text-lg text-muted-foreground uppercase">${token.symbol}</p>
+                  <p className="text-sm lg:text-lg text-muted-foreground uppercase">${token.symbol}</p>
                   
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-1 lg:gap-2 mt-2">
                     {token.twitterUrl && (
                       <a href={token.twitterUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-twitter">
-                          <Twitter className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-twitter">
+                          <Twitter className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
                       </a>
                     )}
                     {token.telegramUrl && (
                       <a href={token.telegramUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-telegram">
-                          <Send className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-telegram">
+                          <Send className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
                       </a>
                     )}
                     {token.websiteUrl && (
                       <a href={token.websiteUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="sm" className="gap-2 h-8" data-testid="button-website">
-                          <Globe className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 lg:h-8 lg:w-8" data-testid="button-website">
+                          <Globe className="h-3 w-3 lg:h-4 lg:w-4" />
                         </Button>
                       </a>
                     )}
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="gap-2 h-8" 
+                      className="gap-1 h-7 lg:h-8 px-2" 
                       onClick={shareToFarcaster}
                       data-testid="button-share-farcaster"
                     >
-                      <SiFarcaster className="h-4 w-4" />
-                      <span className="text-xs">Share</span>
+                      <SiFarcaster className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="text-xs hidden lg:inline">Share</span>
                     </Button>
                     <PriceAlertDialog token={token} onCreateAlert={handleCreateAlert} />
                   </div>
@@ -332,33 +346,33 @@ export default function TokenDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="p-4 bg-muted/30 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 lg:gap-4 mb-4 lg:mb-6">
+              <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Price</p>
-                <p className="font-mono font-semibold text-lg">${token.currentPrice}</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${token.currentPrice}</p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Market Cap</p>
-                <p className="font-mono font-semibold text-lg">${(parseFloat(token.marketCap) / 1000).toFixed(0)}K</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(token.marketCap) / 1000).toFixed(0)}K</p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Volume 24h</p>
-                <p className="font-mono font-semibold text-lg">${(parseFloat(token.volume24h) / 1000).toFixed(0)}K</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">${(parseFloat(token.volume24h) / 1000).toFixed(0)}K</p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-2 lg:p-4 bg-muted/30 rounded-lg">
                 <p className="text-xs uppercase text-muted-foreground font-semibold mb-1">Holders</p>
-                <p className="font-mono font-semibold text-lg">{token.holderCount}</p>
+                <p className="font-mono font-semibold text-sm lg:text-lg">{token.holderCount}</p>
               </div>
             </div>
 
-            <div>
+            <div className="hidden lg:block">
               <h3 className="font-bold text-lg mb-2">About</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {token.description}
               </p>
             </div>
 
-            <div className="pt-4 border-t border-border">
+            <div className="pt-3 lg:pt-4 border-t border-border hidden lg:block">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Contract Address</span>
                 <div className="flex items-center gap-2">
@@ -373,7 +387,7 @@ export default function TokenDetail() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-4 lg:p-6 hidden lg:block">
             <h3 className="font-bold text-lg mb-4">Recent Trades</h3>
             <div className="space-y-3">
               {recentTrades.map((trade, i) => (
@@ -395,18 +409,6 @@ export default function TokenDetail() {
               ))}
             </div>
           </Card>
-        </div>
-
-        <div className="lg:col-span-1">
-          <div className="sticky top-24">
-            <TradingInterface 
-              token={token}
-              userBalance={walletBalance}
-              userTokenBalance={userHolding?.amount || "0"}
-              onBuy={handleBuy}
-              onSell={handleSell}
-            />
-          </div>
         </div>
       </div>
     </div>
