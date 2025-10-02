@@ -8,10 +8,12 @@ contract BondingCurveToken is ERC20, Ownable {
     uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10**18; // 1B tokens
     uint256 public constant GRADUATION_THRESHOLD = 30 ether; // 30 ETH to graduate
     uint256 public reserveBalance; // ETH in bonding curve
+    uint256 public circulatingSupply; // Tokens sold from bonding curve
     bool public graduated;
     
-    // Bonding curve parameters (linear: price = reserveBalance * slope / totalSupply)
-    uint256 public constant CURVE_SLOPE = 1e15; // 0.001 ETH per token initially
+    // Bonding curve: price = (k * circulatingSupply) / INITIAL_SUPPLY
+    // k = initial price multiplier
+    uint256 public constant K_MULTIPLIER = 1e15; // 0.001 ETH base price
     
     address public factory;
     
@@ -28,21 +30,33 @@ contract BondingCurveToken is ERC20, Ownable {
         _mint(address(this), INITIAL_SUPPLY);
     }
     
-    // Calculate token price based on current reserve (linear bonding curve)
+    // Linear bonding curve: price increases with circulating supply
+    // Cost to buy tokenAmount starting from current circulatingSupply
     function getBuyPrice(uint256 tokenAmount) public view returns (uint256) {
         require(!graduated, "Token has graduated");
-        // Simple linear pricing: more ETH in reserve = higher price
-        uint256 currentPrice = (reserveBalance * 1e18) / totalSupply();
-        if (currentPrice < CURVE_SLOPE) currentPrice = CURVE_SLOPE;
-        return (tokenAmount * currentPrice) / 1e18;
+        require(circulatingSupply + tokenAmount <= INITIAL_SUPPLY, "Exceeds supply");
+        
+        // Price = k * (circulatingSupply + tokenAmount/2)
+        // This is average price over the buy
+        uint256 avgSupply = circulatingSupply + (tokenAmount / 2);
+        uint256 avgPrice = (K_MULTIPLIER * avgSupply) / INITIAL_SUPPLY;
+        if (avgPrice < K_MULTIPLIER / 1000) avgPrice = K_MULTIPLIER / 1000; // Minimum price
+        
+        return (tokenAmount * avgPrice) / 1e18;
     }
     
+    // Sell price mirrors buy price minus 0.3% fee
     function getSellPrice(uint256 tokenAmount) public view returns (uint256) {
         require(!graduated, "Token has graduated");
-        uint256 currentPrice = (reserveBalance * 1e18) / totalSupply();
-        if (currentPrice < CURVE_SLOPE) currentPrice = CURVE_SLOPE;
-        // Sell price is slightly lower (0.3% fee)
-        return ((tokenAmount * currentPrice) / 1e18) * 997 / 1000;
+        require(tokenAmount <= circulatingSupply, "Exceeds circulating");
+        
+        // Price at midpoint of sell range
+        uint256 avgSupply = circulatingSupply - (tokenAmount / 2);
+        uint256 avgPrice = (K_MULTIPLIER * avgSupply) / INITIAL_SUPPLY;
+        if (avgPrice < K_MULTIPLIER / 1000) avgPrice = K_MULTIPLIER / 1000;
+        
+        // 0.3% fee stays in reserve
+        return ((tokenAmount * avgPrice) / 1e18) * 997 / 1000;
     }
     
     // Buy tokens with ETH
@@ -50,11 +64,22 @@ contract BondingCurveToken is ERC20, Ownable {
         require(!graduated, "Token has graduated");
         require(msg.value > 0, "Must send ETH");
         
-        uint256 tokenAmount = (msg.value * 1e18) / getBuyPrice(1e18);
+        // Calculate how many tokens can be bought with sent ETH
+        // Binary search for token amount (simplified: use approximation)
+        uint256 tokenAmount = (msg.value * INITIAL_SUPPLY) / (K_MULTIPLIER * (circulatingSupply + 1));
+        
+        // Refine: calculate exact cost and adjust
+        uint256 actualCost = getBuyPrice(tokenAmount);
+        if (actualCost > msg.value) {
+            tokenAmount = (tokenAmount * msg.value) / actualCost;
+        }
+        
         require(tokenAmount > 0, "Invalid token amount");
         require(balanceOf(address(this)) >= tokenAmount, "Insufficient token supply");
+        require(circulatingSupply + tokenAmount <= INITIAL_SUPPLY, "Exceeds supply");
         
         reserveBalance += msg.value;
+        circulatingSupply += tokenAmount;
         _transfer(address(this), msg.sender, tokenAmount);
         
         emit TokensPurchased(msg.sender, msg.value, tokenAmount);
@@ -70,11 +95,13 @@ contract BondingCurveToken is ERC20, Ownable {
         require(!graduated, "Token has graduated");
         require(tokenAmount > 0, "Must sell positive amount");
         require(balanceOf(msg.sender) >= tokenAmount, "Insufficient token balance");
+        require(tokenAmount <= circulatingSupply, "Exceeds circulating supply");
         
         uint256 ethAmount = getSellPrice(tokenAmount);
         require(reserveBalance >= ethAmount, "Insufficient reserve");
         
         _transfer(msg.sender, address(this), tokenAmount);
+        circulatingSupply -= tokenAmount;
         reserveBalance -= ethAmount;
         
         (bool success, ) = msg.sender.call{value: ethAmount}("");
@@ -94,12 +121,12 @@ contract BondingCurveToken is ERC20, Ownable {
     function getStats() external view returns (
         uint256 price,
         uint256 reserve,
-        uint256 supply,
+        uint256 circulating,
         bool isGraduated
     ) {
-        price = getBuyPrice(1e18);
+        price = circulatingSupply > 0 ? getBuyPrice(1e18) : K_MULTIPLIER / 1000;
         reserve = reserveBalance;
-        supply = totalSupply() - balanceOf(address(this));
+        circulating = circulatingSupply;
         isGraduated = graduated;
     }
     

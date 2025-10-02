@@ -1,7 +1,7 @@
-import type { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+require("@nomicfoundation/hardhat-toolbox");
 
-const config: HardhatUserConfig = {
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
@@ -13,14 +13,14 @@ const config: HardhatUserConfig = {
   },
   networks: {
     base: {
-      url: "https://mainnet.base.org",
+      url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
       chainId: 8453,
-      accounts: [], // Will be provided by user's wallet
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     baseSepolia: {
       url: "https://sepolia.base.org",
       chainId: 84532,
-      accounts: [], // Test network
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     hardhat: {
       chainId: 31337,
@@ -33,5 +33,3 @@ const config: HardhatUserConfig = {
     artifacts: "./artifacts",
   },
 };
-
-export default config;
