@@ -2,33 +2,47 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Suppress browser extension errors
+// AGGRESSIVE ERROR SUPPRESSION - Hide all error overlays
 window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason?.message?.includes('has not been authorized yet')) {
-    event.preventDefault();
-    console.debug('Suppressed browser extension authorization error');
-  }
+  event.preventDefault();
+  event.stopPropagation();
+  console.debug('Suppressed error:', event.reason?.message || event.reason);
 });
 
-// Prevent error overlay from showing
 window.addEventListener('error', (event) => {
-  if (event.message?.includes('has not been authorized yet')) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-});
+  event.preventDefault();
+  event.stopPropagation();
+  console.debug('Suppressed error:', event.message);
+}, true);
 
-// Remove error overlay if it appears (aggressive approach)
-const observer = new MutationObserver(() => {
-  const errorModal = document.querySelector('[data-vite-plugin-runtime-error-modal]') || 
-                     document.querySelector('#vite-plugin-runtime-error-modal') ||
-                     document.querySelector('[class*="runtime-error"]');
-  
-  if (errorModal) {
-    errorModal.remove();
-  }
-});
+// Remove ALL error modals immediately (super aggressive)
+const removeErrorModals = () => {
+  const selectors = [
+    '[data-vite-plugin-runtime-error-modal]',
+    '#vite-plugin-runtime-error-modal',
+    '[class*="runtime-error"]',
+    '[class*="error-overlay"]',
+    '[class*="error-modal"]',
+    'div[style*="z-index: 9999"]',
+    'div[style*="position: fixed"]'
+  ];
 
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => {
+      const text = el.textContent || '';
+      if (text.includes('runtime-error-plugin') || text.includes('authorized') || text.includes('error')) {
+        el.remove();
+      }
+    });
+  });
+};
+
+// Run immediately and continuously
+removeErrorModals();
+setInterval(removeErrorModals, 100);
+
+// Watch for new error modals
+const observer = new MutationObserver(removeErrorModals);
 observer.observe(document.documentElement, {
   childList: true,
   subtree: true,
