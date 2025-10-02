@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@/contexts/WalletContext";
 import { BONDING_CURVE_TOKEN_ABI } from "@/lib/contracts";
-import { Contract, parseEther, formatEther } from "ethers";
+import { Contract, parseEther, formatEther, parseUnits } from "ethers";
 import { queryClient } from "@/lib/queryClient";
 
 export default function TokenDetail() {
@@ -333,8 +333,10 @@ export default function TokenDetail() {
         throw new Error("Token has no contract address");
       }
 
-      const tokenAmount = parseFloat(amount);
-      if (isNaN(tokenAmount) || tokenAmount <= 0) {
+      // Validate amount is a valid number string
+      const trimmedAmount = amount.trim();
+      const tokenAmountNum = parseFloat(trimmedAmount);
+      if (isNaN(tokenAmountNum) || tokenAmountNum <= 0) {
         toast({
           title: "Invalid Amount",
           description: "Please enter a valid amount",
@@ -344,7 +346,7 @@ export default function TokenDetail() {
         return;
       }
 
-      const ethValue = tokenAmount * parseFloat(enhancedToken.currentPrice);
+      const ethValue = tokenAmountNum * parseFloat(enhancedToken.currentPrice);
 
       let provider = getProvider();
       if (!provider) {
@@ -383,7 +385,12 @@ export default function TokenDetail() {
 
       console.log("Calling BondingCurveToken.sell() on contract:", enhancedToken.contractAddress);
       
-      const tx = await contract.sell(BigInt(Math.floor(tokenAmount)), {
+      // Convert token amount to 18 decimals (e.g., 100 SLICE → 100 * 10^18)
+      // Use trimmed string directly to avoid scientific notation issues
+      const tokenAmountWei = parseUnits(trimmedAmount, 18);
+      console.log("Selling token amount (wei):", tokenAmountWei.toString());
+      
+      const tx = await contract.sell(tokenAmountWei, {
         gasLimit: 300000
       });
 
@@ -432,7 +439,7 @@ export default function TokenDetail() {
           userId: userData.id,
           tokenId: enhancedToken.id,
           type: "sell",
-          amount: tokenAmount.toString(),
+          amount: tokenAmountNum.toString(),
           price: enhancedToken.currentPrice,
           totalValue: ethValue.toString(),
           gasFee,
@@ -441,7 +448,7 @@ export default function TokenDetail() {
 
       const currentHolding = userHolding;
       if (currentHolding) {
-        const newAmount = parseFloat(currentHolding.amount) - tokenAmount;
+        const newAmount = parseFloat(currentHolding.amount) - tokenAmountNum;
         
         if (newAmount <= 0.001) {
           await fetch(`/api/holdings/${currentHolding.id}`, {
@@ -464,7 +471,7 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${ethValue.toFixed(4)} ETH`,
+        description: `Successfully sold ${tokenAmountNum.toFixed(2)} ${enhancedToken.symbol} for ${ethValue.toFixed(4)} ETH`,
       });
     } catch (error: any) {
       console.error("Sell error - full details:", {
