@@ -178,27 +178,6 @@ export default function TokenDetail() {
 
       const signer = await provider.getSigner();
       const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, signer);
-
-      // Check bonding curve state BEFORE buying
-      const { JsonRpcProvider: ReadProvider } = await import("ethers");
-      const readProvider = new ReadProvider("https://mainnet.base.org");
-      const readContract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, readProvider);
-      
-      const circulatingSupply = await readContract.circulatingSupply();
-      const reserveBalance = await readContract.reserveBalance();
-      const { formatEther } = await import("ethers");
-      
-      console.log("=== BONDING CURVE STATE ===");
-      console.log("Circulating Supply:", formatEther(circulatingSupply), "SLICE");
-      console.log("Reserve Balance:", formatEther(reserveBalance), "ETH");
-      console.log("Your buy amount:", amount, "ETH");
-      
-      // Estimate tokens you'll receive
-      const estimatedTokens = await readContract.getBuyPrice.staticCall(parseEther("1"));
-      console.log("Price per 1 token:", formatEther(estimatedTokens), "ETH");
-      console.log("=========================");
-
-      console.log("Calling BondingCurveToken.buy() on contract:", enhancedToken.contractAddress);
       
       const tx = await contract.buy({ 
         value: parseEther(amount),
@@ -249,9 +228,6 @@ export default function TokenDetail() {
         return;
       }
 
-      console.log("Transaction confirmed successfully:", receipt.hash);
-      console.log("Total logs in receipt:", receipt.logs.length);
-
       // Extract actual token amount from TokensPurchased event
       const { Interface } = await import("ethers");
       const iface = new Interface(BONDING_CURVE_TOKEN_ABI);
@@ -261,9 +237,6 @@ export default function TokenDetail() {
       const contractLogs = receipt.logs.filter(
         log => log.address.toLowerCase() === enhancedToken.contractAddress!.toLowerCase()
       );
-      
-      console.log("Contract address:", enhancedToken.contractAddress);
-      console.log("Filtered logs for this contract:", contractLogs.length);
 
       for (const log of contractLogs) {
         try {
@@ -272,23 +245,16 @@ export default function TokenDetail() {
             data: log.data
           });
           
-          console.log("Parsed event:", parsed?.name);
-          
           if (parsed && parsed.name === 'TokensPurchased') {
-            console.log("Raw tokenAmount from event (wei):", parsed.args.tokenAmount.toString());
-            
             // Convert from wei to token amount (18 decimals)
             const { formatUnits } = await import("ethers");
             actualTokenAmount = formatUnits(parsed.args.tokenAmount, 18);
-            console.log("Formatted token amount:", actualTokenAmount);
             break;
           }
         } catch (e) {
-          console.error("Failed to parse log:", e);
+          // Skip non-matching logs
         }
       }
-
-      console.log("Final actualTokenAmount before validation:", actualTokenAmount);
 
       if (actualTokenAmount === "0") {
         throw new Error("Failed to extract token amount from transaction. Please check BaseScan.");
