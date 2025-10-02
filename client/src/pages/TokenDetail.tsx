@@ -17,6 +17,7 @@ import { useSendTransaction, useWaitForTransactionReceipt, useAccount, useWriteC
 import { parseEther } from "viem";
 import { useEffect } from "react";
 import { BONDING_CURVE_TOKEN_ABI } from "@/lib/contracts";
+import { base } from "wagmi/chains";
 
 export default function TokenDetail() {
   const [, params] = useRoute("/token/:id");
@@ -303,6 +304,7 @@ export default function TokenDetail() {
         abi: BONDING_CURVE_TOKEN_ABI,
         functionName: 'buy',
         value: parseEther(amount),
+        chainId: base.id,
       });
       
       // Store pending purchase details for useEffect to process after confirmation
@@ -363,6 +365,7 @@ export default function TokenDetail() {
         abi: BONDING_CURVE_TOKEN_ABI,
         functionName: 'sell',
         args: [BigInt(Math.floor(tokenAmount))],
+        chainId: base.id,
       });
 
       // Store pending sale for useEffect to process after confirmation

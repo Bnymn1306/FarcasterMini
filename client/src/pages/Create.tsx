@@ -5,17 +5,19 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { InsertToken } from "@shared/schema";
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
 import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
 import { parseEther, decodeEventLog } from "viem";
 import { useEffect, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
+import { base } from "wagmi/chains";
 
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { walletAddress } = useWallet();
   const [pendingToken, setPendingToken] = useState<any>(null);
+  const { connector } = useAccount();
 
   const { data: hash, writeContract, isPending: isSendingTx, error: txError, isError: isTxError } = useWriteContract();
   
@@ -222,6 +224,7 @@ export default function Create() {
         abi: TOKEN_FACTORY_ABI,
         functionName: 'createToken',
         args: [data.name, data.symbol],
+        chainId: base.id,
       });
 
       // useEffect will handle the rest after blockchain confirmation
