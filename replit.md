@@ -190,41 +190,46 @@ The application follows comprehensive design guidelines defined in `design_guide
   - Script: `npm run deploy` (deploys TokenFactory to Base Sepolia)
   - Sets `VITE_FACTORY_CONTRACT_ADDRESS` for frontend to interact with factory
 
-### Phase 4: Base Mainnet Simulated Deployment (October 2, 2025)
+### Phase 4: Base Mainnet Real Contract Deployment (October 2, 2025)
 
-- **Simulated Token Deployment**: Implemented gasless token creation using daily check-in pattern
-  - Frontend generates deterministic mock contract address: `0x{hex(tokenName+symbol)}`
-  - Simulated transaction via `eth_sendTransaction` (self-transaction) shows wallet popup with 0.00003 ETH gas fee
-  - No real blockchain deployment - works on Base Mainnet without requiring ETH
-  - Mock contract address saved to database for UI display
+- **Production TokenFactory Deployment**: Deployed TokenFactory to Base Mainnet at `0xfBCe5D06a4fB74325e2154d2dc6b998AC5e91A5c`
+  - Uses deployer private key from Replit Secrets (DEPLOYER_PRIVATE_KEY)
+  - Factory contract stored in `client/.env` as `VITE_FACTORY_CONTRACT_ADDRESS`
+  - Verified on BaseScan for public transparency
 
-- **Critical Bug Fixes**:
-  - **Storage Override Bug**: Fixed `DBStorage.createToken()` and `MemStorage.createToken()` hardcoding `contractAddress: null`
-    - Changed to: `contractAddress: insertToken.contractAddress ?? null` (preserves incoming value)
-  - **Frontend Field Mismatch**: Fixed mutation sending wrong field name
-    - Changed from: `creatorId: walletAddress` → To: `creatorWalletAddress: walletAddress`
-  - **Backend Conversion**: Routes properly convert `creatorWalletAddress` → `creatorId` by finding/creating user
+- **Real Token Creation Flow**: Create.tsx now deploys genuine BondingCurveToken contracts
+  - `handleSubmit()` calls `TokenFactory.createToken(name, symbol)` via wagmi's `useWriteContract`
+  - Wallet popup shows real gas fees (not simulated)
+  - `useEffect` listens for blockchain confirmation via `useWaitForTransactionReceipt`
+  - Event logs parsed to extract deployed `BondingCurveToken` address from `TokenCreated` event
+  - Contract address saved to database ONLY after blockchain confirmation
+  - Farcaster cast + redirect to /browse after successful deployment
 
-- **Complete Flow**:
-  1. User fills token creation form on /create
-  2. Frontend generates mock contract address from token name+symbol
-  3. Simulated wallet popup shows 0.00003 ETH gas fee (like daily check-in)
-  4. POST /api/tokens with `creatorWalletAddress` and `contractAddress`
-  5. Backend finds/creates user by wallet, sets `creatorId`
-  6. Storage preserves both `contractAddress` and `creatorId` (no override)
-  7. Token appears on /browse page with valid contract address and creator attribution
+- **Real Buy/Sell Flows**: TokenDetail.tsx now interacts with deployed BondingCurveToken contracts
+  - **Buy**: Calls `BondingCurveToken.buy()` payable function
+    - User sends ETH directly to token contract (not platform wallet)
+    - Bonding curve pricing applied automatically by smart contract
+    - Database updates holdings after blockchain confirmation
+  - **Sell**: Calls `BondingCurveToken.sell(tokenAmount)` function
+    - Contract burns tokens and returns ETH to user's wallet
+    - Database reduces/deletes holdings after confirmation
+  - All transactions go through user's own wallet (complete decentralization)
 
-- **Mock Wallet Support**: Uses `0x0000000000000000000000000000000000000000` as fallback when no wallet connected
+- **Critical Changes**:
+  - Removed mock contract detection logic
+  - Removed platform wallet transfers (0x8988...3C17 no longer used)
+  - Removed backend `/api/sell` ETH payout (contract handles it)
+  - All ETH transfers now happen on-chain between user wallets and token contracts
+  - Database is source of truth only for metadata, not financial state
 
 ### Known Limitations / Future Enhancements
-- **Real Deployment**: Currently using simulated deployment - future: integrate TokenFactory contract for real Base Mainnet deployment
-- **Graduation Flow**: Contract has graduation logic, but Uniswap pool creation not yet implemented
-- **Platform Sell Transfers**: Backend `/api/sell` ETH payout requires `PLATFORM_PRIVATE_KEY` (currently commented out)
-- **Price Discovery**: Database still stores price/volume/market cap for UI display (contracts are source of truth for trades)
+- **Graduation Flow**: Contract has graduation logic (10 ETH threshold), but automated Uniswap pool creation not yet implemented
+- **Price Discovery**: Database still stores price/volume/market cap for UI display - should migrate to reading directly from contracts
 - **Token Metadata**: IPFS/on-chain metadata storage not implemented (database stores name/symbol/description)
+- **Bonding Curve Pricing**: Frontend still uses database price instead of calling contract's `getBuyPrice()`/`getSellPrice()` functions
 - **Future Features**: 
-  - Real TokenFactory deployment on Base Mainnet (replace simulated deployment)
   - Automated Uniswap V2/V3 pool creation at graduation threshold
   - On-chain metadata via tokenURI standard
   - LP token locking mechanisms
-  - Cross-chain bridging to mainnet Base
+  - Real-time price feeds from contract state
+  - Contract event indexing for trade history
