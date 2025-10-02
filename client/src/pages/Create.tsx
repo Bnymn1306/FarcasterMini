@@ -5,9 +5,9 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { InsertToken } from "@shared/schema";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
-import { parseEther } from "viem";
+import { parseEther, decodeEventLog } from "viem";
 import { useEffect, useState } from "react";
 
 export default function Create() {
@@ -18,15 +18,46 @@ export default function Create() {
 
   const { data: hash, writeContract, isPending: isSendingTx, error: txError } = useWriteContract();
   
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
 
   useEffect(() => {
-    if (isConfirmed && pendingToken && hash) {
-      console.log("Transaction confirmed, saving token to database...");
+    if (isConfirmed && pendingToken && hash && receipt) {
+      console.log("Transaction confirmed, extracting contract address...");
       
-      createTokenMutation.mutateAsync(pendingToken)
+      // Extract contract address from TokenCreated event logs
+      let contractAddress = "";
+      
+      try {
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({
+              abi: TOKEN_FACTORY_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            
+            if (decoded.eventName === 'TokenCreated') {
+              contractAddress = (decoded.args as any).tokenAddress;
+              console.log("Contract address from event:", contractAddress);
+              break;
+            }
+          } catch (e) {
+            // Not our event, skip
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing event logs:", error);
+      }
+      
+      // Add contract address to token data
+      const tokenDataWithContract = {
+        ...pendingToken,
+        contractAddress: contractAddress || null,
+      };
+      
+      createTokenMutation.mutateAsync(tokenDataWithContract)
         .then(() => {
           toast({
             title: "Token Deployed! 🚀",
@@ -63,7 +94,7 @@ export default function Create() {
       
       setPendingToken(null);
     }
-  }, [isConfirmed, pendingToken, hash]);
+  }, [isConfirmed, pendingToken, hash, receipt]);
 
   const createTokenMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -164,7 +195,6 @@ export default function Create() {
         args: [
           data.name,
           data.symbol,
-          BigInt(data.totalSupply),
         ],
       });
 
