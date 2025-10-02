@@ -32,6 +32,7 @@ export function TradingInterface({
   const [buySliderValue, setBuySliderValue] = useState([50]);
   const [sellSliderValue, setSellSliderValue] = useState([50]);
   const [chartPeriod, setChartPeriod] = useState("24H");
+  const [sellPriceETH, setSellPriceETH] = useState("0");
 
   // Initialize buyAmount based on initial slider value
   useEffect(() => {
@@ -46,6 +47,57 @@ export function TradingInterface({
     setSellAmount(initialSellAmount);
     console.log('Initial sellAmount set to:', initialSellAmount);
   }, [userTokenBalance]);
+
+  // Memoize provider and contract to avoid recreation on every render
+  const { provider: memoizedProvider, contract: memoizedContract } = useMemo(() => {
+    if (!token.contractAddress) {
+      return { provider: null, contract: null };
+    }
+
+    let provider: any = null;
+    let contract: any = null;
+
+    (async () => {
+      const { JsonRpcProvider, Contract } = await import("ethers");
+      const { BONDING_CURVE_TOKEN_ABI } = await import("@/lib/contracts");
+      
+      provider = new JsonRpcProvider("https://mainnet.base.org");
+      contract = new Contract(token.contractAddress!, BONDING_CURVE_TOKEN_ABI, provider);
+    })();
+
+    return { provider, contract };
+  }, [token.contractAddress]);
+
+  // Calculate sell price using bonding curve getSellPrice() with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (!sellAmount || parseFloat(sellAmount) <= 0 || !token.contractAddress) {
+        setSellPriceETH("0");
+        return;
+      }
+
+      try {
+        const { Contract, parseUnits, formatUnits, JsonRpcProvider } = await import("ethers");
+        const { BONDING_CURVE_TOKEN_ABI } = await import("@/lib/contracts");
+        
+        // Use Base RPC to query contract
+        const provider = new JsonRpcProvider("https://mainnet.base.org");
+        const contract = new Contract(token.contractAddress, BONDING_CURVE_TOKEN_ABI, provider);
+        
+        // Convert sell amount to wei and get sell price
+        const tokenAmountWei = parseUnits(sellAmount, 18);
+        const sellPriceWei = await contract.getSellPrice(tokenAmountWei);
+        const sellPriceFormatted = formatUnits(sellPriceWei, 18);
+        
+        setSellPriceETH(sellPriceFormatted);
+      } catch (error) {
+        console.error("Error fetching sell price:", error);
+        setSellPriceETH("0");
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [sellAmount, token.contractAddress]);
 
   const handleBuy = () => {
     console.log('=== BUY CLICKED ===');
@@ -335,7 +387,7 @@ export function TradingInterface({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You'll receive</span>
               <span className="font-mono font-semibold">
-                ~{sellAmount ? (parseFloat(sellAmount) * parseFloat(token.currentPrice)).toFixed(4) : '0'} ETH
+                ~{parseFloat(sellPriceETH).toFixed(6)} ETH
               </span>
             </div>
             <div className="flex justify-between text-sm">

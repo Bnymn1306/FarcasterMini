@@ -232,6 +232,39 @@ export default function TokenDetail() {
 
       console.log("Transaction confirmed successfully:", receipt.hash);
 
+      // Extract actual token amount from TokensPurchased event
+      const { Interface } = await import("ethers");
+      const iface = new Interface(BONDING_CURVE_TOKEN_ABI);
+      let actualTokenAmount = "0";
+
+      // Filter logs by contract address to avoid parsing unrelated logs
+      const contractLogs = receipt.logs.filter(
+        log => log.address.toLowerCase() === enhancedToken.contractAddress!.toLowerCase()
+      );
+
+      for (const log of contractLogs) {
+        try {
+          const parsed = iface.parseLog({
+            topics: log.topics as string[],
+            data: log.data
+          });
+          
+          if (parsed && parsed.name === 'TokensPurchased') {
+            // Convert from wei to token amount (18 decimals)
+            const { formatUnits } = await import("ethers");
+            actualTokenAmount = formatUnits(parsed.args.tokenAmount, 18);
+            console.log("Actual tokens purchased from event:", actualTokenAmount);
+            break;
+          }
+        } catch (e) {
+          console.error("Failed to parse log:", e);
+        }
+      }
+
+      if (actualTokenAmount === "0") {
+        throw new Error("Failed to extract token amount from transaction");
+      }
+
       const gasFee = "0.00012";
 
       let userResponse = await fetch(`/api/users?walletAddress=${walletAddress}`);
@@ -261,7 +294,7 @@ export default function TokenDetail() {
           userId: user.id,
           tokenId: enhancedToken.id,
           type: "buy",
-          amount: normalizedTokenAmount.toString(),
+          amount: actualTokenAmount,
           price: enhancedToken.currentPrice,
           totalValue: amount,
           gasFee,
@@ -278,7 +311,7 @@ export default function TokenDetail() {
         body: JSON.stringify({
           userId: user.id,
           tokenId: enhancedToken.id,
-          amount: normalizedTokenAmount.toString(),
+          amount: actualTokenAmount,
           price: enhancedToken.currentPrice,
         }),
       });
@@ -293,7 +326,7 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 🎉",
-        description: `Successfully bought ${normalizedTokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${amount} ETH`,
+        description: `Successfully bought ${parseFloat(actualTokenAmount).toFixed(2)} ${enhancedToken.symbol} for ${amount} ETH`,
       });
     } catch (error: any) {
       console.error("Buy error - full details:", {
@@ -398,14 +431,45 @@ export default function TokenDetail() {
         });
       }
 
+      // Check actual on-chain balance before selling using read-only provider
+      let actualBalance;
+      let actualBalanceFormatted;
+      try {
+        const { JsonRpcProvider } = await import("ethers");
+        const readOnlyProvider = new JsonRpcProvider("https://mainnet.base.org");
+        const readOnlyContract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, readOnlyProvider);
+        
+        actualBalance = await readOnlyContract.balanceOf(walletAddress);
+        const { formatUnits } = await import("ethers");
+        actualBalanceFormatted = formatUnits(actualBalance, 18);
+        console.log("Actual on-chain balance:", actualBalanceFormatted, enhancedToken.symbol);
+      } catch (balanceError: any) {
+        console.error("Failed to check balance:", balanceError);
+        toast({
+          title: "Balance Check Failed ⚠️",
+          description: "Unable to verify your token balance. Please try again.",
+          variant: "destructive",
+        });
+        setIsTrading(false);
+        return;
+      }
+
+      // Validate that user has enough tokens on-chain
+      const tokenAmountWei = parseUnits(normalizedAmountStr, 18);
+      if (actualBalance < tokenAmountWei) {
+        toast({
+          title: "Insufficient Balance ⚠️",
+          description: `You have ${parseFloat(actualBalanceFormatted).toFixed(2)} ${enhancedToken.symbol} on-chain, but trying to sell ${normalizedAmount.toFixed(2)}`,
+          variant: "destructive",
+        });
+        setIsTrading(false);
+        return;
+      }
+
       const signer = await provider.getSigner();
       const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, signer);
 
       console.log("Calling BondingCurveToken.sell() on contract:", enhancedToken.contractAddress);
-      
-      // Convert token amount to 18 decimals (e.g., 100 SLICE → 100 * 10^18)
-      // Use normalized amount to fix floating point precision issues
-      const tokenAmountWei = parseUnits(normalizedAmountStr, 18);
       console.log("Selling token amount (normalized):", normalizedAmountStr, "wei:", tokenAmountWei.toString());
       
       const tx = await contract.sell(tokenAmountWei, {
