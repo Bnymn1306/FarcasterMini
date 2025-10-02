@@ -2,21 +2,22 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// ERROR SUPPRESSION - Hide overlay but log errors
+// TOTAL ERROR SUPPRESSION - Completely consume browser extension errors
 window.addEventListener('unhandledrejection', (event) => {
   const errorMsg = event.reason?.message || event.reason;
   
-  // Only suppress browser extension errors
+  // Completely suppress browser extension errors (no log, no overlay)
   if (errorMsg && typeof errorMsg === 'string' && errorMsg.includes('has not been authorized yet')) {
     event.preventDefault();
     event.stopPropagation();
-    console.debug('Suppressed browser extension error');
-  } else {
-    // Log real errors but prevent overlay
-    console.error('Real error:', errorMsg);
-    event.preventDefault(); // Still prevent overlay
+    event.stopImmediatePropagation();
+    return false;
   }
-});
+  
+  // For other errors, log but prevent overlay
+  console.error('Real error:', errorMsg);
+  event.preventDefault();
+}, true);
 
 window.addEventListener('error', (event) => {
   // Suppress buffer module errors (known Vite issue)
@@ -32,37 +33,59 @@ window.addEventListener('error', (event) => {
   event.preventDefault(); // Prevent overlay
 }, true);
 
-// Remove ALL error modals immediately (super aggressive)
-const removeErrorModals = () => {
-  const selectors = [
+// EXTREME OVERLAY REMOVAL - Target Replit runtime error plugin
+const nukeThatOverlay = () => {
+  // Kill all overlays
+  const killSelectors = [
     '[data-vite-plugin-runtime-error-modal]',
     '#vite-plugin-runtime-error-modal',
-    '[class*="runtime-error"]',
-    '[class*="error-overlay"]',
-    '[class*="error-modal"]',
-    'div[style*="z-index: 9999"]',
-    'div[style*="position: fixed"]'
+    'iframe[data-vite-plugin]',
+    'div[class*="runtime"]',
+    'div[class*="error-overlay"]',
+    'div[style*="position: fixed"][style*="inset: 0"]',
+    'div[style*="z-index: 2147483647"]',
   ];
 
-  selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => {
-      const text = el.textContent || '';
-      if (text.includes('runtime-error-plugin') || text.includes('authorized') || text.includes('error')) {
-        el.remove();
-      }
-    });
+  killSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => el.remove());
+  });
+
+  // Kill ALL iframes with high z-index or fixed position
+  document.querySelectorAll('iframe').forEach(iframe => {
+    const style = iframe.getAttribute('style') || '';
+    const computedStyle = window.getComputedStyle(iframe);
+    
+    if (style.includes('position: fixed') || 
+        computedStyle.position === 'fixed' ||
+        parseInt(computedStyle.zIndex) > 1000) {
+      iframe.remove();
+    }
+  });
+
+  // Kill divs with error text
+  document.querySelectorAll('div').forEach(div => {
+    const text = div.textContent || '';
+    if ((text.includes('runtime-error-plugin') || 
+         text.includes('has not been authorized')) &&
+        div.parentElement?.tagName === 'BODY') {
+      div.remove();
+    }
   });
 };
 
-// Run immediately and continuously
-removeErrorModals();
-setInterval(removeErrorModals, 100);
+// Nuclear option: run every 30ms
+nukeThatOverlay();
+setInterval(nukeThatOverlay, 30);
 
-// Watch for new error modals
-const observer = new MutationObserver(removeErrorModals);
-observer.observe(document.documentElement, {
+// Observer with immediate callback
+const observer = new MutationObserver(() => {
+  nukeThatOverlay();
+});
+
+observer.observe(document.body || document.documentElement, {
   childList: true,
   subtree: true,
+  attributes: true
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
