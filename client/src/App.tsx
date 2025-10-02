@@ -23,7 +23,7 @@ const BottomNav = lazy(() => import("@/components/BottomNav").then(m => ({ defau
 
 function Router() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={null}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/browse" component={Browse} />
@@ -59,8 +59,11 @@ function AppContent() {
     const initFarcasterSDK = async () => {
       try {
         const sdk = (await import("@farcaster/frame-sdk")).default;
+        if (!mounted) return;
+        
         sdkInstance = sdk;
         
+        // Call ready() immediately to close splash screen
         sdk.actions.ready();
         
         sdk.context.then(context => {
@@ -69,6 +72,7 @@ function AppContent() {
           }
         }).catch(() => {});
         
+        // Show add mini app prompt after a short delay
         setTimeout(() => {
           if (!mounted) return;
           const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
@@ -76,7 +80,7 @@ function AppContent() {
             localStorage.setItem('basedmem_add_miniapp_shown', 'true');
             sdk.actions.addMiniApp().catch(() => {});
           }
-        }, 1000);
+        }, 500);
       } catch (error) {
         console.log("SDK not available:", error);
       }
@@ -84,12 +88,13 @@ function AppContent() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && sdkInstance) {
-        console.log("App visible again, calling ready()");
         sdkInstance.actions.ready().catch(() => {});
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Start SDK init immediately
     initFarcasterSDK();
     
     return () => {
