@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Replit runtime error overlay */
+[data-vite-plugin-runtime-error-modal],
+#vite-plugin-runtime-error-modal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
