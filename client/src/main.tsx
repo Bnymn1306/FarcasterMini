@@ -2,17 +2,34 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// AGGRESSIVE ERROR SUPPRESSION - Hide all error overlays
+// ERROR SUPPRESSION - Hide overlay but log errors
 window.addEventListener('unhandledrejection', (event) => {
-  event.preventDefault();
-  event.stopPropagation();
-  console.debug('Suppressed error:', event.reason?.message || event.reason);
+  const errorMsg = event.reason?.message || event.reason;
+  
+  // Only suppress browser extension errors
+  if (errorMsg && typeof errorMsg === 'string' && errorMsg.includes('has not been authorized yet')) {
+    event.preventDefault();
+    event.stopPropagation();
+    console.debug('Suppressed browser extension error');
+  } else {
+    // Log real errors but prevent overlay
+    console.error('Real error:', errorMsg);
+    event.preventDefault(); // Still prevent overlay
+  }
 });
 
 window.addEventListener('error', (event) => {
-  event.preventDefault();
-  event.stopPropagation();
-  console.debug('Suppressed error:', event.message);
+  // Suppress buffer module errors (known Vite issue)
+  if (event.message && event.message.includes('buffer')) {
+    event.preventDefault();
+    return;
+  }
+  
+  // Log other errors
+  if (event.message || event.error) {
+    console.error('Window error:', event.message, event.error);
+  }
+  event.preventDefault(); // Prevent overlay
 }, true);
 
 // Remove ALL error modals immediately (super aggressive)
