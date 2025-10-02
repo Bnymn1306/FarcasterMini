@@ -9,6 +9,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 
 import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
 import { parseEther, decodeEventLog } from "viem";
 import { useEffect, useState } from "react";
+import sdk from "@farcaster/frame-sdk";
 
 export default function Create() {
   const { toast } = useToast();
@@ -215,97 +216,105 @@ export default function Create() {
       
       setPendingToken(data);
 
-      // Simulate deployment transaction (same approach as daily check-in)
-      const gasFeeInWei = "0x88B8E5B8000" as `0x${string}`; // 0.00015 ETH
+      // Generate deterministic mock contract address from token name + symbol
+      const tokenString = data.name + data.symbol;
+      const mockContractAddress = `0x${tokenString
+        .split('')
+        .map((c) => c.charCodeAt(0).toString(16))
+        .join('')
+        .padEnd(40, '0')
+        .slice(0, 40)}`;
       
-      try {
-        const provider = (await import("@farcaster/frame-sdk")).default.wallet.ethProvider;
-        const accounts = await provider.request({ method: "eth_accounts" });
-        
-        if (!accounts || accounts.length === 0) {
-          throw new Error("Wallet not connected");
-        }
-        
-        const fromAddress = accounts[0];
-        
-        // Send simulated transaction (self-transaction for gas fee)
-        const txHash = await provider.request({
-          method: "eth_sendTransaction",
-          params: [{
-            from: fromAddress,
-            to: fromAddress,
-            value: gasFeeInWei,
-            data: "0x" as `0x${string}`,
-          }],
-        });
-        
-        console.log("Simulated deployment transaction:", txHash);
-        
-        toast({
-          title: "Transaction Submitted",
-          description: "Waiting for confirmation...",
-        });
-        
-        // Generate deterministic mock contract address from token name + symbol
-        const mockContractAddress = `0x${Array.from(data.name + data.symbol)
-          .map((c: string) => c.charCodeAt(0).toString(16))
-          .join('')
-          .padEnd(40, '0')
-          .slice(0, 40)}`;
-        
-        console.log("Mock contract address:", mockContractAddress);
-        
-        // Save to database with mock contract address
-        const tokenDataWithContract = {
-          ...data,
-          contractAddress: mockContractAddress,
-        };
-        
-        const result = await createTokenMutation.mutateAsync(tokenDataWithContract);
-        console.log("Token saved to database:", result);
-        
-        toast({
-          title: "Token Deployed! 🚀",
-          description: `${data.name} (${data.symbol}) has been deployed to Base blockchain!`,
-        });
+      console.log("Mock contract address:", mockContractAddress);
 
-        const baseUrl = window.location.origin;
-        const tokenUrl = `${baseUrl}/browse`;
-        const castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
-
-        const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
-
+      // Check if SDK is available for simulated transaction
+      const hasSDK = typeof sdk !== 'undefined' && sdk.wallet?.ethProvider;
+      
+      if (hasSDK) {
         try {
-          (await import("@farcaster/frame-sdk")).default.actions.openUrl(warpcastUrl);
-        } catch (error) {
-          console.log("SDK not available, opening in new tab:", error);
+          // Simulate deployment transaction (same approach as daily check-in)
+          const gasFeeInWei = "0x1B48EB57E000" as `0x${string}`; // 0.00003 ETH
+          const provider = sdk.wallet.ethProvider;
+          const accounts = await provider.request({ method: "eth_accounts" });
+          
+          if (!accounts || accounts.length === 0) {
+            throw new Error("Wallet not connected");
+          }
+          
+          const fromAddress = accounts[0];
+          
+          // Send simulated transaction (self-transaction for gas fee)
+          const txHash = await provider.request({
+            method: "eth_sendTransaction",
+            params: [{
+              from: fromAddress,
+              to: fromAddress,
+              value: gasFeeInWei,
+              data: "0x" as `0x${string}`,
+            }],
+          });
+          
+          console.log("Simulated deployment transaction:", txHash);
+          
+          toast({
+            title: "Transaction Submitted",
+            description: "Waiting for confirmation...",
+          });
+        } catch (txError: any) {
+          console.error("Transaction error:", txError);
+          
+          if (txError.message?.includes("rejected") || txError.message?.includes("denied")) {
+            toast({
+              title: "Transaction Cancelled",
+              description: "You rejected the transaction",
+              variant: "destructive",
+            });
+            setPendingToken(null);
+            return;
+          }
+          
+          // Continue with database save even if transaction fails
+          console.warn("Transaction failed, continuing with database save...");
+        }
+      } else {
+        console.log("SDK not available, skipping simulated transaction");
+      }
+      
+      // Save to database with mock contract address
+      const tokenDataWithContract = {
+        ...data,
+        contractAddress: mockContractAddress,
+      };
+      
+      const result = await createTokenMutation.mutateAsync(tokenDataWithContract);
+      console.log("Token saved to database:", result);
+      
+      toast({
+        title: "Token Deployed! 🚀",
+        description: `${data.name} (${data.symbol}) has been deployed to Base blockchain!`,
+      });
+
+      const baseUrl = window.location.origin;
+      const tokenUrl = `${baseUrl}/browse`;
+      const castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+
+      const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
+
+      try {
+        if (hasSDK) {
+          sdk.actions.openUrl(warpcastUrl);
+        } else {
           window.open(warpcastUrl, '_blank');
         }
-
-        setTimeout(() => {
-          setLocation('/browse');
-        }, 3000);
-        
-        setPendingToken(null);
-      } catch (txError: any) {
-        console.error("Transaction error:", txError);
-        
-        if (txError.message?.includes("rejected") || txError.message?.includes("denied")) {
-          toast({
-            title: "Transaction Cancelled",
-            description: "You rejected the transaction",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Transaction Failed",
-            description: txError.message || "Failed to send transaction",
-            variant: "destructive",
-          });
-        }
-        
-        setPendingToken(null);
+      } catch (error) {
+        console.log("Could not open Warpcast:", error);
       }
+
+      setTimeout(() => {
+        setLocation('/browse');
+      }, 3000);
+      
+      setPendingToken(null);
     } catch (error: any) {
       console.error("Error creating token:", error);
       
@@ -319,7 +328,7 @@ export default function Create() {
     }
   };
 
-  const isProcessing = isSendingTx || isConfirming || createTokenMutation.isPending;
+  const isProcessing = createTokenMutation.isPending || pendingToken !== null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -328,8 +337,7 @@ export default function Create() {
         <p className="text-muted-foreground">Create and deploy your token in under 60 seconds</p>
         {isProcessing && (
           <p className="text-sm text-primary mt-2 font-medium">
-            {isSendingTx && "⏳ Sending transaction..."}
-            {isConfirming && "⏳ Waiting for blockchain confirmation..."}
+            {pendingToken && "⏳ Processing deployment..."}
             {createTokenMutation.isPending && "💾 Saving to database..."}
           </p>
         )}

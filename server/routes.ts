@@ -187,7 +187,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tokens", async (req, res) => {
     try {
-      const validatedData = insertTokenSchema.parse(req.body);
+      // Handle creatorWalletAddress -> creatorId conversion
+      let tokenData = { ...req.body };
+      
+      if (tokenData.creatorWalletAddress && !tokenData.creatorId) {
+        // Find or create user by wallet address
+        let user = await storage.getUserByWalletAddress(tokenData.creatorWalletAddress);
+        
+        if (!user) {
+          // Create new user if doesn't exist
+          user = await storage.createUser({
+            walletAddress: tokenData.creatorWalletAddress,
+            username: `User_${tokenData.creatorWalletAddress.slice(0, 6)}`,
+          });
+        }
+        
+        tokenData.creatorId = user.id;
+        delete tokenData.creatorWalletAddress;
+      }
+      
+      const validatedData = insertTokenSchema.parse(tokenData);
       const token = await storage.createToken(validatedData);
       res.json(token);
     } catch (error) {
