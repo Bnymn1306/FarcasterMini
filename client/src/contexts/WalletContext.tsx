@@ -100,23 +100,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
                 console.error("Failed to fetch balance:", err);
               }
             }, 500);
-          } else if (typeof window.ethereum !== "undefined") {
-            console.log("Using MetaMask provider");
-            ethersProvider = new BrowserProvider(window.ethereum);
-            
-            setTimeout(async () => {
-              try {
-                const balance = await ethersProvider!.getBalance(address);
-                const balanceEth = formatEther(balance);
-                const formatted = parseFloat(balanceEth).toFixed(4);
-                console.log("Balance fetched:", formatted, "ETH");
-                setWalletBalance(formatted);
-              } catch (err) {
-                console.error("Failed to fetch balance:", err);
-              }
-            }, 500);
           } else {
-            console.warn("No provider available");
+            console.warn("Farcaster provider not available");
           }
         } catch (err) {
           console.error("Failed to initialize provider on mount:", err);
@@ -186,54 +171,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (farcasterError) {
-      console.log("Farcaster wallet error:", farcasterError);
-    }
-    
-    // Fallback to MetaMask/browser wallet
-    console.log("Trying MetaMask fallback...");
-    try {
-      if (typeof window.ethereum !== "undefined") {
-        console.log("MetaMask detected, initializing...");
-        ethersProvider = new BrowserProvider(window.ethereum);
-        
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        if (accounts && accounts.length > 0) {
-          const address = accounts[0];
-          console.log("Connected to MetaMask:", address);
-          
-          // Switch to Base network
-          try {
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: `0x${BASE_CHAIN_ID.toString(16)}` }],
-            });
-          } catch (switchError: any) {
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [{
-                  chainId: `0x${BASE_CHAIN_ID.toString(16)}`,
-                  chainName: "Base",
-                  nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
-                  rpcUrls: [BASE_RPC_URL],
-                  blockExplorerUrls: ["https://basescan.org"],
-                }],
-              });
-            }
-          }
-          
-          setIsWalletConnected(true);
-          setWalletAddress(address);
-          localStorage.setItem("basedmem_wallet", JSON.stringify({ address }));
-          await refreshBalance(address);
-          return;
-        }
-      }
-      
-      throw new Error("No wallet detected");
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
-      alert("Please install MetaMask or open this app in Farcaster to connect your wallet!");
+      console.error("Farcaster wallet connection failed:", farcasterError);
+      alert("Please open this app in Farcaster to connect your wallet!");
     }
   }, [refreshBalance]);
 
@@ -243,80 +182,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     console.log("amount:", amount);
     
     if (!walletAddress) {
-      const error = "Wallet address not found. Please reconnect your wallet.";
+      const error = "Wallet address not found. Please reconnect your Farcaster wallet.";
       console.error(error);
       throw new Error(error);
     }
     
-    // PRIORITY: Use window.ethereum if available (injected by Farcaster or MetaMask)
-    if (typeof window.ethereum !== 'undefined') {
-      console.log("✅ Using window.ethereum (injected wallet)");
-      try {
-        const valueWei = '0x' + parseEther(amount).toString(16);
-        console.log("Transaction params:", { from: walletAddress, to, value: valueWei });
-        
-        // Request transaction via injected wallet (triggers popup)
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: walletAddress,
-            to,
-            value: valueWei,
-          }]
-        });
-        
-        console.log("✅ TX HASH:", txHash);
-        
-        // Wait for confirmation
-        if (ethersProvider) {
-          try {
-            await ethersProvider.waitForTransaction(txHash);
-            console.log("✅ Transaction confirmed");
-          } catch (waitError) {
-            console.warn("Could not wait for confirmation:", waitError);
-          }
-        }
-        
-        await refreshBalance();
-        return txHash;
-      } catch (error: any) {
-        console.error("❌ window.ethereum transaction error:", error);
-        
-        if (error.code === 4001 || error.message?.includes("reject") || error.message?.includes("denied")) {
-          throw new Error("Transaction cancelled by user");
-        } else if (error.message?.includes("insufficient funds")) {
-          throw new Error("Insufficient funds for this transaction");
-        }
-        
-        throw new Error(error.message || "Transaction failed");
-      }
-    }
-    
-    // Fallback: Try ethersProvider
-    console.log("Using ethersProvider (fallback)");
     if (!ethersProvider) {
-      const error = "No wallet provider available. Please reconnect your wallet.";
-      console.error(error);
-      throw new Error(error);
+      throw new Error("Farcaster wallet provider not available. Please reconnect your wallet.");
     }
     
     try {
+      console.log("✅ Using Farcaster wallet provider");
       const signer = await ethersProvider.getSigner();
+      const valueWei = parseEther(amount);
+      console.log("Transaction params:", { from: walletAddress, to, value: valueWei.toString() });
+      
+      // Send transaction via Farcaster wallet
       const tx = await signer.sendTransaction({
         to,
-        value: parseEther(amount),
+        value: valueWei,
       });
       
-      console.log("Transaction sent:", tx.hash);
+      console.log("✅ TX HASH:", tx.hash);
+      
+      // Wait for confirmation
       await tx.wait();
-      console.log("Transaction confirmed:", tx.hash);
+      console.log("✅ Transaction confirmed");
       
       await refreshBalance();
       return tx.hash;
     } catch (error: any) {
-      console.error("ethersProvider transaction failed:", error);
+      console.error("❌ Farcaster wallet transaction error:", error);
       
-      if (error.code === "ACTION_REJECTED" || error.code === 4001) {
+      if (error.code === 4001 || error.message?.includes("reject") || error.message?.includes("denied")) {
         throw new Error("Transaction cancelled by user");
       } else if (error.message?.includes("insufficient funds")) {
         throw new Error("Insufficient funds for this transaction");

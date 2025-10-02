@@ -1,8 +1,6 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { config } from "./lib/wagmi-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
 import { useEffect, lazy, Suspense } from "react";
@@ -166,16 +164,14 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WagmiProvider config={config}>
-        <TooltipProvider>
-          <WalletProvider>
-            <AppContent />
-            <Suspense fallback={null}>
-              <Toaster />
-            </Suspense>
-          </WalletProvider>
-        </TooltipProvider>
-      </WagmiProvider>
+      <TooltipProvider>
+        <WalletProvider>
+          <AppContent />
+          <Suspense fallback={null}>
+            <Toaster />
+          </Suspense>
+        </WalletProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
