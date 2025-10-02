@@ -141,6 +141,9 @@ export default function TokenDetail() {
         ? ethAmount / realPrice
         : 0;
 
+      // Normalize to prevent floating point precision issues
+      const normalizedTokenAmount = Math.floor(estimatedTokenAmount * 1000000) / 1000000;
+
       let provider = getProvider();
       if (!provider) {
         toast({
@@ -258,7 +261,7 @@ export default function TokenDetail() {
           userId: user.id,
           tokenId: enhancedToken.id,
           type: "buy",
-          amount: estimatedTokenAmount.toString(),
+          amount: normalizedTokenAmount.toString(),
           price: enhancedToken.currentPrice,
           totalValue: amount,
           gasFee,
@@ -275,7 +278,7 @@ export default function TokenDetail() {
         body: JSON.stringify({
           userId: user.id,
           tokenId: enhancedToken.id,
-          amount: estimatedTokenAmount.toString(),
+          amount: normalizedTokenAmount.toString(),
           price: enhancedToken.currentPrice,
         }),
       });
@@ -290,7 +293,7 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 🎉",
-        description: `Successfully bought ${estimatedTokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${amount} ETH`,
+        description: `Successfully bought ${normalizedTokenAmount.toFixed(2)} ${enhancedToken.symbol} for ${amount} ETH`,
       });
     } catch (error: any) {
       console.error("Buy error - full details:", {
@@ -356,7 +359,12 @@ export default function TokenDetail() {
         return;
       }
 
-      const ethValue = tokenAmountNum * parseFloat(enhancedToken.currentPrice);
+      // Fix floating point precision issues (e.g., 10.000000000000002 → 10)
+      // Round down to 6 decimal places to match blockchain precision
+      const normalizedAmount = Math.floor(tokenAmountNum * 1000000) / 1000000;
+      const normalizedAmountStr = normalizedAmount.toString();
+
+      const ethValue = normalizedAmount * parseFloat(enhancedToken.currentPrice);
 
       let provider = getProvider();
       if (!provider) {
@@ -396,9 +404,9 @@ export default function TokenDetail() {
       console.log("Calling BondingCurveToken.sell() on contract:", enhancedToken.contractAddress);
       
       // Convert token amount to 18 decimals (e.g., 100 SLICE → 100 * 10^18)
-      // Use trimmed string directly to avoid scientific notation issues
-      const tokenAmountWei = parseUnits(trimmedAmount, 18);
-      console.log("Selling token amount (wei):", tokenAmountWei.toString());
+      // Use normalized amount to fix floating point precision issues
+      const tokenAmountWei = parseUnits(normalizedAmountStr, 18);
+      console.log("Selling token amount (normalized):", normalizedAmountStr, "wei:", tokenAmountWei.toString());
       
       const tx = await contract.sell(tokenAmountWei, {
         gasLimit: 300000
@@ -459,7 +467,7 @@ export default function TokenDetail() {
           userId: userData.id,
           tokenId: enhancedToken.id,
           type: "sell",
-          amount: tokenAmountNum.toString(),
+          amount: normalizedAmount.toString(),
           price: enhancedToken.currentPrice,
           totalValue: ethValue.toString(),
           gasFee,
@@ -468,7 +476,7 @@ export default function TokenDetail() {
 
       const currentHolding = userHolding;
       if (currentHolding) {
-        const newAmount = parseFloat(currentHolding.amount) - tokenAmountNum;
+        const newAmount = parseFloat(currentHolding.amount) - normalizedAmount;
         
         if (newAmount <= 0.001) {
           await fetch(`/api/holdings/${currentHolding.id}`, {
@@ -491,7 +499,7 @@ export default function TokenDetail() {
 
       toast({
         title: "Trade Executed! 💰",
-        description: `Successfully sold ${tokenAmountNum.toFixed(2)} ${enhancedToken.symbol} for ${ethValue.toFixed(4)} ETH`,
+        description: `Successfully sold ${normalizedAmount.toFixed(2)} ${enhancedToken.symbol} for ${ethValue.toFixed(4)} ETH`,
       });
     } catch (error: any) {
       console.error("Sell error - full details:", {
