@@ -31,12 +31,6 @@ export const TOKEN_FACTORY_ABI = [
         "internalType": "address",
         "name": "creator",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
       }
     ],
     "name": "TokenCreated",
