@@ -52,32 +52,22 @@ function AppContent() {
 
   useEffect(() => {
     let mounted = true;
-    let sdkInstance: any = null;
     
     const initFarcasterSDK = async () => {
       try {
-        // Try to import SDK
-        const sdkModule = await import("@farcaster/frame-sdk");
-        const sdk = sdkModule?.default ?? sdkModule;
+        const sdk = await import("@/lib/frameSdk").then(m => m.initFrameSDK());
         
-        if (!mounted) {
-          // Still call ready even if unmounted to release splash
-          try {
-            sdk?.actions?.ready?.();
-          } catch {}
-          return;
+        if (!mounted) return;
+        
+        // Get context and connect Farcaster user
+        if (sdk.context?.user) {
+          connectFarcaster(
+            sdk.context.user.username || "farcaster_user", 
+            sdk.context.user.fid.toString()
+          );
         }
         
-        sdkInstance = sdk;
-        
-        // Background context fetch
-        sdk?.context?.then(context => {
-          if (mounted && context?.user) {
-            connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
-          }
-        }).catch(() => {});
-        
-        // Defer addMiniApp to not block initialization
+        // Defer addMiniApp prompt
         setTimeout(() => {
           try {
             const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
@@ -88,37 +78,14 @@ function AppContent() {
           } catch {}
         }, 2000);
       } catch (error) {
-        console.warn("Farcaster SDK not available:", error);
-      } finally {
-        // CRITICAL: Always signal ready, even on errors!
-        try {
-          if (sdkInstance?.actions?.ready) {
-            sdkInstance.actions.ready().catch(() => {});
-          } else {
-            // Manual postMessage fallback if SDK failed
-            window.parent?.postMessage({ type: "farcaster.miniapp.ready" }, "*");
-          }
-        } catch {
-          // Last resort fallback
-          window.parent?.postMessage({ type: "farcaster.miniapp.ready" }, "*");
-        }
+        console.error("Failed to initialize Farcaster SDK:", error);
       }
     };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && sdkInstance?.actions?.ready) {
-        sdkInstance.actions.ready().catch(() => {});
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Start immediately
     initFarcasterSDK();
     
     return () => {
       mounted = false;
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [connectFarcaster]);
 
