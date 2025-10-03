@@ -62,7 +62,9 @@ function AppContent() {
         sdkInstance = sdk;
         
         // Call ready() immediately to close splash screen
-        sdk.actions.ready();
+        sdk.actions.ready().catch(() => {
+          console.log("ready() failed - splash may remain");
+        });
         
         sdk.context.then(context => {
           if (mounted && context.user) {
@@ -80,7 +82,13 @@ function AppContent() {
           }
         }, 500);
       } catch (error) {
-        console.log("SDK not available:", error);
+        console.log("SDK not available - app will work without Farcaster features:", error);
+        // Force remove splash screen even if SDK fails
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            document.body.classList.add('loaded');
+          }, 100);
+        }
       }
     };
 
