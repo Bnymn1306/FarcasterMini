@@ -61,25 +61,26 @@ function AppContent() {
         
         sdkInstance = sdk;
         
-        // IMMEDIATE ready() call - no delays
-        sdk.actions.ready();
+        // Call ready() without await - don't block on it
+        sdk.actions.ready().catch(() => {
+          console.log("ready() failed or timed out - continuing anyway");
+        });
         
-        // Background context fetch - non-blocking
+        // Background context fetch
         sdk.context.then(context => {
           if (mounted && context.user) {
             connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
           }
         }).catch(() => {});
         
-        // Background addMiniApp prompt - non-blocking
+        // Background addMiniApp prompt
         const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
         if (!hasShownPrompt) {
           localStorage.setItem('basedmem_add_miniapp_shown', 'true');
           sdk.actions.addMiniApp().catch(() => {});
         }
       } catch (error) {
-        // SDK not available - force close splash immediately
-        document.body.classList.add('loaded');
+        // SDK not available - app will work without it
       }
     };
 
