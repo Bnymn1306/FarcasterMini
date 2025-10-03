@@ -72,7 +72,7 @@ function AppContent() {
           }
         }).catch(() => {});
         
-        // Show add mini app prompt after a short delay
+        // Show add mini app prompt immediately
         setTimeout(() => {
           if (!mounted) return;
           const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
@@ -80,14 +80,14 @@ function AppContent() {
             localStorage.setItem('basedmem_add_miniapp_shown', 'true');
             sdk.actions.addMiniApp().catch(() => {});
           }
-        }, 500);
+        }, 0);
       } catch (error) {
         console.log("SDK not available - app will work without Farcaster features:", error);
         // Force remove splash screen even if SDK fails
         if (typeof window !== 'undefined') {
           setTimeout(() => {
             document.body.classList.add('loaded');
-          }, 100);
+          }, 0);
         }
       }
     };
