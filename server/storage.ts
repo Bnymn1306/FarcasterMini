@@ -517,6 +517,6 @@ export class DBStorage implements IStorage {
   }
 }
 
-// Using MemStorage temporarily - DBStorage disabled due to Neon auto-suspend
-// To use DBStorage: Enable Neon database from Replit Database Panel or Neon Console
-export const storage = new MemStorage();
+// Using DBStorage for persistent PostgreSQL database
+// Database is enabled and ready!
+export const storage = new DBStorage();
