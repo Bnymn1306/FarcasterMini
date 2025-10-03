@@ -480,4 +480,6 @@ export class DBStorage implements IStorage {
   }
 }
 
-export const storage = new DBStorage();
+// Temporarily using MemStorage due to Neon database suspension issue
+// Switch back to DBStorage when database is available
+export const storage = new MemStorage(); // new DBStorage();
