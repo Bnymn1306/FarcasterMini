@@ -84,10 +84,19 @@ export default function Create() {
         description: "Please approve the transaction in your Farcaster wallet",
       });
 
+      // Convert initial price from ETH to wei
+      const { parseEther } = await import("ethers");
+      const initialPriceWei = parseEther(data.initialPrice || "0.000001");
+
       // Send transaction via Farcaster wallet (manual gas limit for Farcaster compatibility)
-      const tx = await factoryContract.createToken(data.name, data.symbol, {
-        gasLimit: 5000000 // High limit for contract deployment
-      });
+      const tx = await factoryContract.createToken(
+        data.name, 
+        data.symbol, 
+        initialPriceWei,
+        {
+          gasLimit: 5000000 // High limit for contract deployment
+        }
+      );
       
       const txHash = tx.hash;
       console.log("Transaction hash:", txHash);

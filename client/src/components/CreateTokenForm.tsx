@@ -22,6 +22,7 @@ export interface TokenFormData {
   symbol: string;
   description: string;
   totalSupply: string;
+  initialPrice: string;
   logoUrl: string;
   twitterUrl: string;
   telegramUrl: string;
@@ -43,6 +44,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
           symbol: '',
           description: '',
           totalSupply: '1000000000',
+          initialPrice: '0.000001',
           logoUrl: '',
           twitterUrl: '',
           telegramUrl: '',
@@ -55,6 +57,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
       symbol: '',
       description: '',
       totalSupply: '1000000000',
+      initialPrice: '0.000001',
       logoUrl: '',
       twitterUrl: '',
       telegramUrl: '',
@@ -231,6 +234,26 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
               required
               data-testid="input-token-supply"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="initialPrice" className="text-xs uppercase font-semibold">
+              Initial Price (ETH) *
+            </Label>
+            <Input
+              id="initialPrice"
+              type="number"
+              step="0.000001"
+              min="0.000001"
+              value={formData.initialPrice}
+              onChange={(e) => updateField('initialPrice', e.target.value)}
+              placeholder="0.000001"
+              required
+              data-testid="input-initial-price"
+            />
+            <p className="text-xs text-muted-foreground">
+              Starting price per token. Recommended: 0.000001 ETH
+            </p>
           </div>
 
           <div className="space-y-4 pt-4 border-t border-border">
