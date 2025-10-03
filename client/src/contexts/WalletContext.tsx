@@ -22,8 +22,6 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 const BASE_CHAIN_ID = 8453; // Base Mainnet
 const BASE_RPC_URL = "https://mainnet.base.org";
 
-let cachedSDK: any = null;
-
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
@@ -78,18 +76,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         try {
           console.log("Initializing wallet provider...");
           
-          // Try Farcaster SDK first - with guards
-          if (!cachedSDK) {
-            try {
-              const sdkModule = await import("@farcaster/frame-sdk");
-              cachedSDK = sdkModule?.default ?? sdkModule;
-            } catch (err) {
-              console.warn("Failed to load Farcaster SDK:", err);
-              return;
-            }
-          }
-          
-          const ethProvider = cachedSDK?.wallet?.ethProvider;
+          const sdk = await import("@/lib/frameSdk").then(m => m.getFrameSDK());
+          const ethProvider = sdk?.wallet?.ethProvider;
           
           if (ethProvider) {
             console.log("Using Farcaster provider for restore");
@@ -137,18 +125,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const connectWallet = useCallback(async () => {
     try {
-      // Try Farcaster SDK first (if in Farcaster frame)
-      if (!cachedSDK) {
-        try {
-          const sdkModule = await import("@farcaster/frame-sdk");
-          cachedSDK = sdkModule?.default ?? sdkModule;
-        } catch (sdkError) {
-          console.log("Farcaster SDK not available:", sdkError);
-        }
-      }
-      
-      // Use optional chaining to safely access wallet provider
-      const ethProvider = cachedSDK?.wallet?.ethProvider;
+      const sdk = await import("@/lib/frameSdk").then(m => m.getFrameSDK());
+      const ethProvider = sdk?.wallet?.ethProvider;
       if (ethProvider) {
         console.log("Using Farcaster wallet provider");
         // Use Farcaster's provider

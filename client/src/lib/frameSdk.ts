@@ -7,22 +7,20 @@ export async function initFrameSDK() {
 
   sdkPromise = (async () => {
     try {
-      const sdkModule = await import("@farcaster/frame-sdk");
-      const frameSDK = sdkModule?.default ?? sdkModule;
+      console.log("🚀 Loading Farcaster Frame SDK...");
       
-      if (!frameSDK) {
+      const sdkModule = await import("@farcaster/frame-sdk");
+      const sdk = sdkModule?.default ?? sdkModule;
+      
+      if (!sdk) {
         throw new Error("Frame SDK module not found");
       }
 
-      console.log("🚀 Initializing Farcaster Frame SDK...");
-      
-      const sdk = await frameSDK.init({ fetchContext: true });
-      
-      console.log("✅ Frame SDK initialized successfully");
+      console.log("✅ SDK loaded, calling ready()...");
       
       await sdk.actions.ready();
       
-      console.log("✅ Frame SDK ready() called - splash should close");
+      console.log("✅ SDK ready() completed - splash screen should close");
       
       return sdk;
     } catch (error) {
