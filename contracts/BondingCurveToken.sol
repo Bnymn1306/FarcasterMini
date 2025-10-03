@@ -11,9 +11,9 @@ contract BondingCurveToken is ERC20, Ownable {
     uint256 public circulatingSupply; // Tokens sold from bonding curve
     bool public graduated;
     
-    // Bonding curve: price = (k * circulatingSupply) / INITIAL_SUPPLY
-    // k = initial price multiplier
-    uint256 public constant K_MULTIPLIER = 1e15; // 0.001 ETH base price
+    // Bonding curve: price = (initialPrice * circulatingSupply) / INITIAL_SUPPLY
+    // Initial price set at token creation
+    uint256 public initialPrice; // Starting price per token
     
     address public factory;
     
@@ -24,9 +24,12 @@ contract BondingCurveToken is ERC20, Ownable {
     constructor(
         string memory name,
         string memory symbol,
-        address initialOwner
+        address initialOwner,
+        uint256 _initialPrice
     ) ERC20(name, symbol) Ownable(initialOwner) {
+        require(_initialPrice > 0, "Initial price must be > 0");
         factory = msg.sender;
+        initialPrice = _initialPrice;
         _mint(address(this), INITIAL_SUPPLY);
     }
     
@@ -36,11 +39,10 @@ contract BondingCurveToken is ERC20, Ownable {
         require(!graduated, "Token has graduated");
         require(circulatingSupply + tokenAmount <= INITIAL_SUPPLY, "Exceeds supply");
         
-        // Price = k * (circulatingSupply + tokenAmount/2)
+        // Price = initialPrice + (initialPrice * circulatingSupply / INITIAL_SUPPLY)
         // This is average price over the buy
         uint256 avgSupply = circulatingSupply + (tokenAmount / 2);
-        uint256 avgPrice = (K_MULTIPLIER * avgSupply) / INITIAL_SUPPLY;
-        if (avgPrice < K_MULTIPLIER / 1000) avgPrice = K_MULTIPLIER / 1000; // Minimum price
+        uint256 avgPrice = initialPrice + ((initialPrice * avgSupply) / INITIAL_SUPPLY);
         
         return (tokenAmount * avgPrice) / 1e18;
     }
@@ -52,8 +54,7 @@ contract BondingCurveToken is ERC20, Ownable {
         
         // Price at midpoint of sell range
         uint256 avgSupply = circulatingSupply - (tokenAmount / 2);
-        uint256 avgPrice = (K_MULTIPLIER * avgSupply) / INITIAL_SUPPLY;
-        if (avgPrice < K_MULTIPLIER / 1000) avgPrice = K_MULTIPLIER / 1000;
+        uint256 avgPrice = initialPrice + ((initialPrice * avgSupply) / INITIAL_SUPPLY);
         
         // 0.3% fee stays in reserve
         return ((tokenAmount * avgPrice) / 1e18) * 997 / 1000;
@@ -65,9 +66,8 @@ contract BondingCurveToken is ERC20, Ownable {
         require(msg.value > 0, "Must send ETH");
         
         // Use iterative approach to find correct token amount
-        // Start with estimate at minimum price
-        uint256 minPrice = K_MULTIPLIER / 1000;
-        uint256 tokenAmount = (msg.value * 1e18) / minPrice;
+        // Start with estimate at initial price
+        uint256 tokenAmount = (msg.value * 1e18) / initialPrice;
         
         // Cap at remaining supply
         uint256 remainingSupply = INITIAL_SUPPLY - circulatingSupply;
@@ -84,8 +84,8 @@ contract BondingCurveToken is ERC20, Ownable {
                 uint256 deficit = msg.value - actualCost;
                 if (deficit == 0) break;
                 
-                uint256 avgPrice = (K_MULTIPLIER * (circulatingSupply + tokenAmount/2)) / INITIAL_SUPPLY;
-                if (avgPrice < minPrice) avgPrice = minPrice;
+                uint256 avgSupply = circulatingSupply + tokenAmount/2;
+                uint256 avgPrice = initialPrice + ((initialPrice * avgSupply) / INITIAL_SUPPLY);
                 
                 uint256 additionalTokens = (deficit * 1e18) / avgPrice;
                 if (additionalTokens == 0) break;
@@ -151,7 +151,7 @@ contract BondingCurveToken is ERC20, Ownable {
         uint256 circulating,
         bool isGraduated
     ) {
-        price = circulatingSupply > 0 ? getBuyPrice(1e18) : K_MULTIPLIER / 1000;
+        price = circulatingSupply > 0 ? getBuyPrice(1e18) : initialPrice;
         reserve = reserveBalance;
         circulating = circulatingSupply;
         isGraduated = graduated;
