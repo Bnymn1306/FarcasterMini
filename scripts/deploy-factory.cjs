@@ -3,7 +3,7 @@ const hre = require("hardhat");
 async function main() {
   console.log("🚀 Deploying TokenFactory to Base...");
 
-  const TokenFactory = await hre.ethers.getContractFactory("TokenFactory");
+  const TokenFactory = await hre.ethers.getContractFactory("contracts/TokenFactory.sol:TokenFactory");
   const factory = await TokenFactory.deploy();
 
   await factory.waitForDeployment();

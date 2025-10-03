@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/BondingCurveToken.sol": {
-      "lastModificationDate": 1759442750694,
-      "contentHash": "f83705072833502be868cd6020d038e8",
+      "lastModificationDate": 1759481374074,
+      "contentHash": "7cdee39c022c54cbfe20a1af4709c95c",
       "sourceName": "contracts/BondingCurveToken.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -268,9 +268,86 @@
       ]
     },
     "/home/runner/workspace/contracts/TokenFactory.sol": {
-      "lastModificationDate": 1759355230553,
-      "contentHash": "cc884ca62a876b51f7f45237a6207386",
+      "lastModificationDate": 1759481415393,
+      "contentHash": "4ee5b894d444eb57c607a2c1ca81c62a",
       "sourceName": "contracts/TokenFactory.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./BondingCurveToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "TokenFactory"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/BondingCurveToken.sol": {
+      "lastModificationDate": 1759444064669,
+      "contentHash": "41b840a4fc6f8ea29307b3e10648ebcf",
+      "sourceName": "contracts/contracts/BondingCurveToken.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "BondingCurveToken"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/TokenFactory.sol": {
+      "lastModificationDate": 1759444033645,
+      "contentHash": "56f31900f82157312730f67685e55a5d",
+      "sourceName": "contracts/contracts/TokenFactory.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
