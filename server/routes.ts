@@ -7,6 +7,11 @@ import path from "path";
 import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Seed platform token on startup (DBStorage only)
+  if ('seedPlatformToken' in storage) {
+    await storage.seedPlatformToken();
+  }
+  
   // Serve static files from public directory
   const publicPath = path.join(process.cwd(), "public");
   app.use(express.static(publicPath));

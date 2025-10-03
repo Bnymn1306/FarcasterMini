@@ -515,6 +515,73 @@ export class DBStorage implements IStorage {
     const result = await this.db.insert(dailyCheckIns).values(insertCheckIn).returning();
     return result[0];
   }
+
+  async seedPlatformToken(): Promise<void> {
+    try {
+      const PLATFORM_TOKEN_ADDRESS = '0x6cDa3b61128aDeB94FFC8ec124D18bc099E8eb3d';
+      const platformTokenId = '3baf19a2-49b3-4f27-92b0-cd5a3028c53f';
+      
+      // Check if BMEM already exists
+      const existingToken = await this.getToken(platformTokenId);
+      if (existingToken) {
+        console.log('✅ BMEM platform token already exists');
+        return;
+      }
+      
+      // Create platform creator user if not exists
+      const creatorId = '765f084e-532e-4698-8277-3a2c573906c3';
+      const existingUser = await this.getUser(creatorId);
+      if (!existingUser) {
+        try {
+          await this.db.insert(users).values({
+            id: creatorId,
+            walletAddress: '0x8988C455f0cf4D3167c32B9D65B09130454536ac',
+            username: 'BasedMem',
+            avatarUrl: null,
+            farcasterUsername: null,
+            farcasterFid: null,
+            currentStreak: 0,
+            longestStreak: 0,
+            totalCheckIns: 0,
+            lastCheckIn: null,
+            createdAt: new Date('2025-10-03T10:00:00.000Z')
+          });
+        } catch (error: any) {
+          // User already exists with this wallet address - that's OK
+          if (error.code !== '23505') {
+            throw error;
+          }
+        }
+      }
+      
+      // Add BMEM platform token
+      await this.db.insert(tokens).values({
+        id: platformTokenId,
+        creatorId: creatorId,
+        name: 'BasedMem',
+        symbol: 'BMEM',
+        description: 'The official platform token of BasedMem - earn BASED through daily check-ins, trading, and community engagement!',
+        logoUrl: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="50" fill="%238B5CF6"/%3E%3Ctext x="50" y="70" font-size="60" text-anchor="middle" fill="white"%3EB%3C/text%3E%3C/svg%3E',
+        contractAddress: PLATFORM_TOKEN_ADDRESS,
+        totalSupply: '1000000000',
+        currentPrice: '0.0001',
+        marketCap: '100000',
+        volume24h: '0',
+        priceChange24h: '0',
+        holderCount: 0,
+        twitterUrl: null,
+        telegramUrl: null,
+        websiteUrl: 'https://farcaster.xyz/miniapps/742eMUUFUGM0/basedmem',
+        isVerified: false,
+        isPlatformToken: true,
+        createdAt: new Date('2025-10-03T10:00:00.000Z')
+      });
+      
+      console.log('✅ BMEM platform token seeded successfully');
+    } catch (error) {
+      console.error('❌ Failed to seed platform token:', error);
+    }
+  }
 }
 
 // Using DBStorage for persistent PostgreSQL database
