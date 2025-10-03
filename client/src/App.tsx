@@ -3,10 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Home from "@/pages/Home";
+import sdk from "@farcaster/frame-sdk";
 
 const Browse = lazy(() => import("@/pages/Browse"));
 const Create = lazy(() => import("@/pages/Create"));
@@ -49,45 +50,46 @@ function AppContent() {
     disconnectFarcaster,
   } = useWallet();
   const { toast } = useToast();
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const initFarcasterSDK = async () => {
-      try {
-        const sdk = await import("@/lib/frameSdk").then(m => m.initFrameSDK());
-        
-        if (!mounted) return;
-        
-        // Get context and connect Farcaster user
-        if (sdk.context?.user) {
-          connectFarcaster(
-            sdk.context.user.username || "farcaster_user", 
-            sdk.context.user.fid.toString()
-          );
+    if (!isSDKLoaded) {
+      const initSDK = async () => {
+        try {
+          console.log("🚀 Calling SDK ready()...");
+          
+          await sdk.actions.ready();
+          
+          console.log("✅ SDK ready() completed - splash should close");
+          
+          setIsSDKLoaded(true);
+          
+          const context = await sdk.context;
+          if (context?.user) {
+            connectFarcaster(
+              context.user.username || "farcaster_user",
+              context.user.fid.toString()
+            );
+          }
+          
+          setTimeout(() => {
+            try {
+              const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+              if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
+                localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+                sdk.actions.addMiniApp().catch(() => {});
+              }
+            } catch {}
+          }, 2000);
+        } catch (error) {
+          console.error("❌ Failed to initialize SDK:", error);
+          setIsSDKLoaded(true);
         }
-        
-        // Defer addMiniApp prompt
-        setTimeout(() => {
-          try {
-            const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-            if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
-              localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-              sdk.actions.addMiniApp().catch(() => {});
-            }
-          } catch {}
-        }, 2000);
-      } catch (error) {
-        console.error("Failed to initialize Farcaster SDK:", error);
-      }
-    };
-    
-    initFarcasterSDK();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [connectFarcaster]);
+      };
+      
+      initSDK();
+    }
+  }, [isSDKLoaded, connectFarcaster]);
 
   // Frontend keepalive - ping health endpoint every 2 minutes
   useEffect(() => {
