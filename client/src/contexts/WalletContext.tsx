@@ -78,10 +78,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         try {
           console.log("Initializing wallet provider...");
           
-          // Try Farcaster SDK first
+          // Try Farcaster SDK first - with guards
           if (!cachedSDK) {
-            cachedSDK = (await import("@farcaster/frame-sdk")).default;
+            try {
+              const sdkModule = await import("@farcaster/frame-sdk");
+              cachedSDK = sdkModule?.default ?? sdkModule;
+            } catch (err) {
+              console.warn("Failed to load Farcaster SDK:", err);
+              return;
+            }
           }
+          
           const ethProvider = cachedSDK?.wallet?.ethProvider;
           
           if (ethProvider) {
@@ -133,7 +140,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Try Farcaster SDK first (if in Farcaster frame)
       if (!cachedSDK) {
         try {
-          cachedSDK = (await import("@farcaster/frame-sdk")).default;
+          const sdkModule = await import("@farcaster/frame-sdk");
+          cachedSDK = sdkModule?.default ?? sdkModule;
         } catch (sdkError) {
           console.log("Farcaster SDK not available:", sdkError);
         }

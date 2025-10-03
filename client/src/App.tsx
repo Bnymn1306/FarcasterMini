@@ -56,36 +56,57 @@ function AppContent() {
     
     const initFarcasterSDK = async () => {
       try {
-        const sdk = (await import("@farcaster/frame-sdk")).default;
-        if (!mounted) return;
+        // Try to import SDK
+        const sdkModule = await import("@farcaster/frame-sdk");
+        const sdk = sdkModule?.default ?? sdkModule;
+        
+        if (!mounted) {
+          // Still call ready even if unmounted to release splash
+          try {
+            sdk?.actions?.ready?.();
+          } catch {}
+          return;
+        }
         
         sdkInstance = sdk;
         
-        // Call ready() without await - don't block on it
-        sdk.actions.ready().catch(() => {
-          console.log("ready() failed or timed out - continuing anyway");
-        });
-        
         // Background context fetch
-        sdk.context.then(context => {
-          if (mounted && context.user) {
+        sdk?.context?.then(context => {
+          if (mounted && context?.user) {
             connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
           }
         }).catch(() => {});
         
-        // Background addMiniApp prompt
-        const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-        if (!hasShownPrompt) {
-          localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-          sdk.actions.addMiniApp().catch(() => {});
-        }
+        // Defer addMiniApp to not block initialization
+        setTimeout(() => {
+          try {
+            const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+            if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
+              localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+              sdk.actions.addMiniApp().catch(() => {});
+            }
+          } catch {}
+        }, 2000);
       } catch (error) {
-        // SDK not available - app will work without it
+        console.warn("Farcaster SDK not available:", error);
+      } finally {
+        // CRITICAL: Always signal ready, even on errors!
+        try {
+          if (sdkInstance?.actions?.ready) {
+            sdkInstance.actions.ready().catch(() => {});
+          } else {
+            // Manual postMessage fallback if SDK failed
+            window.parent?.postMessage({ type: "farcaster.miniapp.ready" }, "*");
+          }
+        } catch {
+          // Last resort fallback
+          window.parent?.postMessage({ type: "farcaster.miniapp.ready" }, "*");
+        }
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && sdkInstance) {
+      if (document.visibilityState === 'visible' && sdkInstance?.actions?.ready) {
         sdkInstance.actions.ready().catch(() => {});
       }
     };
