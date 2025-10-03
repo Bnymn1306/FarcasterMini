@@ -9,6 +9,13 @@ import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Home from "@/pages/Home";
 import sdk from "@farcaster/frame-sdk";
 
+console.log("🚀 Module loaded, calling SDK ready()...");
+sdk.actions.ready().then(() => {
+  console.log("✅ SDK ready() completed - splash should close");
+}).catch((err) => {
+  console.error("❌ SDK ready() failed:", err);
+});
+
 const Browse = lazy(() => import("@/pages/Browse"));
 const Create = lazy(() => import("@/pages/Create"));
 const TokenDetail = lazy(() => import("@/pages/TokenDetail"));
@@ -50,20 +57,12 @@ function AppContent() {
     disconnectFarcaster,
   } = useWallet();
   const { toast } = useToast();
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [isContextLoaded, setIsContextLoaded] = useState(false);
 
   useEffect(() => {
-    if (!isSDKLoaded) {
-      const initSDK = async () => {
+    if (!isContextLoaded) {
+      const loadContext = async () => {
         try {
-          console.log("🚀 Calling SDK ready()...");
-          
-          await sdk.actions.ready();
-          
-          console.log("✅ SDK ready() completed - splash should close");
-          
-          setIsSDKLoaded(true);
-          
           const context = await sdk.context;
           if (context?.user) {
             connectFarcaster(
@@ -71,6 +70,8 @@ function AppContent() {
               context.user.fid.toString()
             );
           }
+          
+          setIsContextLoaded(true);
           
           setTimeout(() => {
             try {
@@ -82,14 +83,14 @@ function AppContent() {
             } catch {}
           }, 2000);
         } catch (error) {
-          console.error("❌ Failed to initialize SDK:", error);
-          setIsSDKLoaded(true);
+          console.error("❌ Failed to load context:", error);
+          setIsContextLoaded(true);
         }
       };
       
-      initSDK();
+      loadContext();
     }
-  }, [isSDKLoaded, connectFarcaster]);
+  }, [isContextLoaded, connectFarcaster]);
 
   // Frontend keepalive - ping health endpoint every 2 minutes
   useEffect(() => {
