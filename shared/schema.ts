@@ -35,6 +35,7 @@ export const tokens = pgTable("tokens", {
   telegramUrl: text("telegram_url"),
   websiteUrl: text("website_url"),
   isVerified: boolean("is_verified").default(false),
+  isPlatformToken: boolean("is_platform_token").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -98,6 +99,7 @@ export const insertTokenSchema = createInsertSchema(tokens).omit({
   priceChange24h: true,
   holderCount: true,
   isVerified: true,
+  isPlatformToken: true,
   createdAt: true,
 });
 

@@ -43,20 +43,32 @@ export function TokenCard({ token, onTrade, onViewDetails }: TokenCardProps) {
           </Avatar>
           
           <div>
-            <h3 className="font-bold text-lg" data-testid={`text-token-name-${token.id}`}>
-              {token.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-lg" data-testid={`text-token-name-${token.id}`}>
+                {token.name}
+              </h3>
+              {token.isPlatformToken && (
+                <span className="text-lg" title="Platform Token">👑</span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground uppercase">
               ${token.symbol}
             </p>
           </div>
         </div>
 
-        {token.isVerified && (
-          <Badge variant="secondary" className="bg-primary/20 text-primary">
-            Verified
-          </Badge>
-        )}
+        <div className="flex flex-col gap-1">
+          {token.isPlatformToken && (
+            <Badge variant="default" className="bg-gradient-to-r from-primary to-accent text-white border-0">
+              Platform
+            </Badge>
+          )}
+          {token.isVerified && (
+            <Badge variant="secondary" className="bg-primary/20 text-primary">
+              Verified
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
