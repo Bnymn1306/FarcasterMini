@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Wallet, Rocket, Grid3x3, TrendingUp, Bell, Flame, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { SiFarcaster } from "react-icons/si";
+import { SiFarcaster, SiX } from "react-icons/si";
 
 interface NavigationBarProps {
   onConnectWallet?: () => void;
@@ -118,6 +118,22 @@ export function NavigationBar({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            data-testid="link-twitter"
+          >
+            <a 
+              href="https://x.com/BasedMem" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              aria-label="Follow us on X"
+            >
+              <SiX className="h-4 w-4" />
+            </a>
+          </Button>
+          
           <ThemeToggle />
           
           <Button
