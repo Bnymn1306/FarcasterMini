@@ -75,7 +75,7 @@ export default function DailyBasedPage() {
         return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
       } catch (error: any) {
         if (error.message?.includes("rejected") || error.message?.includes("denied")) {
-          throw new Error("Transaction reddedildi");
+          throw new Error("Transaction rejected");
         }
         throw error;
       }
@@ -84,21 +84,21 @@ export default function DailyBasedPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/check-in", walletAddress] });
       
       const newStreak = data?.user?.currentStreak || 1;
-      let rewardMessage = "10 BMEM kazandın! 🎉";
-      if (newStreak === 3) rewardMessage = "30 BMEM kazandın! 🔥";
-      if (newStreak === 7) rewardMessage = "100 BMEM kazandın! 🚀";
-      if (newStreak === 14) rewardMessage = "250 BMEM kazandın! 💎";
-      if (newStreak === 30) rewardMessage = "1000 BMEM kazandın! 👑";
+      let rewardMessage = "Earned 10 BMEM! 🎉";
+      if (newStreak === 3) rewardMessage = "Earned 30 BMEM! 🔥";
+      if (newStreak === 7) rewardMessage = "Earned 100 BMEM! 🚀";
+      if (newStreak === 14) rewardMessage = "Earned 250 BMEM! 💎";
+      if (newStreak === 30) rewardMessage = "Earned 1000 BMEM! 👑";
 
       toast({
-        title: "Check-In Başarılı! 🎯",
-        description: `${newStreak} günlük streak! ${rewardMessage} Gas fee ödendi: 0.00003 ETH`,
+        title: "Check-In Successful! 🎯",
+        description: `${newStreak} day streak! ${rewardMessage} Gas fee paid: 0.00003 ETH`,
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Hata",
-        description: error.message || "Check-in yapılamadı",
+        title: "Error",
+        description: error.message || "Check-in failed",
         variant: "destructive",
       });
     },
@@ -163,7 +163,7 @@ export default function DailyBasedPage() {
           Daily Based
         </h1>
         <p className="text-muted-foreground">
-          Her gün check-in yap, streak kazan ve BasedMem ekosisteminde ödüller topla!
+          Check in daily, build your streak, and earn rewards in the BasedMem ecosystem!
         </p>
       </div>
 
@@ -181,13 +181,13 @@ export default function DailyBasedPage() {
           <Card className="p-6 space-y-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Son 7 Gün
+              Last 7 Days
             </h3>
             <div className="grid grid-cols-7 gap-2">
               {last7Days.map((day, i) => (
                 <div key={i} className="text-center">
                   <p className="text-xs text-muted-foreground mb-2">
-                    {day.date.toLocaleDateString("tr-TR", { weekday: "short" })}
+                    {day.date.toLocaleDateString("en-US", { weekday: "short" })}
                   </p>
                   <div
                     className={`h-12 rounded-lg flex items-center justify-center ${
@@ -211,14 +211,14 @@ export default function DailyBasedPage() {
           <Card className="p-6 space-y-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Award className="h-5 w-5 text-accent" />
-              Streak Avantajları
+              Streak Benefits
             </h3>
             <div className="space-y-3">
               {[
-                { streak: "3 gün", benefit: "Early access to new tokens", icon: "🔓" },
-                { streak: "7 gün", benefit: "Reduced trading fees", icon: "💰" },
-                { streak: "14 gün", benefit: "VIP badge on profile", icon: "⭐" },
-                { streak: "30 gün", benefit: "Exclusive airdrops", icon: "🎁" },
+                { streak: "3 days", benefit: "Early access to new tokens", icon: "🔓" },
+                { streak: "7 days", benefit: "Reduced trading fees", icon: "💰" },
+                { streak: "14 days", benefit: "VIP badge on profile", icon: "⭐" },
+                { streak: "30 days", benefit: "Exclusive airdrops", icon: "🎁" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
                   <span className="text-2xl">{item.icon}</span>
@@ -232,7 +232,7 @@ export default function DailyBasedPage() {
           </Card>
 
           <Card className="p-6 space-y-4 bg-gradient-to-br from-chart-2/10 to-primary/10 border-chart-2/20">
-            <h3 className="font-bold text-lg">💎 Toplam Kazanç</h3>
+            <h3 className="font-bold text-lg">💎 Total Earnings</h3>
             <div className="text-center py-4">
               <p className="text-5xl font-black font-mono text-primary mb-2">
                 {(user?.totalCheckIns || 0) * 10 + Math.floor((user?.currentStreak || 0) / 3) * 20}
@@ -240,7 +240,7 @@ export default function DailyBasedPage() {
               <p className="text-sm text-muted-foreground">BMEM Tokens</p>
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              Check-in yapmaya devam et ve daha fazla kazan!
+              Keep checking in to earn even more!
             </p>
           </Card>
         </div>

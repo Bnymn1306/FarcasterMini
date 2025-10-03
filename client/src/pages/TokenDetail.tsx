@@ -643,8 +643,8 @@ export default function TokenDetail() {
   const handleCreateAlert = (data: any) => {
     console.log('Creating alert:', data);
     toast({
-      title: "Uyarı Oluşturuldu! 🔔",
-      description: `${enhancedToken.symbol} için fiyat uyarısı başarıyla ayarlandı. Farcaster profilinize bildirim gönderilecek.`,
+      title: "Alert Created! 🔔",
+      description: `Price alert for ${enhancedToken.symbol} has been set successfully. Notifications will be sent to your Farcaster profile.`,
     });
   };
 

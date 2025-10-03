@@ -68,21 +68,21 @@ export function PriceAlertDialog({ token, onCreateAlert }: PriceAlertDialogProps
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2" data-testid="button-create-alert">
           <Bell className="h-4 w-4" />
-          Fiyat Uyarısı
+          Price Alert
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Fiyat Uyarısı Oluştur</DialogTitle>
+          <DialogTitle>Create Price Alert</DialogTitle>
           <DialogDescription>
-            {token.symbol} için fiyat uyarısı ayarlayın. Hedef fiyata ulaşıldığında Farcaster profilinize bildirim gönderilecek.
+            Set a price alert for {token.symbol}. You'll receive a notification on your Farcaster profile when the target price is reached.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="current-price" className="text-xs uppercase font-semibold">
-              Şu Anki Fiyat
+              Current Price
             </Label>
             <div className="text-2xl font-mono font-bold text-primary">
               ${parseFloat(token.currentPrice).toFixed(6)}
@@ -91,22 +91,22 @@ export function PriceAlertDialog({ token, onCreateAlert }: PriceAlertDialogProps
 
           <div className="space-y-2">
             <Label htmlFor="condition" className="text-xs uppercase font-semibold">
-              Koşul
+              Condition
             </Label>
             <Select value={condition} onValueChange={(value: any) => setCondition(value)}>
               <SelectTrigger data-testid="select-condition">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="above">Fiyat üzerine çıktığında</SelectItem>
-                <SelectItem value="below">Fiyat altına düştüğünde</SelectItem>
+                <SelectItem value="above">When price goes above</SelectItem>
+                <SelectItem value="below">When price falls below</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="target-price" className="text-xs uppercase font-semibold">
-              Hedef Fiyat (USD)
+              Target Price (USD)
             </Label>
             <Input
               id="target-price"
@@ -123,10 +123,10 @@ export function PriceAlertDialog({ token, onCreateAlert }: PriceAlertDialogProps
           <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
             <div className="space-y-0.5">
               <Label htmlFor="farcaster-notify" className="font-semibold">
-                Farcaster Bildirimi
+                Farcaster Notification
               </Label>
               <p className="text-xs text-muted-foreground">
-                Profilinize cast olarak gönder
+                Send as a cast to your profile
               </p>
             </div>
             <Switch
@@ -139,7 +139,7 @@ export function PriceAlertDialog({ token, onCreateAlert }: PriceAlertDialogProps
 
           <DialogFooter>
             <Button type="submit" className="w-full" data-testid="button-submit-alert">
-              Uyarı Oluştur
+              Create Alert
             </Button>
           </DialogFooter>
         </form>
