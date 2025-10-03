@@ -53,8 +53,6 @@ export class MemStorage implements IStorage {
     this.holdings = new Map();
     this.priceAlerts = new Map();
     this.dailyCheckIns = new Map();
-    
-    this.seedData();
   }
 
   private async seedData() {
