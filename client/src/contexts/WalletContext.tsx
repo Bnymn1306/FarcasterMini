@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { BrowserProvider, parseEther, formatEther } from "ethers";
+import sdk from "@farcaster/frame-sdk";
 
 interface WalletContextType {
   isWalletConnected: boolean;
@@ -76,7 +77,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         try {
           console.log("Initializing wallet provider...");
           
-          const sdk = await import("@/lib/frameSdk").then(m => m.getFrameSDK());
           const ethProvider = sdk?.wallet?.ethProvider;
           
           if (ethProvider) {
@@ -125,7 +125,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const connectWallet = useCallback(async () => {
     try {
-      const sdk = await import("@/lib/frameSdk").then(m => m.getFrameSDK());
       const ethProvider = sdk?.wallet?.ethProvider;
       if (ethProvider) {
         console.log("Using Farcaster wallet provider");
