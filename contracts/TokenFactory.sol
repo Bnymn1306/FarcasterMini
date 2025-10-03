@@ -9,6 +9,7 @@ contract TokenFactory {
         string name,
         string symbol,
         address indexed creator,
+        uint256 initialPrice,
         uint256 timestamp
     );
     
@@ -17,12 +18,16 @@ contract TokenFactory {
     
     function createToken(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        uint256 initialPrice
     ) external returns (address) {
+        require(initialPrice > 0, "Initial price must be > 0");
+        
         BondingCurveToken newToken = new BondingCurveToken(
             name,
             symbol,
-            msg.sender
+            msg.sender,
+            initialPrice
         );
         
         address tokenAddress = address(newToken);
@@ -30,7 +35,7 @@ contract TokenFactory {
         creatorTokens[msg.sender].push(tokenAddress);
         allTokens.push(tokenAddress);
         
-        emit TokenCreated(tokenAddress, name, symbol, msg.sender, block.timestamp);
+        emit TokenCreated(tokenAddress, name, symbol, msg.sender, initialPrice, block.timestamp);
         
         return tokenAddress;
     }
