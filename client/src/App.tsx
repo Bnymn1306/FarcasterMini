@@ -101,6 +101,22 @@ function AppContent() {
     };
   }, [connectFarcaster]);
 
+  // Frontend keepalive - ping health endpoint every 2 minutes
+  useEffect(() => {
+    const keepaliveInterval = setInterval(async () => {
+      try {
+        await fetch('/api/health', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+      } catch (error) {
+        // Ignore errors - this is just keepalive
+      }
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => clearInterval(keepaliveInterval);
+  }, []);
+
   const handleConnectWallet = async () => {
     if (isWalletConnected) {
       disconnectWallet();

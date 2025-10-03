@@ -70,7 +70,7 @@ app.use((req, res, next) => {
   });
 
   // Keepalive mechanism to prevent Neon database auto-suspend
-  // Ping every 4 minutes to keep connection alive
+  // Ping every 1 minute to keep connection alive (Neon suspends after 5min)
   setInterval(async () => {
     try {
       await fetch(`http://localhost:${port}/api/health`);
@@ -78,5 +78,5 @@ app.use((req, res, next) => {
     } catch (error) {
       // Ignore errors - this is just keepalive
     }
-  }, 4 * 60 * 1000); // 4 minutes
+  }, 60 * 1000); // 1 minute - aggressive keepalive
 })();
