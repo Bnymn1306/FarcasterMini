@@ -234,6 +234,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/tokens/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = await storage.updateToken(id, req.body);
+      
+      if (updated) {
+        res.json(updated);
+      } else {
+        res.status(404).json({ error: "Token not found" });
+      }
+    } catch (error) {
+      console.error("Error updating token:", error);
+      res.status(500).json({ error: "Failed to update token" });
+    }
+  });
+
   // Trades API
   app.post("/api/trades", async (req, res) => {
     try {

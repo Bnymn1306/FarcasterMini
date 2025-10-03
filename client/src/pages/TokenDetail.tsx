@@ -315,6 +315,31 @@ export default function TokenDetail() {
         throw new Error("Failed to update holdings");
       }
 
+      // Update token price in database
+      try {
+        const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, baseProvider);
+        const stats = await contract.getStats();
+        const newPrice = formatEther(stats.price);
+        
+        const oldPrice = parseFloat(enhancedToken.currentPrice);
+        const currentPrice = parseFloat(newPrice);
+        const priceChange = oldPrice > 0 ? ((currentPrice - oldPrice) / oldPrice) * 100 : 0;
+        
+        await fetch(`/api/tokens/${enhancedToken.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentPrice: newPrice,
+            priceChange24h: priceChange.toFixed(2),
+          }),
+        });
+        
+        await queryClient.invalidateQueries({ queryKey: ["/api/tokens", params?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/contract-stats", token?.contractAddress] });
+      } catch (updateError) {
+        console.error("Failed to update token price:", updateError);
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["/api/holdings", user.id] });
       await queryClient.invalidateQueries({ queryKey: ["/api/user-token-holding", user.id, params?.id] });
       await refreshBalance();
@@ -550,6 +575,31 @@ export default function TokenDetail() {
             }),
           });
         }
+      }
+
+      // Update token price in database
+      try {
+        const contract = new Contract(enhancedToken.contractAddress!, BONDING_CURVE_TOKEN_ABI, baseProvider);
+        const stats = await contract.getStats();
+        const newPrice = formatEther(stats.price);
+        
+        const oldPrice = parseFloat(enhancedToken.currentPrice);
+        const currentPrice = parseFloat(newPrice);
+        const priceChange = oldPrice > 0 ? ((currentPrice - oldPrice) / oldPrice) * 100 : 0;
+        
+        await fetch(`/api/tokens/${enhancedToken.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentPrice: newPrice,
+            priceChange24h: priceChange.toFixed(2),
+          }),
+        });
+        
+        await queryClient.invalidateQueries({ queryKey: ["/api/tokens", params?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/contract-stats", token?.contractAddress] });
+      } catch (updateError) {
+        console.error("Failed to update token price:", updateError);
       }
 
       await queryClient.invalidateQueries({ queryKey: ["/api/holdings", userData.id] });
