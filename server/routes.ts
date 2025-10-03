@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertPriceAlertSchema, insertTokenSchema, insertTradeSchema, insertHoldingSchema } from "@shared/schema";
 import path from "path";
 import fs from "fs";
+import { postTokenLaunchTweet } from "./twitter";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Seed platform token on startup (DBStorage only)
@@ -232,6 +233,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const token = await storage.createToken(validatedData);
       console.log("Created token in DB:", token);
+      
+      if (token.creatorId && token.contractAddress) {
+        const creator = await storage.getUser(token.creatorId);
+        
+        postTokenLaunchTweet({
+          name: token.name,
+          symbol: token.symbol,
+          creator: creator?.username || creator?.farcasterUsername || 'anonymous',
+          address: token.contractAddress,
+          initialPrice: token.currentPrice,
+        }).catch(err => {
+          console.error("Failed to post launch tweet:", err);
+        });
+      }
+      
       res.json(token);
     } catch (error) {
       console.error("Error creating token:", error);
