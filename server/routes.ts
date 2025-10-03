@@ -11,6 +11,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const publicPath = path.join(process.cwd(), "public");
   app.use(express.static(publicPath));
 
+  // Health check endpoint for keepalive
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Simple query to keep database connection alive
+      await storage.getAllTokens();
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
+    } catch (error) {
+      res.status(503).json({ status: "error", message: "Database unavailable" });
+    }
+  });
+
   // Serve Farcaster Manifest with Account Association
   app.get("/.well-known/farcaster.json", (req, res) => {
     const protocol = req.get('x-forwarded-proto') || req.protocol;
