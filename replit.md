@@ -34,6 +34,7 @@ Preferred communication style: Simple, everyday language.
 ### Authentication & Blockchain Integration
 
 *   **Wallet Connection**: Direct ethers.js integration with Farcaster wallet provider, ensuring all transactions leverage the Farcaster ecosystem. No MetaMask fallback is used for Farcaster Frame compatibility.
+*   **Farcaster SDK Integration**: Centralized SDK initialization via `client/src/lib/frameSdk.ts` that properly awaits `sdk.actions.ready()` to dismiss splash screen. Both App.tsx and WalletContext.tsx consume this shared SDK instance to prevent race conditions and ensure consistent initialization.
 *   **Blockchain Target**: Base blockchain (Ethereum L2) for efficiency.
 *   **Smart Contracts**:
     *   **TokenFactory.sol**: Factory for deploying new `BondingCurveToken` instances.
