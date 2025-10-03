@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Rocket, TrendingUp, Users, Zap } from "lucide-react";
 
 interface HeroSectionProps {
@@ -112,13 +113,5 @@ export function HeroSection({ onLaunchClick, onBrowseClick }: HeroSectionProps) 
         </div>
       </div>
     </div>
-  );
-}
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${className}`}>
-      {children}
-    </span>
   );
 }

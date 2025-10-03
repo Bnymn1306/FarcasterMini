@@ -61,34 +61,25 @@ function AppContent() {
         
         sdkInstance = sdk;
         
-        // Call ready() immediately to close splash screen
-        sdk.actions.ready().catch(() => {
-          console.log("ready() failed - splash may remain");
-        });
+        // IMMEDIATE ready() call - no delays
+        sdk.actions.ready();
         
+        // Background context fetch - non-blocking
         sdk.context.then(context => {
           if (mounted && context.user) {
             connectFarcaster(context.user.username || "farcaster_user", context.user.fid.toString());
           }
         }).catch(() => {});
         
-        // Show add mini app prompt immediately
-        setTimeout(() => {
-          if (!mounted) return;
-          const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-          if (!hasShownPrompt) {
-            localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-            sdk.actions.addMiniApp().catch(() => {});
-          }
-        }, 0);
-      } catch (error) {
-        console.log("SDK not available - app will work without Farcaster features:", error);
-        // Force remove splash screen even if SDK fails
-        if (typeof window !== 'undefined') {
-          setTimeout(() => {
-            document.body.classList.add('loaded');
-          }, 0);
+        // Background addMiniApp prompt - non-blocking
+        const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+        if (!hasShownPrompt) {
+          localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+          sdk.actions.addMiniApp().catch(() => {});
         }
+      } catch (error) {
+        // SDK not available - force close splash immediately
+        document.body.classList.add('loaded');
       }
     };
 
@@ -100,7 +91,7 @@ function AppContent() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Start SDK init immediately
+    // Start immediately
     initFarcasterSDK();
     
     return () => {
