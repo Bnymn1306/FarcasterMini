@@ -1,7 +1,7 @@
 // FULL ABIs extracted directly from compiled Hardhat artifacts
 // DO NOT modify - these must match exactly with deployed contracts
 
-export const FACTORY_CONTRACT_ADDRESS = "0xe1B773DdaDbc22C81e2eab319137a376d0915Cdd";
+export const FACTORY_CONTRACT_ADDRESS = "0xBC371A2B4A727ea4b1c8E53018a6914F5344FCAc";
 
 // TokenFactory ABI - COMPLETE from artifacts/contracts/TokenFactory.sol/TokenFactory.json
 export const TOKEN_FACTORY_ABI = [
@@ -31,6 +31,18 @@ export const TOKEN_FACTORY_ABI = [
         "internalType": "address",
         "name": "creator",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "initialPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
       }
     ],
     "name": "TokenCreated",
@@ -66,6 +78,11 @@ export const TOKEN_FACTORY_ABI = [
         "internalType": "string",
         "name": "symbol",
         "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "initialPrice",
+        "type": "uint256"
       }
     ],
     "name": "createToken",
@@ -318,7 +335,7 @@ export const BONDING_CURVE_TOKEN_ABI = [
   },
   {
     "inputs": [],
-    "name": "K_MULTIPLIER",
+    "name": "initialPrice",
     "outputs": [
       {
         "internalType": "uint256",
