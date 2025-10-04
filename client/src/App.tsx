@@ -50,46 +50,22 @@ function AppContent() {
     disconnectFarcaster,
   } = useWallet();
   const { toast } = useToast();
-  const [isSDKInitialized, setIsSDKInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isSDKInitialized) {
-      const initializeSDK = async () => {
-        try {
-          const { success, inFrame } = await initializeFarcasterSDK();
-          console.log(`📱 SDK initialized - success: ${success}, inFrame: ${inFrame}`);
-          
-          const context = await getFarcasterContext();
-          if (context?.user) {
-            connectFarcaster(
-              context.user.username || "farcaster_user",
-              context.user.fid.toString()
-            );
-            
-            if (inFrame) {
-              setTimeout(() => {
-                try {
-                  const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-                  const sdk = getSDK();
-                  if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
-                    localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-                    sdk.actions.addMiniApp().catch(() => {});
-                  }
-                } catch {}
-              }, 2000);
-            }
-          }
-          
-          setIsSDKInitialized(true);
-        } catch (error) {
-          console.error("❌ Failed to initialize SDK:", error);
-          setIsSDKInitialized(true);
-        }
-      };
+    const init = async () => {
+      await initializeFarcasterSDK();
       
-      initializeSDK();
-    }
-  }, [isSDKInitialized, connectFarcaster]);
+      const context = await getFarcasterContext();
+      if (context?.user) {
+        connectFarcaster(
+          context.user.username || "farcaster_user",
+          context.user.fid.toString()
+        );
+      }
+    };
+    
+    init();
+  }, [connectFarcaster]);
 
   // Frontend keepalive - ping health endpoint every 2 minutes
   useEffect(() => {
