@@ -92,6 +92,12 @@ function AppContent() {
           console.log("✅ Splash dismissed - app ready!");
         } catch (error) {
           console.error("❌ Ready failed:", error);
+          try {
+            sdk.actions.ready();
+            console.log("✅ Fallback ready() called");
+          } catch (fallbackError) {
+            console.error("❌ Fallback also failed:", fallbackError);
+          }
         }
       };
       

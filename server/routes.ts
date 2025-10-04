@@ -33,6 +33,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const baseUrl = `${protocol}://${req.get('host')}`;
     
+    const cacheBuster = Date.now();
+    
     const manifest = {
       accountAssociation: {
         header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwRmI5MDAzZTg0MDY2ODIzMDNmRTA3NTdiZDlGQzdjRkVhRjVkMTQifQ",
@@ -42,17 +44,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       frame: {
         version: "1",
         name: "BasedMem",
-        iconUrl: `${baseUrl}/icon.jpg`,
+        iconUrl: `${baseUrl}/icon.jpg?v=${cacheBuster}`,
         homeUrl: baseUrl,
-        imageUrl: `${baseUrl}/frame-image.jpg`,
+        imageUrl: `${baseUrl}/frame-image.jpg?v=${cacheBuster}`,
         buttonTitle: "Launch BasedMem",
-        splashImageUrl: `${baseUrl}/icon.jpg`,
+        splashImageUrl: `${baseUrl}/icon.jpg?v=${cacheBuster}`,
         splashBackgroundColor: "#8B5CF6",
         webhookUrl: `${baseUrl}/api/webhook`,
       }
     };
     
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.json(manifest);
   });
   // Price Alerts API
