@@ -38,8 +38,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const manifest = {
       accountAssociation: {
         header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwRmI5MDAzZTg0MDY2ODIzMDNmRTA3NTdiZDlGQzdjRkVhRjVkMTQifQ",
-        payload: "eyJkb21haW4iOiJmYjY3NTY4Zi0yMDIyLTRhZTMtYTI4NS03ZWM0OTAyYzZiNTQtMDAta25iYjlzZTAyMzRyLnNwb2NrLnJlcGxpdC5hcHAifQ",
-        signature: "MHg1NjYxNzJlZjcyN2FjYmY5ZjUwNWNlN2RmZDY1OTBiZWYyZGU0NDE1OWI3YmY1MTc1ZjZmNjU3MjY1ZTAzNWM0MDU4ZGJmZjExMDM2NTI2OTRmOTlkNjJlYjE1YjNlNDFmMmI0YzVlZThiODRhNzg4NTVlMWQ2YmE5MzJiMDVlODFj"
+        payload: "eyJkb21haW4iOiJiYXNlZG1lbS5yZXBsaXQuYXBwIn0",
+        signature: "MHg5Y2VmM2RkNjBkYzliZGY0OWE0Yzk5MTBjZDdlOTMxNGM4ZDNhYmE5MGUzZDhkMWY1MWY3ZGJiZjYwZjg3MTViNGRhYWQ4ODkwOTE3OTQzMmMyNWJhMDQ2NmNiOTI0MTY5OTNkNGQxNjJhNjg5M2NmYjJhNzgxYzRmMGEzNTU5OTFi"
       },
       frame: {
         version: "1",
