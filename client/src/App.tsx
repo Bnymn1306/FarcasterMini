@@ -51,6 +51,7 @@ function AppContent() {
   } = useWallet();
   const { toast } = useToast();
   const isSDKLoadedRef = useRef(false);
+  const isReadyCalledRef = useRef(false);
   const connectFarcasterRef = useRef(connectFarcaster);
   
   useEffect(() => {
@@ -86,15 +87,9 @@ function AppContent() {
         } catch (error) {
           if (timeoutId) clearTimeout(timeoutId);
         }
-        
-        try {
-          await sdk.actions.ready({});
-        } catch (error) {
-          console.error("SDK ready() failed:", error);
-        }
       };
       
-      load().catch(err => console.error("SDK init error:", err));
+      load().catch(err => console.error("SDK context error:", err));
     }
     
     return () => {
@@ -103,6 +98,25 @@ function AppContent() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const sdk = getSDK();
+    
+    if (sdk && !isReadyCalledRef.current) {
+      isReadyCalledRef.current = true;
+      
+      const callReady = async () => {
+        try {
+          await sdk.actions.ready({});
+          console.log("✅ SDK ready() called - splash dismissed");
+        } catch (error) {
+          console.error("SDK ready() failed:", error);
+        }
+      };
+      
+      callReady();
+    }
+  });
 
   // Frontend keepalive - ping health endpoint every 2 minutes
   useEffect(() => {
