@@ -33,9 +33,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const baseUrl = `${protocol}://${req.get('host')}`;
     
-    // Updated payload with .replit.app domain
-    // Decoded: {"domain":"fb67568f-2022-4ae3-a285-7ec4902c6b54-00-knbb9se0234r.spock.replit.app"}
     const manifest = {
+      accountAssociation: {
+        header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwRmI5MDAzZTg0MDY2ODIzMDNmRTA3NTdiZDlGQzdjRkVhRjVkMTQifQ",
+        payload: "eyJkb21haW4iOiJmYjY3NTY4Zi0yMDIyLTRhZTMtYTI4NS03ZWM0OTAyYzZiNTQtMDAta25iYjlzZTAyMzRyLnNwb2NrLnJlcGxpdC5hcHAifQ",
+        signature: "MHg1NjYxNzJlZjcyN2FjYmY5ZjUwNWNlN2RmZDY1OTBiZWYyZGU0NDE1OWI3YmY1MTc1ZjZmNjU3MjY1ZTAzNWM0MDU4ZGJmZjExMDM2NTI2OTRmOTlkNjJlYjE1YjNlNDFmMmI0YzVlZThiODRhNzg4NTVlMWQ2YmE5MzJiMDVlODFj"
+      },
       frame: {
         version: "1",
         name: "BasedMem",
@@ -46,11 +49,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         splashImageUrl: `${baseUrl}/icon.jpg`,
         splashBackgroundColor: "#8B5CF6",
         webhookUrl: `${baseUrl}/api/webhook`,
-      },
-      accountAssociation: {
-        header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDg5ODhDNDU1ZjBjZjREMzE2N2MzMkI5RDY1QjA5MTMwNDU0NTM2YWMifQ",
-        payload: "eyJkb21haW4iOiJmYjY3NTY4Zi0yMDIyLTRhZTMtYTI4NS03ZWM0OTAyYzZiNTQtMDAta25iYjlzZTAyMzRyLnNwb2NrLnJlcGxpdC5hcHAifQ",
-        signature: "agp+aqj8P+GYxzTwoX56T3OyOWM4hC0tmzKpy389KTUaiPacqdXHJVQOZ0GGIN8tS8t6Uz9DdmVaf0qG4UbIzBw="
       }
     };
     
