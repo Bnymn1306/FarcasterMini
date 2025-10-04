@@ -60,6 +60,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Expires', '0');
     res.json(manifest);
   });
+  
+  // Farcaster Mini App notification token endpoint
+  app.post("/api/notification-token", express.json(), async (req, res) => {
+    try {
+      const { url, token } = req.body;
+      
+      if (!url || !token) {
+        return res.status(400).json({ error: "url and token required" });
+      }
+      
+      console.log("🔔 Farcaster notification token received:");
+      console.log("  URL:", url);
+      console.log("  Token:", token.substring(0, 20) + "...");
+      
+      res.json({ success: true, message: "Notification token saved" });
+    } catch (error) {
+      console.error("Error saving notification token:", error);
+      res.status(500).json({ error: "Failed to save token" });
+    }
+  });
+  
   // Price Alerts API
   app.get("/api/alerts", async (req, res) => {
     try {

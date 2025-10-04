@@ -90,6 +90,49 @@ function AppContent() {
         try {
           await sdk.actions.ready({});
           console.log("✅ Splash dismissed - app ready!");
+          
+          setTimeout(async () => {
+            try {
+              const hasPromptedAddMiniApp = localStorage.getItem('basedmem_miniapp_prompted');
+              
+              if (!hasPromptedAddMiniApp) {
+                try {
+                  console.log("🎯 Prompting user to add Mini App...");
+                  const result = await sdk.actions.addMiniApp();
+                  
+                  localStorage.setItem('basedmem_miniapp_prompted', 'true');
+                  
+                  if (result?.notificationDetails) {
+                    console.log("✅ Mini App added! Notification enabled");
+                    
+                    try {
+                      await fetch('/api/notification-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          url: result.notificationDetails.url,
+                          token: result.notificationDetails.token
+                        })
+                      });
+                    } catch (err) {
+                      console.error("Failed to save notification token:", err);
+                    }
+                    
+                    toast({
+                      title: "Added to Mini Apps! 🎉",
+                      description: "BasedMem is now in your favorites",
+                    });
+                  }
+                } catch (error) {
+                  console.log("ℹ️ User declined to add Mini App");
+                  localStorage.setItem('basedmem_miniapp_prompted', 'true');
+                }
+              }
+            } catch (storageError) {
+              console.warn("localStorage not available:", storageError);
+            }
+          }, 2000);
+          
         } catch (error) {
           console.error("❌ Ready failed:", error);
           try {
