@@ -1,31 +1,24 @@
 import sdk from "@farcaster/frame-sdk";
 
-let isFrameReady = false;
-let frameReadyPromise: Promise<boolean> | null = null;
+let sdkReadySuccess = false;
+let frameReadyPromise: Promise<{ success: boolean; inFrame: boolean }> | null = null;
 
 export function isInFarcasterFrame(): boolean {
   if (typeof window === 'undefined') return false;
   return window !== window.parent;
 }
 
-export async function initializeFarcasterSDK(): Promise<boolean> {
+export async function initializeFarcasterSDK(): Promise<{ success: boolean; inFrame: boolean }> {
   if (frameReadyPromise) {
     return frameReadyPromise;
   }
 
-  frameReadyPromise = new Promise<boolean>((resolve) => {
+  frameReadyPromise = new Promise<{ success: boolean; inFrame: boolean }>((resolve) => {
     const inFrame = isInFarcasterFrame();
+    const frameInfo = inFrame ? "in Farcaster Frame" : "in browser";
+    console.log(`🚀 Initializing Farcaster SDK (${frameInfo}) - calling ready()...`);
     
-    if (!inFrame) {
-      console.log("ℹ️ Not running in Farcaster Frame - skipping SDK ready()");
-      isFrameReady = false;
-      resolve(false);
-      return;
-    }
-
-    console.log("🚀 Farcaster Frame detected, calling SDK ready()...");
-    
-    const timeoutMs = 5000;
+    const timeoutMs = 3000;
     let timeoutId: number;
     let resolved = false;
 
@@ -34,21 +27,21 @@ export async function initializeFarcasterSDK(): Promise<boolean> {
       resolved = true;
       clearTimeout(timeoutId);
       console.log(message);
-      isFrameReady = success;
-      resolve(success);
+      sdkReadySuccess = success;
+      resolve({ success, inFrame });
     };
 
     timeoutId = window.setTimeout(() => {
-      resolveOnce(false, "⚠️ SDK ready() timeout after 5s - continuing anyway");
+      resolveOnce(false, `⏱️ SDK ready() timeout after 3s (${frameInfo}) - splash dismissed, app active`);
     }, timeoutMs);
 
     sdk.actions.ready()
       .then(() => {
-        resolveOnce(true, "✅ SDK ready() completed - splash should close");
+        resolveOnce(true, `✅ SDK ready() completed (${frameInfo}) - splash dismissed, app active`);
       })
       .catch((err) => {
-        console.error("❌ SDK ready() failed:", err);
-        resolveOnce(false, "❌ SDK ready() failed - continuing anyway");
+        console.error("⚠️ SDK ready() failed (non-fatal):", err);
+        resolveOnce(false, `⚠️ SDK ready() failed (${frameInfo}) - splash dismissed, app active`);
       });
   });
 
@@ -56,16 +49,20 @@ export async function initializeFarcasterSDK(): Promise<boolean> {
 }
 
 export async function getFarcasterContext() {
-  if (!isFrameReady) {
-    console.log("⚠️ SDK not ready, skipping context fetch");
-    return null;
+  if (!sdkReadySuccess) {
+    console.log("⚠️ SDK not fully ready - attempting context fetch anyway");
   }
-
+  
   try {
     const context = await sdk.context;
-    return context;
+    if (context?.user) {
+      console.log("✅ Farcaster context loaded:", context.user.username);
+      return context;
+    }
+    console.log("ℹ️ Context available but no user data");
+    return null;
   } catch (error) {
-    console.error("❌ Failed to get Farcaster context:", error);
+    console.log("ℹ️ Running outside Farcaster - context unavailable");
     return null;
   }
 }

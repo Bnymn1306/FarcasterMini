@@ -56,29 +56,28 @@ function AppContent() {
     if (!isSDKInitialized) {
       const initializeSDK = async () => {
         try {
-          const isReady = await initializeFarcasterSDK();
+          const { success, inFrame } = await initializeFarcasterSDK();
+          console.log(`📱 SDK initialized - success: ${success}, inFrame: ${inFrame}`);
           
-          if (isReady) {
-            const context = await getFarcasterContext();
-            if (context?.user) {
-              connectFarcaster(
-                context.user.username || "farcaster_user",
-                context.user.fid.toString()
-              );
-            }
+          const context = await getFarcasterContext();
+          if (context?.user) {
+            connectFarcaster(
+              context.user.username || "farcaster_user",
+              context.user.fid.toString()
+            );
             
-            setTimeout(() => {
-              try {
-                const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
-                const sdk = getSDK();
-                if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
-                  localStorage.setItem('basedmem_add_miniapp_shown', 'true');
-                  sdk.actions.addMiniApp().catch(() => {});
-                }
-              } catch {}
-            }, 2000);
-          } else {
-            console.log("ℹ️ Running outside Farcaster Frame - full features available via wallet connection");
+            if (inFrame) {
+              setTimeout(() => {
+                try {
+                  const hasShownPrompt = localStorage.getItem('basedmem_add_miniapp_shown');
+                  const sdk = getSDK();
+                  if (!hasShownPrompt && sdk?.actions?.addMiniApp) {
+                    localStorage.setItem('basedmem_add_miniapp_shown', 'true');
+                    sdk.actions.addMiniApp().catch(() => {});
+                  }
+                } catch {}
+              }, 2000);
+            }
           }
           
           setIsSDKInitialized(true);
