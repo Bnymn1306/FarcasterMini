@@ -3,11 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NavigationBar } from "@/components/NavigationBar";
-import { useEffect, lazy, Suspense, useState } from "react";
+import { useEffect, lazy, Suspense, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Home from "@/pages/Home";
-import { initializeFarcasterSDK, getFarcasterContext, getSDK } from "@/lib/farcasterInit";
+import { getSDK } from "@/lib/farcasterInit";
 
 const Browse = lazy(() => import("@/pages/Browse"));
 const Create = lazy(() => import("@/pages/Create"));
@@ -50,22 +50,59 @@ function AppContent() {
     disconnectFarcaster,
   } = useWallet();
   const { toast } = useToast();
+  const isSDKLoadedRef = useRef(false);
+  const connectFarcasterRef = useRef(connectFarcaster);
+  
+  useEffect(() => {
+    connectFarcasterRef.current = connectFarcaster;
+  }, [connectFarcaster]);
 
   useEffect(() => {
-    const init = async () => {
-      await initializeFarcasterSDK();
+    const sdk = getSDK();
+    
+    if (sdk && !isSDKLoadedRef.current) {
+      isSDKLoadedRef.current = true;
+      connectFarcasterRef.current = connectFarcaster;
       
-      const context = await getFarcasterContext();
-      if (context?.user) {
-        connectFarcaster(
-          context.user.username || "farcaster_user",
-          context.user.fid.toString()
-        );
+      const load = async () => {
+        let timeoutId: NodeJS.Timeout | null = null;
+        
+        try {
+          const contextPromise = sdk.context;
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error("Context timeout")), 3000);
+          });
+          
+          const context = await Promise.race([contextPromise, timeoutPromise]) as any;
+          
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          if (context?.user) {
+            connectFarcasterRef.current(
+              context.user.username || "farcaster_user",
+              context.user.fid.toString()
+            );
+          }
+        } catch (error) {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
+        
+        try {
+          await sdk.actions.ready({});
+        } catch (error) {
+          console.error("SDK ready() failed:", error);
+        }
+      };
+      
+      load().catch(err => console.error("SDK init error:", err));
+    }
+    
+    return () => {
+      if (sdk) {
+        sdk.removeAllListeners();
       }
     };
-    
-    init();
-  }, [connectFarcaster]);
+  }, []);
 
   // Frontend keepalive - ping health endpoint every 2 minutes
   useEffect(() => {
