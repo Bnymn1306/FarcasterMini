@@ -52,10 +52,12 @@ function AppContent() {
   const { toast } = useToast();
   const isSDKLoadedRef = useRef(false);
   const connectFarcasterRef = useRef(connectFarcaster);
+  const connectWalletRef = useRef(connectWallet);
   
   useEffect(() => {
     connectFarcasterRef.current = connectFarcaster;
-  }, [connectFarcaster]);
+    connectWalletRef.current = connectWallet;
+  }, [connectFarcaster, connectWallet]);
 
   useEffect(() => {
     const sdk = getSDK();
@@ -82,6 +84,18 @@ function AppContent() {
               context.user.username || "farcaster_user",
               context.user.fid.toString()
             );
+            
+            if (sdk.wallet?.ethProvider) {
+              try {
+                const accounts = await sdk.wallet.ethProvider.request({ method: "eth_accounts" });
+                if (accounts && accounts.length > 0) {
+                  console.log("✅ Auto-connecting Farcaster wallet:", accounts[0]);
+                  await connectWalletRef.current();
+                }
+              } catch (err) {
+                console.warn("Could not auto-connect wallet:", err);
+              }
+            }
           }
         } catch (error) {
           if (timeoutId) clearTimeout(timeoutId);
