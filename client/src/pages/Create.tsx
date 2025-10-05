@@ -205,9 +205,34 @@ export default function Create() {
     } catch (error: any) {
       console.error("Error creating token:", error);
       
+      // Provide user-friendly error messages
+      let errorTitle = "Deployment Failed";
+      let errorDescription = "Failed to deploy token";
+      
+      const errorMsg = error?.message?.toLowerCase() || "";
+      const errorCode = error?.code;
+      
+      if (errorCode === 4001 || errorMsg.includes("user rejected") || errorMsg.includes("user denied")) {
+        errorTitle = "Transaction Cancelled";
+        errorDescription = "You cancelled the transaction. No funds were spent.";
+      } else if (errorMsg.includes("insufficient funds") || errorMsg.includes("insufficient balance")) {
+        errorTitle = "Insufficient Funds";
+        errorDescription = "You need more ETH in your wallet to cover gas fees. Please add ETH to your Farcaster wallet.";
+      } else if (errorMsg.includes("gas") || errorMsg.includes("out of gas")) {
+        errorTitle = "Gas Fee Error";
+        errorDescription = "Transaction failed due to gas issues. Please try again with more ETH.";
+      } else if (errorMsg.includes("network") || errorMsg.includes("connection")) {
+        errorTitle = "Network Error";
+        errorDescription = "Connection to Base network failed. Please check your internet and try again.";
+      } else if (error?.message) {
+        errorDescription = error.message.length > 100 
+          ? error.message.substring(0, 100) + "..." 
+          : error.message;
+      }
+      
       toast({
-        title: "Deployment Failed",
-        description: error?.message || "Failed to deploy token",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
