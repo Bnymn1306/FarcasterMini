@@ -43,9 +43,36 @@ export async function postTokenLaunchTweet(data: TokenLaunchData): Promise<boole
   }
 
   try {
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const domain = process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
-    const tokenUrl = `${protocol}://${domain}/token/${data.address}`;
+    // Determine base URL based on environment
+    let baseUrl: string;
+    
+    if (process.env.NODE_ENV === 'production') {
+      // In production, check for REPLIT_DOMAINS (Replit Deployments)
+      const replitDomains = process.env.REPLIT_DOMAINS;
+      
+      if (replitDomains) {
+        // REPLIT_DOMAINS can be JSON or string depending on deployment type
+        try {
+          const domains = JSON.parse(replitDomains);
+          baseUrl = `https://${domains.deploy || 'basedmem.replit.app'}`;
+        } catch {
+          // If it's a plain string (single domain), use it
+          baseUrl = `https://${replitDomains}`;
+        }
+      } else {
+        // Fallback to known production domain
+        baseUrl = 'https://basedmem.replit.app';
+      }
+    } else {
+      // Development - use REPLIT_DEV_DOMAIN or localhost
+      baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : 'http://localhost:5000';
+    }
+    
+    const tokenUrl = `${baseUrl}/token/${data.address}`;
+    
+    console.log('🔗 Generated token URL for cast:', tokenUrl);
 
     const tweetText = `🚀 New Token Launch!
 
