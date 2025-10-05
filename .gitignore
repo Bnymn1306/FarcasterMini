@@ -9,3 +9,7 @@ vite.config.ts.*
 *.log
 .replit
 replit.nix
+attached_assets
+GITHUB_UPLOAD_GUIDE.md
+MIRROR_ARTICLE.md
+BasedMem-source.tar.gz
