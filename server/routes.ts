@@ -47,65 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.seedPlatformToken();
   }
   
-  // Farcaster Composer Action - CORS middleware for all methods
-  app.all("/api/composer/launch", (req, res, next) => {
-    // Set CORS headers for all requests
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Handle OPTIONS preflight
-    if (req.method === 'OPTIONS') {
-      return res.status(200).end();
-    }
-    
-    next();
-  });
-
-  // Farcaster Composer Action - Metadata (GET)
-  app.get("/api/composer/launch", (req, res) => {
-    try {
-      const protocol = req.get('x-forwarded-proto') || req.protocol;
-      const baseUrl = `${protocol}://${req.get('host')}`;
-      
-      res.json({
-        name: "Launch Token on BasedMem",
-        icon: "rocket",
-        description: "Deploy a meme token on Base in 5 seconds - powered by BasedMem",
-        aboutUrl: `${baseUrl}`,
-        action: {
-          type: "post",
-          postUrl: `${baseUrl}/api/composer/launch`
-        }
-      });
-    } catch (error) {
-      console.error("Error serving composer action metadata:", error);
-      res.status(500).json({ error: "Failed to load action" });
-    }
-  });
-
-  // Farcaster Composer Action - Handler (POST)
-  app.post("/api/composer/launch", express.json(), (req, res) => {
-    try {
-      const protocol = req.get('x-forwarded-proto') || req.protocol;
-      const baseUrl = `${protocol}://${req.get('host')}`;
-      
-      // Return a form response that opens BasedMem in the mini app
-      res.json({
-        type: "form",
-        title: "Launch Your Meme Token",
-        url: `${baseUrl}/create`
-      });
-    } catch (error) {
-      console.error("Error handling composer action:", error);
-      res.status(500).json({ 
-        type: "message",
-        message: "Failed to launch. Please try again."
-      });
-    }
-  });
-
-  // Serve static files from public directory - AFTER API routes
+  // Serve static files from public directory
   const publicPath = path.join(process.cwd(), "public");
   app.use(express.static(publicPath));
 
@@ -128,6 +70,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const cacheBuster = Date.now();
     
     const manifest = {
+      accountAssociation: {
+        header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwRmI5MDAzZTg0MDY2ODIzMDNmRTA3NTdiZDlGQzdjRkVhRjVkMTQifQ",
+        payload: "eyJkb21haW4iOiJiYXNlZG1lbS5yZXBsaXQuYXBwIn0",
+        signature: "MHg5Y2VmM2RkNjBkYzliZGY0OWE0Yzk5MTBjZDdlOTMxNGM4ZDNhYmE5MGUzZDhkMWY1MWY3ZGJiZjYwZjg3MTViNGRhYWQ4ODkwOTE3OTQzMmMyNWJhMDQ2NmNiOTI0MTY5OTNkNGQxNjJhNjg5M2NmYjJhNzgxYzRmMGEzNTU5OTFi"
+      },
       frame: {
         version: "1",
         name: "BasedMem",
