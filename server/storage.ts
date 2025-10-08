@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert, type DailyCheckIn, type InsertDailyCheckIn, users, tokens, trades, holdings, priceAlerts, dailyCheckIns } from "@shared/schema";
+import { type User, type InsertUser, type Token, type InsertToken, type Trade, type InsertTrade, type Holding, type InsertHolding, type PriceAlert, type InsertPriceAlert, type DailyCheckIn, type InsertDailyCheckIn, type Badge, type InsertBadge, users, tokens, trades, holdings, priceAlerts, dailyCheckIns, badges } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
@@ -36,6 +36,10 @@ export interface IStorage {
   getDailyCheckIn(userId: string, date: Date): Promise<DailyCheckIn | undefined>;
   getCheckInsByUser(userId: string): Promise<DailyCheckIn[]>;
   createDailyCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn>;
+  
+  getBadgesByUser(userId: string): Promise<Badge[]>;
+  createBadge(badge: InsertBadge): Promise<Badge>;
+  getUserTokenCount(userId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -45,6 +49,7 @@ export class MemStorage implements IStorage {
   private holdings: Map<string, Holding>;
   private priceAlerts: Map<string, PriceAlert>;
   private dailyCheckIns: Map<string, DailyCheckIn>;
+  private badges: Map<string, Badge>;
 
   constructor() {
     this.users = new Map();
@@ -53,6 +58,7 @@ export class MemStorage implements IStorage {
     this.holdings = new Map();
     this.priceAlerts = new Map();
     this.dailyCheckIns = new Map();
+    this.badges = new Map();
     
     // Seed BMEM platform token (will persist until server restart)
     this.seedPlatformToken();
@@ -339,6 +345,29 @@ export class MemStorage implements IStorage {
     this.dailyCheckIns.set(id, checkIn);
     return checkIn;
   }
+
+  async getBadgesByUser(userId: string): Promise<Badge[]> {
+    return Array.from(this.badges.values())
+      .filter((badge) => badge.userId === userId)
+      .sort((a, b) => new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime());
+  }
+
+  async createBadge(insertBadge: InsertBadge): Promise<Badge> {
+    const id = randomUUID();
+    const badge: Badge = {
+      ...insertBadge,
+      id,
+      earnedAt: new Date()
+    };
+    this.badges.set(id, badge);
+    return badge;
+  }
+
+  async getUserTokenCount(userId: string): Promise<number> {
+    return Array.from(this.tokens.values()).filter(
+      (token) => token.creatorId === userId
+    ).length;
+  }
 }
 
 neonConfig.webSocketConstructor = ws;
@@ -514,6 +543,23 @@ export class DBStorage implements IStorage {
   async createDailyCheckIn(insertCheckIn: InsertDailyCheckIn): Promise<DailyCheckIn> {
     const result = await this.db.insert(dailyCheckIns).values(insertCheckIn).returning();
     return result[0];
+  }
+
+  async getBadgesByUser(userId: string): Promise<Badge[]> {
+    return await this.db.select().from(badges)
+      .where(eq(badges.userId, userId))
+      .orderBy(desc(badges.earnedAt));
+  }
+
+  async createBadge(insertBadge: InsertBadge): Promise<Badge> {
+    const result = await this.db.insert(badges).values(insertBadge).returning();
+    return result[0];
+  }
+
+  async getUserTokenCount(userId: string): Promise<number> {
+    const result = await this.db.select().from(tokens)
+      .where(eq(tokens.creatorId, userId));
+    return result.length;
   }
 
   async seedPlatformToken(): Promise<void> {

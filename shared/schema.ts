@@ -82,6 +82,19 @@ export const dailyCheckIns = pgTable("daily_check_ins", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const badges = pgTable("badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  badgeType: text("badge_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  iconEmoji: text("icon_emoji").notNull(),
+  nftTokenId: text("nft_token_id"),
+  nftContractAddress: text("nft_contract_address"),
+  milestone: integer("milestone").notNull(),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   currentStreak: true,
@@ -127,6 +140,11 @@ export const insertDailyCheckInSchema = createInsertSchema(dailyCheckIns).omit({
   createdAt: true,
 });
 
+export const insertBadgeSchema = createInsertSchema(badges).omit({
+  id: true,
+  earnedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -144,6 +162,9 @@ export type PriceAlert = typeof priceAlerts.$inferSelect;
 
 export type InsertDailyCheckIn = z.infer<typeof insertDailyCheckInSchema>;
 export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
+
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type Badge = typeof badges.$inferSelect;
 
 export type TokenWithCreator = Token & {
   creator: User;
