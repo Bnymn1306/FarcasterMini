@@ -70,6 +70,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const cacheBuster = Date.now();
     
     const manifest = {
+      accountAssociation: {
+        header: "eyJmaWQiOjM1MTUwMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDg5ODhDNDU1ZjBjZjREMzE2N2MzMkI5RDY1QjA5MTMwNDU0NTM2YWMifQ",
+        payload: "eyJkb21haW4iOiJiYXNlZG1lbS5yZXBsaXQuYXBwIn0",
+        signature: "IrSv3TiqZHm759m0mbJfSjZQKj9a0zBj5fVEZ0IfBRg5dtaH3pBetxaUpdMbU5Bl4oBfJblXkCxqtItkar3Xaxw="
+      },
       frame: {
         version: "1",
         name: "BasedMem",
