@@ -268,6 +268,7 @@ export default function Create() {
 
       <div className="mb-6 flex justify-center">
         <Button
+          type="button"
           onClick={handleQuickLaunch}
           disabled={isDeploying || !walletAddress}
           size="lg"

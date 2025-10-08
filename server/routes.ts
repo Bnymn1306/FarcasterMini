@@ -738,6 +738,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Launch from Cast - Farcaster Frame Action
+  app.get("/api/frame/quick-launch", async (req, res) => {
+    try {
+      const protocol = req.get('x-forwarded-proto') || req.protocol;
+      const baseUrl = `${protocol}://${req.get('host')}`;
+      const frameImage = `${baseUrl}/frame-image.jpg`;
+      
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Launch on BasedMem</title>
+  <meta property="og:title" content="Quick Launch Your Meme Token" />
+  <meta property="og:description" content="Deploy a token on Base in 5 seconds!" />
+  <meta property="og:image" content="${frameImage}" />
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="${frameImage}" />
+  <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
+  <meta property="fc:frame:button:1" content="⚡ Launch Token Now" />
+  <meta property="fc:frame:button:1:action" content="link" />
+  <meta property="fc:frame:button:1:target" content="${baseUrl}" />
+</head>
+<body>
+  <h1>⚡ Quick Launch on BasedMem</h1>
+  <p>Deploy your meme token on Base in 5 seconds!</p>
+</body>
+</html>`;
+      
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } catch (error) {
+      console.error("Error generating quick launch frame:", error);
+      res.status(500).send("Error generating frame");
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
