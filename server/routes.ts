@@ -7,6 +7,40 @@ import path from "path";
 import fs from "fs";
 import { postTokenLaunchTweet } from "./twitter";
 
+// Badge definitions
+const BADGE_TYPES = {
+  GENESIS_BUILDER: { title: "🥇 Genesis Builder", description: "Launched your first token on Base", milestone: 1, iconEmoji: "🥇" },
+  MEME_MASTER: { title: "🔥 Meme Master", description: "Launched 10 tokens", milestone: 10, iconEmoji: "🔥" },
+  VIRAL_KING: { title: "👑 Viral King", description: "Launched 25 tokens", milestone: 25, iconEmoji: "👑" },
+  BASED_LEGEND: { title: "💎 Based Legend", description: "Launched 50 tokens", milestone: 50, iconEmoji: "💎" },
+};
+
+async function checkAndAwardBadges(userId: string) {
+  try {
+    const tokenCount = await storage.getUserTokenCount(userId);
+    const existingBadges = await storage.getBadgesByUser(userId);
+    const existingBadgeTypes = new Set(existingBadges.map(b => b.badgeType));
+    
+    for (const [type, config] of Object.entries(BADGE_TYPES)) {
+      if (tokenCount >= config.milestone && !existingBadgeTypes.has(type)) {
+        await storage.createBadge({
+          userId,
+          badgeType: type,
+          title: config.title,
+          description: config.description,
+          iconEmoji: config.iconEmoji,
+          milestone: config.milestone,
+          nftTokenId: null,
+          nftContractAddress: null,
+        });
+        console.log(`🏆 Badge awarded: ${config.title} to user ${userId}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error checking badges:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Seed platform token on startup (DBStorage only)
   if ('seedPlatformToken' in storage) {
@@ -262,6 +296,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (token.creatorId && token.contractAddress) {
         const creator = await storage.getUser(token.creatorId);
+        
+        // Check for badges (async, no await)
+        checkAndAwardBadges(token.creatorId).catch(err => {
+          console.error("Failed to award badges:", err);
+        });
         
         postTokenLaunchTweet({
           name: token.name,
@@ -684,6 +723,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error handling frame action:", error);
       res.status(500).send("Error handling frame action");
+    }
+  });
+
+  // Badges API
+  app.get("/api/badges/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const badges = await storage.getBadgesByUser(userId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ error: "Failed to fetch badges" });
     }
   });
 

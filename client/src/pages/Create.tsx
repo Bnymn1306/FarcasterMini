@@ -8,6 +8,7 @@ import { FACTORY_CONTRACT_ADDRESS, TOKEN_FACTORY_ABI } from "@/lib/contracts";
 import { useState } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { Contract, Interface } from "ethers";
+import { Button } from "@/components/ui/button";
 
 export default function Create() {
   const { toast } = useToast();
@@ -240,6 +241,19 @@ export default function Create() {
     }
   };
 
+  const handleQuickLaunch = async () => {
+    const quickData = {
+      name: `QuickMeme${Date.now().toString().slice(-4)}`,
+      symbol: `QM${Date.now().toString().slice(-3)}`,
+      description: "Quick launched meme token on Base!",
+      totalSupply: "1000000",
+      initialPrice: "0.000001",
+      creatorWalletAddress: walletAddress
+    };
+    
+    await handleSubmit(quickData);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-8 text-center">
@@ -250,6 +264,18 @@ export default function Create() {
             ⏳ Deploying via Farcaster wallet...
           </p>
         )}
+      </div>
+
+      <div className="mb-6 flex justify-center">
+        <Button
+          onClick={handleQuickLaunch}
+          disabled={isDeploying || !walletAddress}
+          size="lg"
+          className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
+          data-testid="button-quick-launch"
+        >
+          ⚡ 5-Second Quick Launch
+        </Button>
       </div>
       
       <CreateTokenForm onSubmit={handleSubmit} disabled={isDeploying} data-testid="form-create-token" />
