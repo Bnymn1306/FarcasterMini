@@ -44,6 +44,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
   const [castUrl, setCastUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importedCast, setImportedCast] = useState<any>(null);
+  const [lastProcessedUrl, setLastProcessedUrl] = useState('');
   const [formData, setFormData] = useState<TokenFormData>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -79,6 +80,24 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }, [formData]);
+
+  // Auto-import cast when valid URL is detected
+  useEffect(() => {
+    if (!castUrl || castUrl === lastProcessedUrl) return;
+    
+    // Check if it's a valid Warpcast URL
+    const isValidUrl = /warpcast\.com\/[^/]+\/0x[a-fA-F0-9]+/.test(castUrl);
+    
+    if (isValidUrl && castUrl !== lastProcessedUrl) {
+      // Auto-import with a slight delay for better UX
+      const timer = setTimeout(() => {
+        handleImportCast();
+        setLastProcessedUrl(castUrl);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [castUrl, lastProcessedUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,26 +241,14 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Link a Warpcast cast to your token and create meme magic ✨
+            Paste a Warpcast URL to automatically link it to your token ✨
           </p>
-          <div className="flex gap-2">
-            <Input
-              value={castUrl}
-              onChange={(e) => setCastUrl(e.target.value)}
-              placeholder="https://warpcast.com/dwr.eth/0x..."
-              className="flex-1"
-              data-testid="input-cast-url"
-            />
-            <Button
-              type="button"
-              onClick={handleImportCast}
-              disabled={isImporting || !castUrl.trim()}
-              className="gap-2"
-              data-testid="button-import-cast"
-            >
-              {isImporting ? "Importing..." : "Import"}
-            </Button>
-          </div>
+          <Input
+            value={castUrl}
+            onChange={(e) => setCastUrl(e.target.value)}
+            placeholder="https://warpcast.com/dwr.eth/0x..."
+            data-testid="input-cast-url"
+          />
           {importedCast && (
             <div className="text-xs text-muted-foreground space-y-1 mt-2">
               <p>📝 "{importedCast.text.substring(0, 80)}..."</p>
