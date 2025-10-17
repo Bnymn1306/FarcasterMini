@@ -202,9 +202,8 @@ export default function Create() {
       
       // If this is a cast tokenization, create special message
       if (data.castUrl && data.castAuthorUsername) {
-        // Cast tokenization message - use displayName for proper ENS mentions
-        const mentionName = data.castAuthorDisplayName || data.castAuthorUsername;
-        castText = `🚀 Just tokenized @${mentionName}'s cast on BasedMem!\n\n${data.castUrl}\n\nToken: $${data.symbol}\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #Farcaster #Base`;
+        // Cast tokenization message - use username for ENS mentions (e.g., jesse.base.eth)
+        castText = `🚀 Just tokenized @${data.castAuthorUsername}'s cast on BasedMem!\n\n${data.castUrl}\n\nToken: $${data.symbol}\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #Farcaster #Base`;
       } else {
         // Regular token launch message
         castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;

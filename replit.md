@@ -66,10 +66,10 @@ Preferred communication style: Simple, everyday language.
     *   Name format: `{AuthorDisplayName} {FirstKeyword} Token` (e.g., "Jesse Build Token")
     *   Symbol format: `{Username4Chars}{CastHash4Chars}` (e.g., "JESS9A2F") for guaranteed uniqueness
 *   **Symbol Uniqueness Enforcement**: Database unique constraint on `tokens.symbol` + backend validation prevents duplicate symbols
-*   **ENS Display Names**: Farcaster mentions now use `authorDisplayName` (ENS name like "aneri.base.eth") for proper @mentions
+*   **ENS Username Mentions**: Farcaster mentions now use `authorUsername` (e.g., "jesse.base.eth") for proper @mentions instead of display names
 *   **Original Cast Display**: Token detail pages show "Original Cast" section with author info, cast preview, and engagement metrics
 *   **Database Schema**: Added `castAuthorDisplayName` field; stores complete cast metadata (castHash, castUrl, castAuthorFid, castAuthorUsername, castAuthorDisplayName, castText, castLikes, castRecasts)
-*   **Post-Launch Cast Format**: "🚀 Just tokenized @{displayName}'s cast on BasedMem!\n\n{castUrl}\n\nToken: ${symbol}\nTotal Supply: {supply}\n\n#BasedMem #Farcaster #Base"
+*   **Post-Launch Cast Format**: "🚀 Just tokenized @{username}'s cast on BasedMem!\n\n{castUrl}\n\nToken: ${symbol}\nTotal Supply: {supply}\n\n#BasedMem #Farcaster #Base"
 *   **Files Modified**:
     *   `client/src/components/CreateTokenForm.tsx`: Unique naming logic, displayName integration
     *   `client/src/pages/Create.tsx`: Cast-specific share with ENS mentions
