@@ -178,6 +178,12 @@ export class MemStorage implements IStorage {
   }
 
   async createToken(insertToken: InsertToken): Promise<Token> {
+    // Check for duplicate symbol
+    const existingToken = await this.getTokenBySymbol(insertToken.symbol);
+    if (existingToken) {
+      throw new Error(`A token with symbol "${insertToken.symbol}" already exists`);
+    }
+    
     const id = randomUUID();
     const PLATFORM_TOKEN_ADDRESS = '0x56A83DE968BF222dc618C2EAc2F049Eb4168073d';
     const isPlatformToken = insertToken.contractAddress?.toLowerCase() === PLATFORM_TOKEN_ADDRESS.toLowerCase();
