@@ -12,6 +12,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   getToken(id: string): Promise<Token | undefined>;
+  getTokenBySymbol(symbol: string): Promise<Token | undefined>;
   getAllTokens(): Promise<Token[]>;
   createToken(token: InsertToken): Promise<Token>;
   updateToken(id: string, updates: Partial<Token>): Promise<Token | undefined>;
@@ -107,6 +108,13 @@ export class MemStorage implements IStorage {
         websiteUrl: 'https://farcaster.xyz/miniapps/742eMUUFUGM0/basedmem',
         isVerified: false,
         isPlatformToken: true,
+        castHash: null,
+        castUrl: null,
+        castAuthorFid: null,
+        castAuthorUsername: null,
+        castText: null,
+        castLikes: null,
+        castRecasts: null,
         createdAt: new Date('2025-10-03T10:00:00.000Z')
       });
       
@@ -159,6 +167,12 @@ export class MemStorage implements IStorage {
     return this.tokens.get(id);
   }
 
+  async getTokenBySymbol(symbol: string): Promise<Token | undefined> {
+    return Array.from(this.tokens.values()).find(
+      (token) => token.symbol === symbol
+    );
+  }
+
   async getAllTokens(): Promise<Token[]> {
     return Array.from(this.tokens.values());
   }
@@ -187,6 +201,13 @@ export class MemStorage implements IStorage {
       holderCount: 0,
       isVerified: false,
       isPlatformToken,
+      castHash: insertToken.castHash ?? null,
+      castUrl: insertToken.castUrl ?? null,
+      castAuthorFid: insertToken.castAuthorFid ?? null,
+      castAuthorUsername: insertToken.castAuthorUsername ?? null,
+      castText: insertToken.castText ?? null,
+      castLikes: insertToken.castLikes ?? null,
+      castRecasts: insertToken.castRecasts ?? null,
       createdAt: new Date()
     };
     this.tokens.set(id, token);
@@ -356,6 +377,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const badge: Badge = {
       ...insertBadge,
+      nftTokenId: insertBadge.nftTokenId ?? null,
+      nftContractAddress: insertBadge.nftContractAddress ?? null,
       id,
       earnedAt: new Date()
     };
@@ -417,6 +440,11 @@ export class DBStorage implements IStorage {
 
   async getToken(id: string): Promise<Token | undefined> {
     const result = await this.db.select().from(tokens).where(eq(tokens.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getTokenBySymbol(symbol: string): Promise<Token | undefined> {
+    const result = await this.db.select().from(tokens).where(eq(tokens.symbol, symbol)).limit(1);
     return result[0];
   }
 

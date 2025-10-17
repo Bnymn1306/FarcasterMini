@@ -372,6 +372,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         castHash: validatedData.castHash,
       });
       
+      // Check if symbol already exists
+      const existingToken = await storage.getTokenBySymbol(validatedData.symbol);
+      if (existingToken) {
+        return res.status(400).json({ 
+          error: "Symbol already exists", 
+          message: `A token with symbol "${validatedData.symbol}" already exists. Please choose a different symbol.` 
+        });
+      }
+      
       const token = await storage.createToken(validatedData);
       console.log("Created token in DB:", token);
       

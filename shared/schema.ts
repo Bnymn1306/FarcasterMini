@@ -21,7 +21,7 @@ export const tokens = pgTable("tokens", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   creatorId: varchar("creator_id"),
   name: text("name").notNull(),
-  symbol: text("symbol").notNull(),
+  symbol: text("symbol").notNull().unique(),
   description: text("description"),
   logoUrl: text("logo_url"),
   contractAddress: text("contract_address").unique(),
