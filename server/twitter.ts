@@ -37,6 +37,7 @@ interface TokenLaunchData {
   // Cast tokenization metadata
   castUrl?: string;
   castAuthorUsername?: string;
+  castAuthorDisplayName?: string;
   castText?: string;
 }
 
@@ -82,11 +83,13 @@ export async function postTokenLaunchTweet(data: TokenLaunchData): Promise<boole
 
     // If this is a cast tokenization, create a special message
     if (data.castUrl && data.castAuthorUsername) {
+      // Use displayName for proper ENS mentions
+      const mentionName = data.castAuthorDisplayName || data.castAuthorUsername;
       const castPreview = data.castText 
         ? `"${data.castText.substring(0, 120)}${data.castText.length > 120 ? '...' : ''}"`
         : '';
       
-      tweetText = `🚀 Just tokenized @${data.castAuthorUsername}'s cast on BasedMem!
+      tweetText = `🚀 Just tokenized @${mentionName}'s cast on BasedMem!
 
 ${castPreview}
 

@@ -56,6 +56,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
         castUrl: undefined,
         castAuthorFid: undefined,
         castAuthorUsername: undefined,
+        castAuthorDisplayName: undefined,
         castText: undefined,
         castLikes: undefined,
         castRecasts: undefined,
@@ -216,6 +217,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
         castUrl: data.url || castUrl, // Use canonical URL from Neynar API
         castAuthorFid: data.authorFid,
         castAuthorUsername: username,
+        castAuthorDisplayName: displayName,
         castText: castText,
         castLikes: data.likes,
         castRecasts: data.recasts,

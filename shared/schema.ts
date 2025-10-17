@@ -41,6 +41,7 @@ export const tokens = pgTable("tokens", {
   castUrl: text("cast_url"),
   castAuthorFid: text("cast_author_fid"),
   castAuthorUsername: text("cast_author_username"),
+  castAuthorDisplayName: text("cast_author_display_name"),
   castText: text("cast_text"),
   castLikes: integer("cast_likes").default(0),
   castRecasts: integer("cast_recasts").default(0),

@@ -61,18 +61,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (Oct 18, 2025)
 
-### Quick Tokenize Auto-Fill Feature
-*   **Button Added**: "Quick Tokenize" button on Create page next to cast URL input
-*   **Auto-Fetch**: Fetches cast data from Neynar API (`GET /api/cast/fetch?url={castUrl}`)
-*   **Auto-Fill Logic**:
-    *   Token Name: `{authorDisplayName} Cast Token`
-    *   Symbol: `{first4chars}CAST` (e.g., JESSCAST)
-    *   Description: Full cast text (max 500 chars)
-    *   Logo: Author's profile picture
-*   **Post-Launch Cast**: Special Farcaster cast format that mentions original author and includes cast URL
-    *   Format: "🚀 Just tokenized @{username}'s cast on BasedMem!\n\n{castUrl}\n\nToken: ${symbol}\nTotal Supply: {supply}\n\n#BasedMem #Farcaster #Base"
+### Cast Tokenization Enhancements
+*   **Unique Token Naming**: Each cast-tokenized token has unique name/symbol using cast keywords + hash suffix to prevent duplicates
+    *   Name format: `{AuthorDisplayName} {FirstKeyword} Token` (e.g., "Jesse Build Token")
+    *   Symbol format: `{Username4Chars}{CastHash4Chars}` (e.g., "JESS9A2F") for guaranteed uniqueness
+*   **Symbol Uniqueness Enforcement**: Database unique constraint on `tokens.symbol` + backend validation prevents duplicate symbols
+*   **ENS Display Names**: Farcaster mentions now use `authorDisplayName` (ENS name like "aneri.base.eth") for proper @mentions
+*   **Original Cast Display**: Token detail pages show "Original Cast" section with author info, cast preview, and engagement metrics
+*   **Database Schema**: Added `castAuthorDisplayName` field; stores complete cast metadata (castHash, castUrl, castAuthorFid, castAuthorUsername, castAuthorDisplayName, castText, castLikes, castRecasts)
+*   **Post-Launch Cast Format**: "🚀 Just tokenized @{displayName}'s cast on BasedMem!\n\n{castUrl}\n\nToken: ${symbol}\nTotal Supply: {supply}\n\n#BasedMem #Farcaster #Base"
 *   **Files Modified**:
-    *   `client/src/components/CreateTokenForm.tsx`: Quick Tokenize button and auto-fill logic
-    *   `client/src/pages/Create.tsx`: Cast-specific share message
-    *   `server/routes.ts`: Neynar REST API integration
-    *   `server/twitter.ts`: Cast tokenization message format
+    *   `client/src/components/CreateTokenForm.tsx`: Unique naming logic, displayName integration
+    *   `client/src/pages/Create.tsx`: Cast-specific share with ENS mentions
+    *   `client/src/pages/TokenDetail.tsx`: Original Cast section display
+    *   `server/routes.ts`: Neynar REST API integration with displayName logging
+    *   `server/twitter.ts`: ENS mention support in auto-tweets
+    *   `shared/schema.ts`: castAuthorDisplayName field + symbol unique constraint
+    *   `server/storage.ts`: Duplicate symbol validation in createToken

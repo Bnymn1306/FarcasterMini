@@ -123,6 +123,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: cast.timestamp,
       };
 
+      console.log('📝 Cast author data:', {
+        username: castData.authorUsername,
+        displayName: castData.authorDisplayName,
+        fid: castData.authorFid
+      });
+
       res.json(castData);
     } catch (error: any) {
       console.error("Error fetching cast:", error);
