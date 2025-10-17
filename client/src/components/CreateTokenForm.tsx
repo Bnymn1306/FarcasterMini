@@ -85,8 +85,9 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
   useEffect(() => {
     if (!castUrl || castUrl === lastProcessedUrl) return;
     
-    // Check if it's a valid Warpcast URL
-    const isValidUrl = /warpcast\.com\/[^/]+\/0x[a-fA-F0-9]+/.test(castUrl);
+    // Check if it's a valid Warpcast/Farcaster URL
+    // Supports: warpcast.com, ar.xyz, and other Farcaster clients
+    const isValidUrl = /(warpcast\.com|ar\.xyz|farcaster\.xyz)\/[^/]+\/0x[a-fA-F0-9]+/.test(castUrl);
     
     if (isValidUrl && castUrl !== lastProcessedUrl) {
       // Auto-import with a slight delay for better UX
@@ -170,18 +171,18 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
     if (!castUrl.trim()) {
       toast({
         title: "URL Required",
-        description: "Please enter a Warpcast URL",
+        description: "Please enter a Farcaster cast URL",
         variant: "destructive",
       });
       return;
     }
 
     // Extract hash from URL for metadata
-    const hashMatch = castUrl.match(/\/(0x[a-fA-F0-9]+)$/);
+    const hashMatch = castUrl.match(/\/(0x[a-fA-F0-9]+)\s*$/);
     if (!hashMatch) {
       toast({
         title: "Invalid URL Format",
-        description: "URL must be in format: https://warpcast.com/username/0xhash",
+        description: "URL must contain a cast hash (0x...)",
         variant: "destructive",
       });
       return;
@@ -189,8 +190,8 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
 
     const castHash = hashMatch[1];
     
-    // Extract username from URL
-    const usernameMatch = castUrl.match(/warpcast\.com\/([^/]+)\//);
+    // Extract username from URL - supports warpcast.com, ar.xyz, farcaster.xyz
+    const usernameMatch = castUrl.match(/(?:warpcast\.com|ar\.xyz|farcaster\.xyz)\/([^/]+)\//);
     const username = usernameMatch?.[1] || "farcaster";
 
     // Create placeholder cast data (user will fill in details manually)
