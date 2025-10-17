@@ -379,6 +379,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           creator: creator?.username || creator?.farcasterUsername || 'anonymous',
           address: token.contractAddress,
           initialPrice: token.currentPrice,
+          // Cast tokenization metadata (if available)
+          castUrl: token.castUrl || undefined,
+          castAuthorUsername: token.castAuthorUsername || undefined,
+          castText: token.castText || undefined,
         }).catch(err => {
           console.error("Failed to post launch tweet:", err);
         });

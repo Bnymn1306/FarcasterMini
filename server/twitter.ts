@@ -34,6 +34,10 @@ interface TokenLaunchData {
   creator: string;
   address: string;
   initialPrice: string;
+  // Cast tokenization metadata
+  castUrl?: string;
+  castAuthorUsername?: string;
+  castText?: string;
 }
 
 export async function postTokenLaunchTweet(data: TokenLaunchData): Promise<boolean> {
@@ -74,7 +78,27 @@ export async function postTokenLaunchTweet(data: TokenLaunchData): Promise<boole
     
     console.log('🔗 Generated token URL for cast:', tokenUrl);
 
-    const tweetText = `🚀 New Token Launch!
+    let tweetText: string;
+
+    // If this is a cast tokenization, create a special message
+    if (data.castUrl && data.castAuthorUsername) {
+      const castPreview = data.castText 
+        ? `"${data.castText.substring(0, 120)}${data.castText.length > 120 ? '...' : ''}"`
+        : '';
+      
+      tweetText = `🚀 Just tokenized @${data.castAuthorUsername}'s cast on BasedMem!
+
+${castPreview}
+
+Token: $${data.symbol}
+Original Cast: ${data.castUrl}
+
+Trade now 👉 ${tokenUrl}
+
+#BasedMem #Base #Farcaster`;
+    } else {
+      // Default token launch message
+      tweetText = `🚀 New Token Launch!
 
 🪙 ${data.symbol} (${data.name})
 👤 Creator: @${data.creator}
@@ -84,6 +108,7 @@ export async function postTokenLaunchTweet(data: TokenLaunchData): Promise<boole
 Start trading now! 👉 ${tokenUrl}
 
 #BasedMem #Base #MemeCoins`;
+    }
 
     const tweet = await twitterClient.v2.tweet(tweetText);
     console.log('✅ Tweet posted successfully:', tweet.data.id);
