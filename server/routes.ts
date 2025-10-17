@@ -81,14 +81,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Extract hash from Warpcast URL
+      // URL format: https://warpcast.com/username/0xhash
+      const hashMatch = url.match(/\/(0x[a-fA-F0-9]+)$/);
+      if (!hashMatch) {
+        return res.status(400).json({ 
+          error: "Invalid Warpcast URL",
+          message: "URL must be in format: https://warpcast.com/username/0xhash" 
+        });
+      }
+
+      const castHash = hashMatch[1];
+
       // Initialize Neynar client
       const config = new Configuration({ apiKey });
       const client = new NeynarAPIClient(config);
 
-      // Fetch cast by URL
-      const response = await client.lookupCastByHashOrUrl(url as string, "url" as any);
+      // Fetch cast by hash using the correct method
+      const response = await client.fetchBulkCasts({ casts: [castHash] });
 
-      const cast = response.cast;
+      if (!response.result?.casts || response.result.casts.length === 0) {
+        return res.status(404).json({ 
+          error: "Cast not found",
+          message: "Could not find cast with the provided URL" 
+        });
+      }
+
+      const cast = response.result.casts[0];
 
       // Extract relevant data
       const castData = {
