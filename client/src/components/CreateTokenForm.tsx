@@ -81,24 +81,6 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }, [formData]);
 
-  // Auto-import cast when valid URL is detected
-  useEffect(() => {
-    if (!castUrl || castUrl === lastProcessedUrl) return;
-    
-    // Check if it's a valid Warpcast/Farcaster URL
-    // Supports: warpcast.com, ar.xyz, and other Farcaster clients
-    const isValidUrl = /(warpcast\.com|ar\.xyz|farcaster\.xyz)\/[^/]+\/0x[a-fA-F0-9]+/.test(castUrl);
-    
-    if (isValidUrl && castUrl !== lastProcessedUrl) {
-      // Auto-import with a slight delay for better UX
-      const timer = setTimeout(() => {
-        handleImportCast();
-        setLastProcessedUrl(castUrl);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [castUrl, lastProcessedUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,47 +159,55 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
       return;
     }
 
-    // Extract hash from URL for metadata
-    const hashMatch = castUrl.match(/\/(0x[a-fA-F0-9]+)\s*$/);
-    if (!hashMatch) {
+    setIsImporting(true);
+    try {
+      const response = await fetch(`/api/cast/fetch?url=${encodeURIComponent(castUrl)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch cast");
+      }
+
+      setImportedCast(data);
+
+      // Auto-fill form with cast data from API
+      const castText = data.text || "";
+      const username = data.authorUsername || "unknown";
+      const displayName = data.authorDisplayName || username;
+      
+      // Generate token name and symbol from cast author
+      const tokenName = `${displayName} Cast Token`;
+      const symbol = (username.substring(0, 4) + "CAST").toUpperCase();
+
+      setFormData(prev => ({
+        ...prev,
+        name: tokenName,
+        symbol: symbol,
+        description: castText.substring(0, 500), // Use full cast text as description
+        logoUrl: data.authorPfp || prev.logoUrl, // Use author's profile picture
+        castHash: data.hash,
+        castUrl: castUrl,
+        castAuthorFid: data.authorFid,
+        castAuthorUsername: username,
+        castText: castText,
+        castLikes: data.likes,
+        castRecasts: data.recasts,
+      }));
+
       toast({
-        title: "Invalid URL Format",
-        description: "URL must contain a cast hash (0x...)",
+        title: "Cast Imported! ✨",
+        description: `Tokenizing cast by @${username} - Ready to launch!`,
+      });
+    } catch (error: any) {
+      console.error("Cast import error:", error);
+      toast({
+        title: "Import Failed",
+        description: error.message || "Failed to import cast. Check the URL and try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsImporting(false);
     }
-
-    const castHash = hashMatch[1];
-    
-    // Extract username from URL - supports warpcast.com, ar.xyz, farcaster.xyz
-    const usernameMatch = castUrl.match(/(?:warpcast\.com|ar\.xyz|farcaster\.xyz)\/([^/]+)\//);
-    const username = usernameMatch?.[1] || "farcaster";
-
-    // Create placeholder cast data (user will fill in details manually)
-    setImportedCast({
-      hash: castHash,
-      url: castUrl,
-      text: `Cast from @${username}`,
-      authorUsername: username,
-      authorFid: "",
-      authorPfp: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-      likes: 0,
-      recasts: 0,
-    });
-
-    // Auto-fill basic info
-    setFormData(prev => ({
-      ...prev,
-      castHash: castHash,
-      castUrl: castUrl,
-      castAuthorUsername: username,
-    }));
-
-    toast({
-      title: "Cast Linked! ✨",
-      description: `Connected to cast by @${username}. Fill in token details below.`,
-    });
   };
 
   return (
@@ -242,14 +232,25 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Paste a Warpcast URL to automatically link it to your token ✨
+            Paste a Farcaster cast URL and click import to auto-fill everything! ✨
           </p>
-          <Input
-            value={castUrl}
-            onChange={(e) => setCastUrl(e.target.value)}
-            placeholder="https://warpcast.com/dwr.eth/0x..."
-            data-testid="input-cast-url"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={castUrl}
+              onChange={(e) => setCastUrl(e.target.value)}
+              placeholder="https://warpcast.com/dwr.eth/0x..."
+              data-testid="input-cast-url"
+            />
+            <Button
+              type="button"
+              onClick={handleImportCast}
+              disabled={isImporting || !castUrl.trim()}
+              className="gap-2 whitespace-nowrap"
+              data-testid="button-quick-tokenize"
+            >
+              {isImporting ? "Importing..." : "Quick Tokenize"}
+            </Button>
+          </div>
           {importedCast && (
             <div className="text-xs text-muted-foreground space-y-1 mt-2">
               <p>📝 "{importedCast.text.substring(0, 80)}..."</p>

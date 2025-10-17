@@ -63,46 +63,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Fetch Farcaster Cast for tokenization (using free Warpcast Client API)
+  // Fetch Farcaster Cast for tokenization (using Neynar REST API)
   app.get("/api/cast/fetch", async (req, res) => {
     try {
       const { url } = req.query;
       
       if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: "Warpcast URL required" });
+        return res.status(400).json({ error: "Farcaster cast URL required" });
       }
 
-      // Extract hash from Warpcast URL
-      // URL format: https://warpcast.com/username/0xhash
-      const hashMatch = url.match(/\/(0x[a-fA-F0-9]+)$/);
-      if (!hashMatch) {
-        return res.status(400).json({ 
-          error: "Invalid Warpcast URL",
-          message: "URL must be in format: https://warpcast.com/username/0xhash" 
+      const apiKey = process.env.NEYNAR_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ 
+          error: "API key not configured",
+          message: "Neynar API key is missing" 
         });
       }
 
-      const castHash = hashMatch[1];
-
-      // Use free Warpcast Client API (no API key required)
-      const warpcastResponse = await fetch(
-        `https://client.warpcast.com/v2/cast?hash=${castHash}`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          }
+      // Use Neynar REST API v2
+      const neynarUrl = `https://api.neynar.com/v2/farcaster/cast?identifier=${encodeURIComponent(url)}&type=url`;
+      const response = await fetch(neynarUrl, {
+        headers: {
+          'accept': 'application/json',
+          'api_key': apiKey,
         }
-      );
+      });
 
-      if (!warpcastResponse.ok) {
-        return res.status(404).json({ 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return res.status(response.status).json({ 
           error: "Cast not found",
-          message: "Could not find cast with the provided URL" 
+          message: errorData.message || "Could not find cast with the provided URL" 
         });
       }
 
-      const warpcastData = await warpcastResponse.json();
-      const cast = warpcastData.result?.cast;
+      const data = await response.json();
+      const cast = data.cast;
 
       if (!cast) {
         return res.status(404).json({ 
@@ -111,17 +107,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Extract relevant data (Warpcast Client API format)
+      // Extract relevant data (Neynar API format)
       const castData = {
         hash: cast.hash,
         url: url,
         text: cast.text || "",
         authorFid: cast.author?.fid?.toString() || "",
         authorUsername: cast.author?.username || "",
-        authorDisplayName: cast.author?.displayName || cast.author?.display_name || "",
-        authorPfp: cast.author?.pfp?.url || cast.author?.pfp_url || "",
-        likes: cast.reactions?.likes?.length || cast.reactions?.likes_count || 0,
-        recasts: cast.reactions?.recasts?.length || cast.reactions?.recasts_count || 0,
+        authorDisplayName: cast.author?.display_name || "",
+        authorPfp: cast.author?.pfp_url || "",
+        likes: cast.reactions?.likes_count || 0,
+        recasts: cast.reactions?.recasts_count || 0,
         replies: cast.replies?.count || 0,
         embeds: cast.embeds || [],
         timestamp: cast.timestamp,
