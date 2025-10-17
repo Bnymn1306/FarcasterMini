@@ -192,9 +192,19 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
       const username = data.authorUsername || "unknown";
       const displayName = data.authorDisplayName || username;
       
-      // Generate token name and symbol from cast author
-      const tokenName = `${displayName} Cast Token`;
-      const symbol = (username.substring(0, 4) + "CAST").toUpperCase();
+      // Extract first 1-2 meaningful words from cast (skip common words)
+      const commonWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'to', 'of', 'in', 'for', 'on', 'at', 'by', 'with', 'from', 'as', 'if', 'or', 'and', 'but']);
+      const words = castText.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2 && !commonWords.has(w));
+      const firstWord = words[0] || 'cast';
+      const capitalizedWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+      
+      // Generate unique token name using cast content
+      const tokenName = `${displayName} ${capitalizedWord} Token`;
+      
+      // Generate unique symbol using hash for uniqueness
+      const hashSuffix = data.hash ? data.hash.slice(-4).toUpperCase() : Date.now().toString().slice(-4);
+      const baseSymbol = username.substring(0, 4).toUpperCase();
+      const symbol = `${baseSymbol}${hashSuffix}`;
 
       setFormData(prev => ({
         ...prev,

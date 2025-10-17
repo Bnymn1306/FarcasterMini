@@ -767,6 +767,56 @@ export default function TokenDetail() {
               </p>
             </div>
 
+            {/* Cast Tokenization Info */}
+            {enhancedToken.castUrl && (
+              <div className="mt-4 lg:mt-6 p-4 bg-primary/5 border-2 border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <SiFarcaster className="h-5 w-5 text-primary" />
+                  <h3 className="font-bold text-lg">Original Cast</h3>
+                  <Badge className="bg-primary/20 text-primary">Tokenized</Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  {enhancedToken.castAuthorUsername && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">By:</span>
+                      <span className="font-semibold">@{enhancedToken.castAuthorUsername}</span>
+                    </div>
+                  )}
+                  
+                  {enhancedToken.castText && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Cast Preview:</p>
+                      <p className="text-sm bg-muted/30 p-3 rounded-lg leading-relaxed">
+                        "{enhancedToken.castText.length > 200 
+                          ? enhancedToken.castText.substring(0, 200) + '...' 
+                          : enhancedToken.castText}"
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {enhancedToken.castLikes !== undefined && enhancedToken.castLikes !== null && (
+                      <span>💜 {enhancedToken.castLikes} likes</span>
+                    )}
+                    {enhancedToken.castRecasts !== undefined && enhancedToken.castRecasts !== null && (
+                      <span>🔄 {enhancedToken.castRecasts} recasts</span>
+                    )}
+                  </div>
+                  
+                  <a 
+                    href={enhancedToken.castUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                    data-testid="link-original-cast"
+                  >
+                    View Original Cast <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
             <div className="pt-3 lg:pt-4 border-t border-border hidden lg:block">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Contract Address</span>
