@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Upload, Rocket } from "lucide-react";
+import { Upload, Rocket, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GasFeeDisplay } from "./GasFeeDisplay";
 import sdk from "@farcaster/frame-sdk";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 const STORAGE_KEY = 'basedmem_create_token_draft';
 
@@ -27,12 +28,22 @@ export interface TokenFormData {
   twitterUrl: string;
   telegramUrl: string;
   websiteUrl: string;
+  castHash?: string;
+  castUrl?: string;
+  castAuthorFid?: string;
+  castAuthorUsername?: string;
+  castText?: string;
+  castLikes?: number;
+  castRecasts?: number;
 }
 
 export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: CreateTokenFormProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [castUrl, setCastUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importedCast, setImportedCast] = useState<any>(null);
   const [formData, setFormData] = useState<TokenFormData>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -136,6 +147,63 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
     reader.readAsDataURL(file);
   };
 
+  const handleImportCast = async () => {
+    if (!castUrl.trim()) {
+      toast({
+        title: "URL Required",
+        description: "Please enter a Warpcast URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const response = await fetch(`/api/cast/fetch?url=${encodeURIComponent(castUrl)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch cast");
+      }
+
+      setImportedCast(data);
+
+      // Auto-fill form with cast data
+      const castText = data.text || "";
+      const firstWord = castText.split(' ')[0]?.replace(/[^a-zA-Z0-9]/g, '') || "MEME";
+      const symbol = (data.authorUsername?.substring(0, 4) + firstWord.substring(0, 2)).toUpperCase();
+
+      setFormData(prev => ({
+        ...prev,
+        name: `${firstWord} by @${data.authorUsername}`,
+        symbol: symbol,
+        description: castText.substring(0, 200),
+        logoUrl: data.authorPfp || data.embeds?.[0]?.url || prev.logoUrl,
+        castHash: data.hash,
+        castUrl: castUrl,
+        castAuthorFid: data.authorFid,
+        castAuthorUsername: data.authorUsername,
+        castText: castText,
+        castLikes: data.likes,
+        castRecasts: data.recasts,
+      }));
+
+      toast({
+        title: "Cast Imported! ✨",
+        description: `Tokenizing "${firstWord}" by @${data.authorUsername}`,
+      });
+    } catch (error: any) {
+      console.error("Cast import error:", error);
+      toast({
+        title: "Import Failed",
+        description: error.message || "Failed to import cast. Check the URL and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
       <Card className="p-6 space-y-6">
@@ -144,6 +212,46 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
           <p className="text-sm text-muted-foreground">
             Fill in the details to launch your meme coin on Base
           </p>
+        </div>
+
+        {/* Cast Tokenization - Import from Warpcast */}
+        <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Tokenize a Farcaster Cast</h3>
+            {importedCast && (
+              <Badge variant="secondary" className="ml-auto">
+                ✨ Cast Imported
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Import a viral Warpcast post and turn it into a tradeable meme token
+          </p>
+          <div className="flex gap-2">
+            <Input
+              value={castUrl}
+              onChange={(e) => setCastUrl(e.target.value)}
+              placeholder="https://warpcast.com/dwr.eth/0x..."
+              className="flex-1"
+              data-testid="input-cast-url"
+            />
+            <Button
+              type="button"
+              onClick={handleImportCast}
+              disabled={isImporting || !castUrl.trim()}
+              className="gap-2"
+              data-testid="button-import-cast"
+            >
+              {isImporting ? "Importing..." : "Import"}
+            </Button>
+          </div>
+          {importedCast && (
+            <div className="text-xs text-muted-foreground space-y-1 mt-2">
+              <p>📝 "{importedCast.text.substring(0, 80)}..."</p>
+              <p>👤 by @{importedCast.authorUsername} • 💜 {importedCast.likes} likes • 🔄 {importedCast.recasts} recasts</p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

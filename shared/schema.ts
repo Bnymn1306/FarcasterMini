@@ -36,6 +36,14 @@ export const tokens = pgTable("tokens", {
   websiteUrl: text("website_url"),
   isVerified: boolean("is_verified").default(false),
   isPlatformToken: boolean("is_platform_token").default(false),
+  // Cast Tokenization fields
+  castHash: text("cast_hash"),
+  castUrl: text("cast_url"),
+  castAuthorFid: text("cast_author_fid"),
+  castAuthorUsername: text("cast_author_username"),
+  castText: text("cast_text"),
+  castLikes: integer("cast_likes").default(0),
+  castRecasts: integer("cast_recasts").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

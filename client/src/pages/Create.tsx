@@ -29,6 +29,14 @@ export default function Create() {
         telegramUrl: data.telegramUrl || null,
         websiteUrl: data.websiteUrl || null,
         creatorWalletAddress: data.creatorWalletAddress || walletAddress || null,
+        // Cast tokenization metadata
+        castHash: data.castHash || null,
+        castUrl: data.castUrl || null,
+        castAuthorFid: data.castAuthorFid || null,
+        castAuthorUsername: data.castAuthorUsername || null,
+        castText: data.castText || null,
+        castLikes: data.castLikes || null,
+        castRecasts: data.castRecasts || null,
       };
 
       const response = await fetch("/api/tokens", {

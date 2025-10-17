@@ -6,6 +6,7 @@ import { insertPriceAlertSchema, insertTokenSchema, insertTradeSchema, insertHol
 import path from "path";
 import fs from "fs";
 import { postTokenLaunchTweet } from "./twitter";
+import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 
 // Badge definitions
 const BADGE_TYPES = {
@@ -59,6 +60,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     } catch (error) {
       res.status(503).json({ status: "error", message: "Database unavailable" });
+    }
+  });
+
+  // Fetch Farcaster Cast for tokenization
+  app.get("/api/cast/fetch", async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: "Warpcast URL required" });
+      }
+
+      // Check if Neynar API key is available
+      const apiKey = process.env.NEYNAR_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({ 
+          error: "Cast tokenization not configured", 
+          message: "Neynar API key missing. Please add NEYNAR_API_KEY to environment variables." 
+        });
+      }
+
+      // Initialize Neynar client
+      const config = new Configuration({ apiKey });
+      const client = new NeynarAPIClient(config);
+
+      // Fetch cast by URL
+      const response = await client.lookupCastByHashOrUrl(url as string, "url" as any);
+
+      const cast = response.cast;
+
+      // Extract relevant data
+      const castData = {
+        hash: cast.hash,
+        url: url,
+        text: cast.text,
+        authorFid: cast.author.fid.toString(),
+        authorUsername: cast.author.username,
+        authorDisplayName: cast.author.display_name,
+        authorPfp: cast.author.pfp_url,
+        likes: cast.reactions?.likes_count || 0,
+        recasts: cast.reactions?.recasts_count || 0,
+        replies: cast.replies?.count || 0,
+        embeds: cast.embeds || [],
+        timestamp: cast.timestamp,
+      };
+
+      res.json(castData);
+    } catch (error: any) {
+      console.error("Error fetching cast:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch cast",
+        message: error.message || "Invalid Warpcast URL or cast not found"
+      });
     }
   });
 
