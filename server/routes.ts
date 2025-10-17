@@ -63,22 +63,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Fetch Farcaster Cast for tokenization
+  // Fetch Farcaster Cast for tokenization (using free Warpcast Client API)
   app.get("/api/cast/fetch", async (req, res) => {
     try {
       const { url } = req.query;
       
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ error: "Warpcast URL required" });
-      }
-
-      // Check if Neynar API key is available
-      const apiKey = process.env.NEYNAR_API_KEY;
-      if (!apiKey) {
-        return res.status(503).json({ 
-          error: "Cast tokenization not configured", 
-          message: "Neynar API key missing. Please add NEYNAR_API_KEY to environment variables." 
-        });
       }
 
       // Extract hash from Warpcast URL
@@ -93,33 +84,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const castHash = hashMatch[1];
 
-      // Initialize Neynar client
-      const config = new Configuration({ apiKey });
-      const client = new NeynarAPIClient(config);
+      // Use free Warpcast Client API (no API key required)
+      const warpcastResponse = await fetch(
+        `https://client.warpcast.com/v2/cast?hash=${castHash}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
+      );
 
-      // Fetch cast by hash using the correct method
-      const response = await client.fetchBulkCasts({ casts: [castHash] });
-
-      if (!response.result?.casts || response.result.casts.length === 0) {
+      if (!warpcastResponse.ok) {
         return res.status(404).json({ 
           error: "Cast not found",
           message: "Could not find cast with the provided URL" 
         });
       }
 
-      const cast = response.result.casts[0];
+      const warpcastData = await warpcastResponse.json();
+      const cast = warpcastData.result?.cast;
 
-      // Extract relevant data
+      if (!cast) {
+        return res.status(404).json({ 
+          error: "Cast not found",
+          message: "Invalid cast data received" 
+        });
+      }
+
+      // Extract relevant data (Warpcast Client API format)
       const castData = {
         hash: cast.hash,
         url: url,
-        text: cast.text,
-        authorFid: cast.author.fid.toString(),
-        authorUsername: cast.author.username,
-        authorDisplayName: cast.author.display_name,
-        authorPfp: cast.author.pfp_url,
-        likes: cast.reactions?.likes_count || 0,
-        recasts: cast.reactions?.recasts_count || 0,
+        text: cast.text || "",
+        authorFid: cast.author?.fid?.toString() || "",
+        authorUsername: cast.author?.username || "",
+        authorDisplayName: cast.author?.displayName || cast.author?.display_name || "",
+        authorPfp: cast.author?.pfp?.url || cast.author?.pfp_url || "",
+        likes: cast.reactions?.likes?.length || cast.reactions?.likes_count || 0,
+        recasts: cast.reactions?.recasts?.length || cast.reactions?.recasts_count || 0,
         replies: cast.replies?.count || 0,
         embeds: cast.embeds || [],
         timestamp: cast.timestamp,

@@ -157,51 +157,47 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
       return;
     }
 
-    setIsImporting(true);
-    try {
-      const response = await fetch(`/api/cast/fetch?url=${encodeURIComponent(castUrl)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch cast");
-      }
-
-      setImportedCast(data);
-
-      // Auto-fill form with cast data
-      const castText = data.text || "";
-      const firstWord = castText.split(' ')[0]?.replace(/[^a-zA-Z0-9]/g, '') || "MEME";
-      const symbol = (data.authorUsername?.substring(0, 4) + firstWord.substring(0, 2)).toUpperCase();
-
-      setFormData(prev => ({
-        ...prev,
-        name: `${firstWord} by @${data.authorUsername}`,
-        symbol: symbol,
-        description: castText.substring(0, 200),
-        logoUrl: data.authorPfp || data.embeds?.[0]?.url || prev.logoUrl,
-        castHash: data.hash,
-        castUrl: castUrl,
-        castAuthorFid: data.authorFid,
-        castAuthorUsername: data.authorUsername,
-        castText: castText,
-        castLikes: data.likes,
-        castRecasts: data.recasts,
-      }));
-
+    // Extract hash from URL for metadata
+    const hashMatch = castUrl.match(/\/(0x[a-fA-F0-9]+)$/);
+    if (!hashMatch) {
       toast({
-        title: "Cast Imported! ✨",
-        description: `Tokenizing "${firstWord}" by @${data.authorUsername}`,
-      });
-    } catch (error: any) {
-      console.error("Cast import error:", error);
-      toast({
-        title: "Import Failed",
-        description: error.message || "Failed to import cast. Check the URL and try again.",
+        title: "Invalid URL Format",
+        description: "URL must be in format: https://warpcast.com/username/0xhash",
         variant: "destructive",
       });
-    } finally {
-      setIsImporting(false);
+      return;
     }
+
+    const castHash = hashMatch[1];
+    
+    // Extract username from URL
+    const usernameMatch = castUrl.match(/warpcast\.com\/([^/]+)\//);
+    const username = usernameMatch?.[1] || "farcaster";
+
+    // Create placeholder cast data (user will fill in details manually)
+    setImportedCast({
+      hash: castHash,
+      url: castUrl,
+      text: `Cast from @${username}`,
+      authorUsername: username,
+      authorFid: "",
+      authorPfp: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+      likes: 0,
+      recasts: 0,
+    });
+
+    // Auto-fill basic info
+    setFormData(prev => ({
+      ...prev,
+      castHash: castHash,
+      castUrl: castUrl,
+      castAuthorUsername: username,
+    }));
+
+    toast({
+      title: "Cast Linked! ✨",
+      description: `Connected to cast by @${username}. Fill in token details below.`,
+    });
   };
 
   return (
@@ -221,12 +217,12 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
             <h3 className="font-semibold">Tokenize a Farcaster Cast</h3>
             {importedCast && (
               <Badge variant="secondary" className="ml-auto">
-                ✨ Cast Imported
+                ✅ Cast Linked
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Import a viral Warpcast post and turn it into a tradeable meme token
+            Link a Warpcast cast to your token and create meme magic ✨
           </p>
           <div className="flex gap-2">
             <Input

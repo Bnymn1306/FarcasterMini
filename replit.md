@@ -43,11 +43,13 @@ Preferred communication style: Simple, everyday language.
 ### Key Features
 
 1.  **Token Launch**: Streamlined creation and deployment of meme coins directly to the Base blockchain via the `TokenFactory` contract.
-2.  **Trading Interface**: Buy/sell functionality interacting directly with `BondingCurveToken` smart contracts for real-time, on-chain pricing and execution.
-3.  **Price Alerts**: Configurable notifications with Farcaster integration.
-4.  **Portfolio Tracking**: Overview of user holdings and performance.
-5.  **Daily Check-in**: Gamified system with streak tracking and rewards.
-6.  **Token Discovery**: Browse, filter, and sort tokens.
+2.  **Cast Tokenization**: Link Warpcast posts to tokens. Extracts cast hash and username from URL, stores metadata (castHash, castUrl, castAuthorUsername) in database. No API required - fully client-side URL parsing.
+3.  **Trading Interface**: Buy/sell functionality interacting directly with `BondingCurveToken` smart contracts for real-time, on-chain pricing and execution.
+4.  **Price Alerts**: Configurable notifications with Farcaster integration.
+5.  **Portfolio Tracking**: Overview of user holdings and performance.
+6.  **Badge System**: Automatic NFT achievement awards (Genesis Builder, Meme Master, Viral King, Based Legend) based on token creation milestones.
+7.  **Daily Check-in**: Gamified system with streak tracking and rewards.
+8.  **Token Discovery**: Browse, filter, and sort tokens.
 
 ## External Dependencies
 
