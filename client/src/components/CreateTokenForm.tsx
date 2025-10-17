@@ -45,6 +45,23 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
   const [isImporting, setIsImporting] = useState(false);
   const [importedCast, setImportedCast] = useState<any>(null);
   const [lastProcessedUrl, setLastProcessedUrl] = useState('');
+  
+  // Clear cast metadata when cast URL is cleared
+  useEffect(() => {
+    if (!castUrl && importedCast) {
+      setImportedCast(null);
+      setFormData(prev => ({
+        ...prev,
+        castHash: undefined,
+        castUrl: undefined,
+        castAuthorFid: undefined,
+        castAuthorUsername: undefined,
+        castText: undefined,
+        castLikes: undefined,
+        castRecasts: undefined,
+      }));
+    }
+  }, [castUrl, importedCast]);
   const [formData, setFormData] = useState<TokenFormData>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -186,7 +203,7 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
         description: castText.substring(0, 500), // Use full cast text as description
         logoUrl: data.authorPfp || prev.logoUrl, // Use author's profile picture
         castHash: data.hash,
-        castUrl: castUrl,
+        castUrl: data.url || castUrl, // Use canonical URL from Neynar API
         castAuthorFid: data.authorFid,
         castAuthorUsername: username,
         castText: castText,

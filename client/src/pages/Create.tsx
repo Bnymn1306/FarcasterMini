@@ -196,8 +196,19 @@ export default function Create() {
 
       // Open Warpcast compose
       const baseUrl = window.location.origin;
-      const tokenUrl = `${baseUrl}/browse`;
-      const castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+      const tokenUrl = `${baseUrl}/token/${contractAddress}`;
+      
+      let castText: string;
+      
+      // If this is a cast tokenization, create special message
+      if (data.castUrl && data.castAuthorUsername) {
+        // Cast tokenization message
+        castText = `🚀 Just tokenized @${data.castAuthorUsername}'s cast on BasedMem!\n\n${data.castUrl}\n\nToken: $${data.symbol}\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #Farcaster #Base`;
+      } else {
+        // Regular token launch message
+        castText = `🚀 Just deployed ${data.name} ($${data.symbol}) on Base!\n\n${data.description || 'A new meme token with bonding curve!'}\n\nTotal Supply: ${parseInt(data.totalSupply).toLocaleString()}\n\n#BasedMem #MemeCoins #Base`;
+      }
+      
       const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(castText)}&embeds[]=${encodeURIComponent(tokenUrl)}`;
 
       try {

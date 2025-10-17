@@ -338,6 +338,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle creatorWalletAddress -> creatorId conversion
       let tokenData = { ...req.body };
       console.log("POST /api/tokens - incoming body:", req.body);
+      console.log("POST /api/tokens - cast metadata:", {
+        castUrl: req.body.castUrl,
+        castAuthorUsername: req.body.castAuthorUsername,
+        castText: req.body.castText,
+      });
       
       if (tokenData.creatorWalletAddress && !tokenData.creatorId) {
         // Find or create user by wallet address
@@ -361,6 +366,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertTokenSchema.parse(tokenData);
       console.log("Validated token data:", validatedData);
+      console.log("Validated cast metadata:", {
+        castUrl: validatedData.castUrl,
+        castAuthorUsername: validatedData.castAuthorUsername,
+        castHash: validatedData.castHash,
+      });
       
       const token = await storage.createToken(validatedData);
       console.log("Created token in DB:", token);

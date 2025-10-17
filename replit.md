@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 ### Key Features
 
 1.  **Token Launch**: Streamlined creation and deployment of meme coins directly to the Base blockchain via the `TokenFactory` contract.
-2.  **Cast Tokenization**: Link Warpcast posts to tokens. Extracts cast hash and username from URL, stores metadata (castHash, castUrl, castAuthorUsername) in database. No API required - fully client-side URL parsing.
+2.  **Cast Tokenization (Quick Tokenize)**: One-click tokenization of Farcaster casts. Paste any Warpcast/Farcaster URL, click "Quick Tokenize," and the system automatically fetches cast data via Neynar API and auto-fills token name, symbol, description, and logo from the original cast. Post-launch shares reference the original cast author with proper @mention and cast URL. Stores full cast metadata (castHash, castUrl, castAuthorUsername, castText, castLikes, castRecasts) in database.
 3.  **Trading Interface**: Buy/sell functionality interacting directly with `BondingCurveToken` smart contracts for real-time, on-chain pricing and execution.
 4.  **Price Alerts**: Configurable notifications with Farcaster integration.
 5.  **Portfolio Tracking**: Overview of user holdings and performance.
@@ -54,6 +54,25 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 *   **Farcaster Integration**: For social notifications (casts) and mandatory wallet interaction.
+*   **Neynar API**: REST API v2 for fetching Farcaster cast metadata during Quick Tokenize. Free tier: 300 requests/minute.
 *   **Base Blockchain**: The sole target blockchain for all platform operations.
 *   **DiceBear API**: Used for generating avatar placeholders (`api.dicebear.com/7.x/shapes`).
 *   **Icon Libraries**: Lucide React for general UI icons, and React Icons (SiFarcaster, SiEthereum) for brand-specific icons.
+
+## Recent Changes (Oct 18, 2025)
+
+### Quick Tokenize Auto-Fill Feature
+*   **Button Added**: "Quick Tokenize" button on Create page next to cast URL input
+*   **Auto-Fetch**: Fetches cast data from Neynar API (`GET /api/cast/fetch?url={castUrl}`)
+*   **Auto-Fill Logic**:
+    *   Token Name: `{authorDisplayName} Cast Token`
+    *   Symbol: `{first4chars}CAST` (e.g., JESSCAST)
+    *   Description: Full cast text (max 500 chars)
+    *   Logo: Author's profile picture
+*   **Post-Launch Cast**: Special Farcaster cast format that mentions original author and includes cast URL
+    *   Format: "🚀 Just tokenized @{username}'s cast on BasedMem!\n\n{castUrl}\n\nToken: ${symbol}\nTotal Supply: {supply}\n\n#BasedMem #Farcaster #Base"
+*   **Files Modified**:
+    *   `client/src/components/CreateTokenForm.tsx`: Quick Tokenize button and auto-fill logic
+    *   `client/src/pages/Create.tsx`: Cast-specific share message
+    *   `server/routes.ts`: Neynar REST API integration
+    *   `server/twitter.ts`: Cast tokenization message format
