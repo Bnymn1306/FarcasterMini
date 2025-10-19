@@ -162,6 +162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         splashImageUrl: `${baseUrl}/icon.jpg?v=${cacheBuster}`,
         splashBackgroundColor: "#8B5CF6",
         webhookUrl: `${baseUrl}/api/webhook`,
+      },
+      baseBuilder: {
+        ownerAddress: "0x74E7FeACbb2ad2d46eCc1B403bdFb5c61EF139DF"
       }
     };
     
