@@ -152,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payload: "eyJkb21haW4iOiJiYXNlZG1lbS5yZXBsaXQuYXBwIn0",
         signature: "IrSv3TiqZHm759m0mbJfSjZQKj9a0zBj5fVEZ0IfBRg5dtaH3pBetxaUpdMbU5Bl4oBfJblXkCxqtItkar3Xaxw="
       },
-      frame: {
+      miniapp: {
         version: "1",
         name: "BasedMem",
         iconUrl: `${baseUrl}/icon.jpg?v=${cacheBuster}`,
