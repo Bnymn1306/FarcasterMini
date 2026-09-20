@@ -1,4 +1,6 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
+import { configuredOwner } from './background/config';
 import type { LimitOrder } from '@shared/schema';
 import { getSolanaEscrowService, SolanaEscrowService } from './solanaEscrow';
 
@@ -52,7 +54,15 @@ export class SolanaLimitOrderExecutor {
     }
   }
 
+  public async tick(owner: "vm" | "workflow" = "vm", generation?: string) {
+    return runOwnedTick("solana", () => this.checkAndExecuteOrdersInternal(), owner, generation);
+  }
+
   private async checkAndExecuteOrders() {
+    return this.tick();
+  }
+
+  private async checkAndExecuteOrdersInternal() {
     if (this.isProcessing) {
       console.log('⏭️ Previous Solana check still processing, skipping...');
       return;
@@ -92,6 +102,9 @@ export class SolanaLimitOrderExecutor {
    * Retry transfers for orders where swap succeeded but transfer failed
    */
   private async retryPendingTransfers() {
+    // Legacy VM semantics remain unchanged. Configured ownership must never
+    // blindly retry an output transfer whose first send may have landed.
+    if (configuredOwner() !== "legacy") return;
     try {
       const allOrders = await this.storage.getAllLimitOrders();
       const pendingTransfers = allOrders.filter(
@@ -174,6 +187,7 @@ export class SolanaLimitOrderExecutor {
       const shouldExecute = this.shouldExecuteOrder(order.orderType, currentPrice, targetPrice);
 
       if (shouldExecute) {
+        if (!await claimSideEffect(order.id, "swap")) return;
         console.log(`✅ Solana order ready! ${order.orderType} ${order.tokenSymbol}: current=$${currentPrice}, target=$${targetPrice}`);
         
         // Parse order JSON for mint addresses

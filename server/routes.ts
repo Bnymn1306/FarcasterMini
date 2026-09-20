@@ -246,6 +246,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Start/Stop the rugpull detector
   app.post("/api/rugpull-detector/start", express.json(), async (req, res) => {
+    if (process.env.VERCEL || process.env.VERCEL_ENV) {
+      return res.status(503).json({ success: false, error: "Persistent rugpull monitoring is disabled on Vercel; use the dedicated worker" });
+    }
     try {
       if (!rugpullDetector.isActive()) {
         rugpullDetector.start();
@@ -280,6 +283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add token to monitor
   app.post("/api/rugpull-detector/monitor", express.json(), async (req, res) => {
+    if (process.env.VERCEL || process.env.VERCEL_ENV) {
+      return res.status(503).json({ success: false, error: "Persistent rugpull monitoring is disabled on Vercel; use the dedicated worker" });
+    }
     try {
       const { tokenAddress, userAddress, userBalance, autoSellEnabled } = req.body;
       
@@ -8377,6 +8383,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ext = filename.split(".").pop()?.toLowerCase() ?? "png";
       const allowed = ["png", "jpg", "jpeg", "gif", "webp"];
       if (!allowed.includes(ext)) return res.status(400).json({ error: "Only PNG, JPG, GIF, WEBP allowed" });
+
+      if (process.env.VERCEL) {
+        const { uploadFractionBlob } = await import("./persistence/fractionUploads");
+        const { randomUUID } = await import("node:crypto");
+        const data = base64.replace(/^data:[^;]+;base64,/, "");
+        const url = await uploadFractionBlob(
+          `${randomUUID()}.${ext}`,
+          Buffer.from(data, "base64"),
+          `image/${ext === "jpg" ? "jpeg" : ext}`,
+        );
+        return res.json({ success: true, url });
+      }
 
       const { default: fs } = await import("fs");
       const { default: path } = await import("path");

@@ -1,4 +1,6 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
+import { configuredOwner } from './background/config';
 import { rugpullDetector, type MonitoredToken, type RugpullSignal } from './rugpullDetector';
 import { ethers } from 'ethers';
 import type { RugProtection } from '@shared/schema';
@@ -37,6 +39,9 @@ export class RugProtectionExecutor {
 
   private setupAutoSellCallback() {
     rugpullDetector.setAutoSellCallback(async (token: MonitoredToken, signal: RugpullSignal): Promise<boolean> => {
+      // Explicitly configured operation is held until durable rug polling and
+      // reconciliation are reviewed. The legacy VM remains unchanged.
+      if (configuredOwner() !== "legacy") return false;
       console.log(`🚨 Auto-sell callback triggered for ${token.tokenAddress}`);
       console.log(`   Signal: ${signal.type} - ${signal.severity}`);
       console.log(`   Message: ${signal.message}`);
@@ -73,6 +78,15 @@ export class RugProtectionExecutor {
   }
 
   private async executeAutoSell(protection: RugProtection, signal: RugpullSignal): Promise<{ success: boolean; txHash?: string; error?: string }> {
+    return await runOwnedTick("rug", async () => {
+      if (!await claimSideEffect(protection.id, "emergency-sell")) {
+        return { success: false, error: "Execution already claimed or stopped; reconciliation required" };
+      }
+      return this.executeAutoSellInternal(protection, signal);
+    }) ?? { success: false, error: "Background ownership gate denied execution" };
+  }
+
+  private async executeAutoSellInternal(protection: RugProtection, signal: RugpullSignal): Promise<{ success: boolean; txHash?: string; error?: string }> {
     try {
       if (!this.wallet || !this.provider) {
         return { success: false, error: 'Wallet not initialized' };
@@ -219,6 +233,15 @@ export class RugProtectionExecutor {
   }
 
   async syncActiveProtections() {
+    return this.tick();
+  }
+
+  /** Sync-only tick. It does not start the process-local detector loop. */
+  public async tick() {
+    return runOwnedTick("rug", () => this.syncActiveProtectionsInternal());
+  }
+
+  private async syncActiveProtectionsInternal() {
     try {
       const activeProtections = await this.storage.getActiveRugProtections();
       console.log(`🔄 Syncing ${activeProtections.length} active rug protections to detector`);
@@ -247,6 +270,9 @@ export class RugProtectionExecutor {
   }
 
   start(syncIntervalMs: number = 60000) {
+    // Durable rug polling has not been audited; do not start an in-memory
+    // detector on Vercel or after explicit ownership transfer.
+    if (!["legacy", "vm"].includes(configuredOwner())) return;
     if (this.intervalId) {
       console.log('⚠️ RugProtection executor already running');
       return;

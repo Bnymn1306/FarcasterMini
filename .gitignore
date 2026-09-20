@@ -13,3 +13,8 @@ attached_assets
 GITHUB_UPLOAD_GUIDE.md
 MIRROR_ARTICLE.md
 BasedMem-source.tar.gz
+.vercel/
+.output/
+.nitro/
+.workflow-data/
+/.swc

@@ -1,6 +1,6 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
 import { createHash } from "node:crypto";
 import { AERODROME_STOCK_POOLS, B20_ASSETS, StockAgentError, assetsResponse, catalogMetadata, getLegalFlags } from "./stockAgentService";
+import { requestExaAnswer, ResearchProviderConfigurationError } from "./askBaseResearchProvider";
 
 type LiveAsset = Awaited<ReturnType<typeof assetsResponse>>["assets"][number];
 export type AskBaseSource = {
@@ -201,7 +201,6 @@ type ExaAnswer = {
 };
 
 async function researchAnswer(message: string, language: "en" | "tr", context: string) {
-  const connectors = new ReplitConnectors();
   const query = [
     `You are AskBase, an evidence-first market research assistant. Answer the user's exact question in ${language === "tr" ? "Turkish" : "English"} only.`,
     "Use current, verifiable information and make the answer specific to the question. State relevant dates and measurement periods.",
@@ -218,16 +217,22 @@ async function researchAnswer(message: string, language: "en" | "tr", context: s
       ? "Araştırma kaynağı zamanında yanıt vermedi."
       : "The research provider did not respond in time.")), 20_000);
   });
-  const response = await Promise.race([
-    connectors.proxy("exa", "/answer", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, text: true }),
-    }),
-    timeoutPromise,
-  ]).finally(() => {
+  let response: Response;
+  try {
+    response = await Promise.race([
+      requestExaAnswer(query),
+      timeoutPromise,
+    ]);
+  } catch (error) {
+    if (error instanceof ResearchProviderConfigurationError) {
+      throw new StockAgentError(503, error.code, language === "tr"
+        ? "AskBase araştırma sağlayıcısı bu ortamda yapılandırılmamış."
+        : "AskBase research is not configured in this environment.");
+    }
+    throw error;
+  } finally {
     if (timeout) clearTimeout(timeout);
-  });
+  }
   const payload = await response.json().catch(() => ({})) as ExaAnswer;
   if (!response.ok || typeof payload.answer !== "string" || !payload.answer.trim()) {
     const unavailable = language === "tr"

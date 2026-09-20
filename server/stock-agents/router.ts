@@ -2,9 +2,17 @@ import { Router } from "express";
 import { z } from "zod";
 import { AERODROME_SWAP_ROUTER, BASE_CHAIN_ID, BASE_USDC, B20_ASSETS, StockAgentError, addressSchema, asset, assetsResponse, createAerodromeQuote, getLegalFlags, liveAsset, portfolio, preflightSwap, tradeBlockingReasons, uintStringSchema } from "../services/stockAgentService";
 import { askBase } from "../services/askBaseService";
+import { consumeSharedAskRequest } from "../persistence/durableState";
 export const stockAgentsRouter = Router();
 const askRateLimits = new Map<string, { startedAt: number; count: number }>();
-function consumeAskRequest(key: string) {
+async function consumeAskRequest(key: string) {
+  if (process.env.VERCEL) {
+    try {
+      return await consumeSharedAskRequest(key);
+    } catch {
+      throw new StockAgentError(503, "ASK_RATE_LIMIT_UNAVAILABLE", "Research is temporarily unavailable because shared rate limit storage is unavailable.");
+    }
+  }
   const now = Date.now();
   if (askRateLimits.size > 2_000) {
     askRateLimits.forEach((window, id) => {
@@ -28,7 +36,7 @@ function fail(res: any, e: unknown) { if (e instanceof StockAgentError) return r
 stockAgentsRouter.get("/assets", async (_req, res) => { try { res.json({ success: true, ...(await assetsResponse()) }); } catch (e) { fail(res, e); } });
 stockAgentsRouter.get("/strategies", (_req, res) => res.json({ success: true, strategies, legal: getLegalFlags() }));
 stockAgentsRouter.post("/ask", async (req, res) => { try {
-  if (!consumeAskRequest(req.ip || "unknown")) {
+  if (!await consumeAskRequest(req.ip || "unknown")) {
     throw new StockAgentError(429, "ASK_RATE_LIMITED", req.body?.language === "tr"
       ? "Çok fazla araştırma isteği gönderdiniz. Lütfen bir dakika sonra tekrar deneyin."
       : "Too many research requests. Please try again in one minute.");

@@ -1,4 +1,5 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
 import type { LimitOrder } from '@shared/schema';
 import { ethers } from 'ethers';
 
@@ -111,7 +112,15 @@ export class InkLimitOrderExecutor {
     }
   }
 
+  public async tick(owner: "vm" | "workflow" = "vm", generation?: string) {
+    return runOwnedTick("ink", () => this.checkAndExecuteOrdersInternal(), owner, generation);
+  }
+
   private async checkAndExecuteOrders() {
+    return this.tick();
+  }
+
+  private async checkAndExecuteOrdersInternal() {
     if (this.isProcessing) {
       console.log('⏭️ Previous INK check still processing, skipping...');
       return;
@@ -315,6 +324,7 @@ export class InkLimitOrderExecutor {
   }
 
   private async executeOrder(order: LimitOrder, currentPrice: number) {
+    if (!await claimSideEffect(order.id, "swap")) return;
     if (!this.wallet || !this.provider) {
       console.error('❌ Wallet not initialized');
       return;

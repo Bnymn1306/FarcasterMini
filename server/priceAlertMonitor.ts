@@ -1,4 +1,5 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
 import type { PriceAlert } from '@shared/schema';
 
 interface PriceCache {
@@ -46,7 +47,15 @@ export class PriceAlertMonitor {
     }
   }
 
+  public async tick(owner: "vm" | "workflow" = "vm", generation?: string) {
+    return runOwnedTick("alerts", () => this.checkAlertsInternal(), owner, generation);
+  }
+
   private async checkAlerts() {
+    return this.tick();
+  }
+
+  private async checkAlertsInternal() {
     if (this.isProcessing) {
       return;
     }
@@ -104,6 +113,7 @@ export class PriceAlertMonitor {
     console.log(`   💰 ${alert.externalTokenSymbol || 'Token'}: $${currentPrice.toFixed(6)} vs target $${targetPrice} (${alert.condition}) → ${shouldTrigger ? '🎯 TRIGGER!' : '⏳ waiting'}`);
 
     if (shouldTrigger) {
+      if (!await claimSideEffect(alert.id, "notify")) return;
       console.log(`🎯 Alert triggered! ${alert.externalTokenSymbol || 'Token'} ${alert.condition} $${targetPrice} (current: $${currentPrice})`);
       
       await this.storage.updatePriceAlert(alert.id, {

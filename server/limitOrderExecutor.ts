@@ -1,4 +1,5 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
 import type { LimitOrder } from '@shared/schema';
 import { ethers } from 'ethers';
 
@@ -95,7 +96,15 @@ export class LimitOrderExecutor {
     }
   }
 
+  public async tick(owner: "vm" | "workflow" = "vm", generation?: string) {
+    return runOwnedTick("base", () => this.checkAndExecuteOrdersInternal(), owner, generation);
+  }
+
   private async checkAndExecuteOrders() {
+    return this.tick();
+  }
+
+  private async checkAndExecuteOrdersInternal() {
     if (this.isProcessing) {
       console.log('⏭️ Previous check still processing, skipping...');
       return;
@@ -257,6 +266,7 @@ export class LimitOrderExecutor {
   }
 
   private async executeOrder(order: LimitOrder, filledPrice: number) {
+    if (!await claimSideEffect(order.id, "swap")) return;
     try {
       console.log(`🔄 Attempting to execute order ${order.id} for ${order.tokenSymbol} at $${filledPrice}`);
 

@@ -1,13 +1,13 @@
 ---
 name: Vercel hosting boundary
-description: Why Vercel is frontend-only and canonical identity stays on the existing domain.
+description: Safe separation of Vercel frontend hosting from a full backend and trading-worker migration.
 ---
 
 Vercel hosts the frontend only; the existing persistent backend retains the database connections and the sole background trading executors. Keep a backend origin independent of any frontend custom-domain change.
 
-**Why:** The user requested Vercel compatibility without interrupting active trading. The existing polling executors are not safe to duplicate or transplant unchanged into request-scoped functions.
+**Why:** The existing polling executors are not safe to duplicate or transplant unchanged into request-scoped functions. A full migration is authorized, but authorization to prepare it is not evidence that a worker cutover is safe.
 
-**How to apply:** Do not treat a Vercel import as permission to move funds, migrate data, stop the backend, or change DNS. The supplemental Vercel URL is not a newly verified Farcaster miniapp: canonical metadata and the signed domain association remain unchanged until a separate domain migration is authorized.
+**How to apply:** Preserve the canonical basedmem.xyz identity and signed domain association. Keep the persistent backend and sole trading executor active until independent database ownership, provider credentials, and transaction-reconciliation safeguards have been verified. Stage full-backend changes outside the production GitHub branch to avoid triggering a premature cutover.
 
 Validate clean Linux dependency resolution, not only a build with the workspace's preinstalled dependencies.
 

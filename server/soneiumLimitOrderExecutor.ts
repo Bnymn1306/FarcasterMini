@@ -1,4 +1,5 @@
 import { IStorage } from './storage';
+import { runOwnedTick, claimSideEffect } from './background/ownership';
 import type { LimitOrder } from '@shared/schema';
 import { ethers } from 'ethers';
 
@@ -115,7 +116,15 @@ export class SoneiumLimitOrderExecutor {
     }
   }
 
+  public async tick(owner: "vm" | "workflow" = "vm", generation?: string) {
+    return runOwnedTick("soneium", () => this.checkAndExecuteOrdersInternal(), owner, generation);
+  }
+
   private async checkAndExecuteOrders() {
+    return this.tick();
+  }
+
+  private async checkAndExecuteOrdersInternal() {
     if (this.isProcessing) {
       console.log('⏭️ Previous Soneium check still processing, skipping...');
       return;
@@ -253,6 +262,7 @@ export class SoneiumLimitOrderExecutor {
   }
 
   private async executeOrder(order: LimitOrder, currentPrice: number) {
+    if (!await claimSideEffect(order.id, "swap")) return;
     if (!this.wallet || !this.provider) {
       console.error('❌ Wallet not initialized');
       return;

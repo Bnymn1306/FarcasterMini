@@ -1,25 +1,27 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOjM1MTUwMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDg5ODhDNDU1ZjBjZjREMzE2N2MzMkI5RDY1QjA5MTMwNDU0NTM2YWMifQ",
+    "header": "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM0MGE0RDBmRGEyMmFmOTNCQ0IzN2U5MTI1YkU1QjdGYjk2ZDU1MzAifQ",
     "payload": "eyJkb21haW4iOiJiYXNlZG1lbS54eXoifQ",
-    "signature": "PMCweYn4IOYWxoLLJx2KME10AZBo2Di9egjMI2TqSXppe3RilKPyRcbXUiCjsHZESjBcTKSJqqELtp/b4AQrwRs="
+    "signature": "ZezfIM8GqEe665NLjEJPtb+ZyYapIS6pYrWah02oXMgG0W42tfAzVo7wnkH2v/bPUhcatCR1cjnuGahAjU4eQhw="
   },
-  "frame": {
+  "baseBuilder": {
+    "ownerAddress": "0x74E7FeACbb2ad2d46eCc1B403bdFb5c61EF139DF"
+  },
+  "miniapp": {
     "version": "1",
     "name": "BasedMem",
-    "subtitle": "Swap, Agents and Stocks",
-    "tagline": "Human-controlled onchain tools",
-    "description": "Swap tokens, create limit orders, discover onchain agents and access explainable tokenized stocks.",
-    "iconUrl": "https://basedmem.xyz/icon.png",
+    "iconUrl": "https://basedmem.xyz/icon.jpg",
     "homeUrl": "https://basedmem.xyz",
-    "splashImageUrl": "https://basedmem.xyz/splash.png",
-    "splashBackgroundColor": "#0a0a0f",
-    "webhookUrl": "https://basedmem.xyz/api/farcaster/webhook",
+    "splashImageUrl": "https://basedmem.xyz/splash-icon.jpg",
+    "splashBackgroundColor": "#0A0A0A",
+    "subtitle": "Swap, Agents and Stocks",
+    "description": "Swap tokens, create limit orders, discover onchain agents and access explainable tokenized stocks.",
+    "screenshotUrls": ["https://basedmem.xyz/screenshot-1.jpg"],
     "primaryCategory": "finance",
-    "tags": ["trading", "defi", "agents", "stocks", "base"],
-    "heroImageUrl": "https://basedmem.xyz/icon.png",
-    "ogTitle": "BasedMem - Human-Controlled Onchain Tools",
-    "ogDescription": "Swap, limit orders, Agent Hub and explainable Stock Agents in one focused app.",
-    "ogImageUrl": "https://basedmem.xyz/icon.png"
+    "tags": ["defi", "trading", "agents"],
+    "heroImageUrl": "https://basedmem.xyz/icon.jpg",
+    "tagline": "Human-controlled onchain tools",
+    "webhookUrl": "https://basedmem.xyz/api/webhook",
+    "capabilities": ["wallet-solana"]
   }
 }

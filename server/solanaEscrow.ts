@@ -16,6 +16,7 @@ import {
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 import bs58 from 'bs58';
+import { recordDepositReceipt, requireLegacyDepositRuntime } from './persistence/durableState';
 
 // Solana RPC endpoints with fallback
 const SOLANA_RPC_ENDPOINTS = [
@@ -24,6 +25,7 @@ const SOLANA_RPC_ENDPOINTS = [
 ];
 
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
+const VERCEL_ESCROW_DISABLED = 'Solana escrow transfers disabled on Vercel: pending durable order-scoped execution and reconciliation of prior transfers; do not retry automatically';
 
 interface EscrowDeposit {
   orderId: string;
@@ -232,6 +234,9 @@ export class SolanaEscrowService {
           );
 
           if (!escrowPostBalance) {
+            if (process.env.VERCEL) {
+              return { verified: false, error: 'Escrow token balance evidence missing; manual verification required' };
+            }
             // If no post balance found, trust the transaction was successful
             // since it's already confirmed on-chain
             console.log('⚠️ Could not find escrow token balance, trusting confirmed transaction');
@@ -273,14 +278,19 @@ export class SolanaEscrowService {
       }
 
       // Store verified deposit
-      this.verifiedDeposits.set(orderId, {
+      const receipt = {
         userWallet: expectedUserWallet,
         inputMint: expectedInputMint,
         amount: amountReceived,
         signature: depositSignature,
         orderId,
         usedForExecution: false,
-      });
+      };
+      if (process.env.VERCEL) {
+        await recordDepositReceipt(this.escrowPublicKey || '', receipt);
+      } else {
+        this.verifiedDeposits.set(orderId, receipt);
+      }
 
       console.log('✅ Deposit verified:', {
         orderId,
@@ -299,6 +309,7 @@ export class SolanaEscrowService {
    * Check if an order's deposit has been verified and not yet used
    */
   isDepositVerifiedForOrder(orderId: string): boolean {
+    requireLegacyDepositRuntime();
     const deposit = this.verifiedDeposits.get(orderId);
     return deposit ? !deposit.usedForExecution : false;
   }
@@ -307,6 +318,7 @@ export class SolanaEscrowService {
    * Mark deposit as used for execution (prevents double-spending)
    */
   markDepositAsUsed(orderId: string): void {
+    requireLegacyDepositRuntime();
     const deposit = this.verifiedDeposits.get(orderId);
     if (deposit) {
       deposit.usedForExecution = true;
@@ -318,6 +330,7 @@ export class SolanaEscrowService {
    * Get deposit info for an order
    */
   getDepositInfo(orderId: string): VerifiedDeposit | undefined {
+    requireLegacyDepositRuntime();
     return this.verifiedDeposits.get(orderId);
   }
 
@@ -422,6 +435,9 @@ export class SolanaEscrowService {
     inputAmount: string,
     slippageBps: number = 300, // 3% default for meme coins
   ): Promise<EscrowExecutionResult> {
+    if (process.env.VERCEL) {
+      return { success: false, error: VERCEL_ESCROW_DISABLED };
+    }
     if (!this.escrowKeypair) {
       return { success: false, error: 'Escrow wallet not initialized' };
     }
@@ -550,6 +566,9 @@ export class SolanaEscrowService {
     tokenMint: string,
     amount: string,
   ): Promise<{ success: boolean; signature?: string; error?: string }> {
+    if (process.env.VERCEL) {
+      return { success: false, error: VERCEL_ESCROW_DISABLED };
+    }
     if (!this.escrowKeypair) {
       return { success: false, error: 'Escrow wallet not initialized' };
     }
@@ -644,6 +663,9 @@ export class SolanaEscrowService {
     inputMint: string,
     amount: string,
   ): Promise<{ success: boolean; signature?: string; error?: string }> {
+    if (process.env.VERCEL) {
+      return { success: false, error: VERCEL_ESCROW_DISABLED };
+    }
     if (!this.escrowKeypair) {
       return { success: false, error: 'Escrow wallet not initialized' };
     }
