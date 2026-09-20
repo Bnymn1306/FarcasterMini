@@ -1,0 +1,61 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://basedmem.replit.app/api/:path*"
+    },
+    {
+      "source": "/mcp",
+      "destination": "https://basedmem.replit.app/mcp"
+    },
+    {
+      "source": "/mcp/:path*",
+      "destination": "https://basedmem.replit.app/mcp/:path*"
+    },
+    {
+      "source": "/frame/:path*",
+      "destination": "https://basedmem.replit.app/frame/:path*"
+    },
+    {
+      "source": "/token-logo/:path*",
+      "destination": "https://basedmem.replit.app/token-logo/:path*"
+    },
+    {
+      "source": "/.well-known/farcaster.json",
+      "destination": "https://basedmem.replit.app/.well-known/farcaster.json"
+    },
+    {
+      "source": "/((?!api(?:/|$)|mcp(?:/|$)|frame(?:/|$)|token-logo(?:/|$)|\\.well-known(?:/|$)|assets(?:/|$)).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/mcp",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/mcp/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}
