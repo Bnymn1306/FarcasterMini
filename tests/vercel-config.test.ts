@@ -56,3 +56,18 @@ test("macOS-only file watchers are optional so clean Linux installs can succeed"
     assert.deepEqual(entry.os, ["darwin"], name);
   }
 });
+
+test("locked package downloads use public registries or GitHub, not workspace-only hosts", () => {
+  const lock = JSON.parse(readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"));
+  for (const [name, value] of Object.entries(lock.packages)) {
+    const entry = value as { resolved?: string };
+    if (!entry.resolved) continue;
+    const url = new URL(entry.resolved);
+    if (url.protocol.startsWith("git+")) {
+      assert.equal(url.hostname, "github.com", name);
+      continue;
+    }
+    assert.equal(url.protocol, "https:", name);
+    assert.equal(url.hostname, "registry.npmjs.org", name);
+  }
+});
