@@ -20,3 +20,9 @@ A dry-run install does not validate package download URLs. Workspace-only regist
 **Why:** The local build and npm dry-run passed, but Vercel could not resolve an internal package registry hostname during the real download.
 
 **How to apply:** Check every resolved registry host before exporting, verify public replacement tarballs against the existing integrity hash, and use an isolated real install rather than presenting dry-run success as a complete deployment check.
+
+Repeat portability checks after dependency changes, not just the first export.
+
+**Why:** Package installation can restore internal registry URLs and remove Ganache's bundled macOS watcher's optional marker, even after both were previously corrected.
+
+**How to apply:** Treat lockfile portability tests as an export prerequisite. Registry portability corrections must never be used to bypass a package security-policy block; those require dependency remediation.

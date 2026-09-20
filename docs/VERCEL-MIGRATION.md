@@ -1,3 +1,9 @@
+# Release validation hold
+
+The standalone bundle builds and the focused migration tests pass, but this is **not a release-ready migration**. A fresh-cache isolated install encountered the package firewall's critical-CVE blocks in legacy transitive dependencies (including eth-sig-util, arbundles, basic-ftp, and old crypto/build dependencies), followed by temporary extraction quota errors. Do not bypass that policy or present the preinstalled-workspace build as a clean-install pass. The legacy @0x/protocol-utils and rubic-sdk direct parents were already at their registry latest versions when checked; a newer Neynar SDK exists but has not been adopted or compatibility-tested. Resolve or remove the unused dependency chains and complete a real clean install before enabling the standalone deployment.
+
+The pre-existing broad TypeScript check also fails; the separate type-check restoration work remains required. New migration-specific diagnostics were corrected, but that does not make the whole project type-clean.
+
 # Vercel migration preparation
 
 ## Standalone API approval gate
