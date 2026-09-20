@@ -23,67 +23,67 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 98%;
+  --background: 0 0% 100%;
 
-  --foreground: 0 0% 10%;
+  --foreground: 220 25% 10%;
 
-  --border: 0 0% 90%;
+  --border: 220 15% 90%;
 
   --card: 0 0% 100%;
 
-  --card-foreground: 0 0% 10%;
+  --card-foreground: 220 25% 10%;
 
-  --card-border: 0 0% 94%;
+  --card-border: 220 15% 94%;
 
-  --sidebar: 0 0% 97%;
+  --sidebar: 220 20% 98%;
 
-  --sidebar-foreground: 0 0% 10%;
+  --sidebar-foreground: 220 25% 10%;
 
-  --sidebar-border: 0 0% 92%;
+  --sidebar-border: 220 15% 92%;
 
-  --sidebar-primary: 280 75% 55%;
+  --sidebar-primary: 220 90% 56%;
 
   --sidebar-primary-foreground: 0 0% 98%;
 
-  --sidebar-accent: 0 0% 94%;
+  --sidebar-accent: 220 20% 96%;
 
-  --sidebar-accent-foreground: 0 0% 10%;
+  --sidebar-accent-foreground: 220 25% 10%;
 
-  --sidebar-ring: 280 75% 55%;
+  --sidebar-ring: 220 90% 56%;
 
   --popover: 0 0% 100%;
 
-  --popover-foreground: 0 0% 10%;
+  --popover-foreground: 220 25% 10%;
 
-  --popover-border: 0 0% 90%;
+  --popover-border: 220 15% 90%;
 
-  --primary: 280 75% 55%;
+  --primary: 220 90% 56%;
 
   --primary-foreground: 0 0% 98%;
 
-  --secondary: 0 0% 94%;
+  --secondary: 220 15% 96%;
 
-  --secondary-foreground: 0 0% 10%;
+  --secondary-foreground: 220 25% 10%;
 
-  --muted: 0 0% 96%;
+  --muted: 220 15% 97%;
 
-  --muted-foreground: 0 0% 45%;
+  --muted-foreground: 220 15% 40%;
 
-  --accent: 0 0% 95%;
+  --accent: 340 82% 62%;
 
-  --accent-foreground: 0 0% 10%;
+  --accent-foreground: 0 0% 98%;
 
   --destructive: 0 84% 45%;
 
   --destructive-foreground: 0 0% 98%;
 
   --input: 0 0% 85%;
-  --ring: 280 75% 55%;
-  --chart-1: 280 75% 45%;
-  --chart-2: 142 70% 40%;
-  --chart-3: 210 75% 45%;
+  --ring: 220 90% 56%;
+  --chart-1: 220 90% 56%;
+  --chart-2: 142 70% 45%;
+  --chart-3: 340 82% 62%;
   --chart-4: 25 85% 50%;
-  --chart-5: 340 75% 45%;
+  --chart-5: 280 75% 55%;
 
   --font-sans: Open Sans, sans-serif;
   --font-serif: Georgia, serif;
@@ -132,76 +132,90 @@
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255, .15);
+  --badge-outline: rgba(255,255,255, .10);
 
-  --opaque-button-border-intensity: 9;  /* In terms of percentages */
+  --opaque-button-border-intensity: 12;  /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255, .06);
+  --elevate-2: rgba(255,255,255, .12);
 
-  --background: 17 20% 8%;
+  /* Deep dark background for crypto trading vibe */
+  --background: 230 25% 7%;
 
-  --foreground: 0 0% 95%;
+  /* Bright white foreground for maximum contrast */
+  --foreground: 0 0% 98%;
 
-  --border: 17 10% 20%;
+  --border: 230 20% 25%;
 
-  --card: 17 15% 12%;
+  /* Slightly elevated cards with visible borders */
+  --card: 230 22% 12%;
 
-  --card-foreground: 0 0% 95%;
+  --card-foreground: 0 0% 98%;
 
-  --card-border: 17 12% 16%;
+  --card-border: 230 25% 22%;
 
-  --sidebar: 17 15% 10%;
+  --sidebar: 230 25% 9%;
 
-  --sidebar-foreground: 0 0% 95%;
+  --sidebar-foreground: 0 0% 98%;
 
-  --sidebar-border: 17 12% 14%;
+  --sidebar-border: 230 20% 18%;
 
-  --sidebar-primary: 280 75% 60%;
+  /* Electric cyan for primary - crypto trading vibe */
+  --sidebar-primary: 185 100% 50%;
 
-  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-primary-foreground: 230 25% 7%;
 
-  --sidebar-accent: 17 12% 16%;
+  --sidebar-accent: 230 20% 16%;
 
-  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-accent-foreground: 0 0% 98%;
 
-  --sidebar-ring: 280 75% 60%;
+  --sidebar-ring: 185 100% 50%;
 
-  --popover: 17 15% 14%;
+  --popover: 230 22% 12%;
 
-  --popover-foreground: 0 0% 95%;
+  --popover-foreground: 0 0% 98%;
 
-  --popover-border: 17 12% 18%;
+  --popover-border: 230 25% 22%;
 
-  --primary: 280 75% 60%;
+  /* Electric cyan primary */
+  --primary: 185 100% 50%;
 
-  --primary-foreground: 0 0% 98%;
+  --primary-foreground: 230 25% 7%;
 
-  --secondary: 17 12% 18%;
+  --secondary: 230 20% 18%;
 
   --secondary-foreground: 0 0% 95%;
 
-  --muted: 17 10% 16%;
+  --muted: 230 18% 16%;
 
-  --muted-foreground: 0 0% 65%;
+  /* Much brighter muted text for better readability */
+  --muted-foreground: 220 20% 70%;
 
-  --accent: 17 8% 18%;
+  /* Hot pink accent for excitement */
+  --accent: 330 100% 65%;
 
-  --accent-foreground: 0 0% 95%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 50%;
+  --destructive: 0 90% 55%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 17 10% 25%;
-  --ring: 280 75% 60%;
-  --chart-1: 280 75% 65%;
-  --chart-2: 142 70% 50%;
-  --chart-3: 210 75% 60%;
-  --chart-4: 25 85% 60%;
-  --chart-5: 340 75% 60%;
+  /* Brighter input backgrounds */
+  --input: 230 20% 22%;
+  --ring: 185 100% 50%;
+  
+  /* Vibrant chart colors */
+  --chart-1: 185 100% 55%;
+  --chart-2: 145 90% 50%;
+  --chart-3: 330 100% 65%;
+  --chart-4: 35 100% 55%;
+  --chart-5: 270 90% 65%;
+  
+  /* Success/Warning colors for trading */
+  --success: 145 90% 45%;
+  --warning: 40 100% 50%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.40);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.50);
@@ -363,4 +377,31 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+}
+
+/* AskBase signal mark: an original orbital system that nods to Base's circular language. */
+@keyframes askbase-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes askbase-pulse {
+  0%, 100% { transform: scale(.82); opacity: .52; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.askbase-orbit {
+  transform-origin: center;
+  animation: askbase-orbit 4.8s linear infinite;
+}
+
+.askbase-pulse {
+  transform-origin: center;
+  animation: askbase-pulse 1.8s ease-in-out infinite;
+}
+
+.askbase-scrollbar::-webkit-scrollbar { width: 7px; }
+.askbase-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--primary) / .22); border-radius: 999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .askbase-orbit, .askbase-pulse { animation: none; }
 }

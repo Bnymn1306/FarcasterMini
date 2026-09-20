@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BasedMem Mobile Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-family: system-ui;
+            min-height: 100vh;
+        }
+        .status {
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+        }
+        .success { background: rgba(0,255,0,0.2); }
+        .error { background: rgba(255,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <h1>🔬 BasedMem Mobile Test</h1>
+    <div id="status"></div>
+    
+    <script type="module">
+        const log = (msg, isError = false) => {
+            const div = document.createElement('div');
+            div.className = 'status ' + (isError ? 'error' : 'success');
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            document.getElementById('status').appendChild(div);
+            console.log(msg);
+        };
+
+        log('✅ Test page loaded');
+        log('📱 User Agent: ' + navigator.userAgent);
+        
+        try {
+            log('📦 Importing Farcaster SDK...');
+            const { default: sdk } = await import('@farcaster/frame-sdk');
+            log('✅ SDK imported successfully');
+            
+            log('📱 Calling SDK ready()...');
+            await sdk.actions.ready();
+            log('✅ SDK ready() completed - SPLASH DISMISSED!');
+            
+            log('🎯 Checking SDK context...');
+            const context = await sdk.context;
+            if (context?.user) {
+                log('✅ Farcaster context available: ' + context.user.username);
+            } else {
+                log('ℹ️ No Farcaster context (browser mode)');
+            }
+            
+            log('🎉 ALL TESTS PASSED - SDK WORKING!');
+            
+        } catch (error) {
+            log('❌ ERROR: ' + error.message, true);
+            log('Stack: ' + error.stack, true);
+        }
+    </script>
+</body>
+</html>

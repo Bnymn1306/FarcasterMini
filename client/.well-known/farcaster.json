@@ -1,0 +1,26 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM1MTUwMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM0MGE0RDBmRGEyMmFmOTNCQ0IzN2U5MTI1QkU1QjdGYjk2ZDU1MzAifQ",
+    "payload": "eyJkb21haW4iOiJiYXNlZG1lbS54eXoifQ",
+    "signature": "ZezfIM8GqEe665NLjEJPtb+ZyYapIS6pYrWah02oXMgG0W42tfAzVo7wnkH2v/bPUhcatCR1cjnuGahAjU4eQhw="
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "BasedMem",
+    "iconUrl": "https://basedmem.xyz/icon.jpg",
+    "homeUrl": "https://basedmem.xyz",
+    "splashImageUrl": "https://basedmem.xyz/splash.svg",
+    "splashBackgroundColor": "#0A0A0A",
+    "subtitle": "Swap, Agents and Stocks",
+    "description": "Swap tokens, create limit orders, discover onchain agents and access explainable tokenized stocks.",
+    "screenshotUrls": [
+      "https://basedmem.xyz/frame-image.jpg"
+    ],
+    "primaryCategory": "finance",
+    "tags": ["defi", "trading", "agents"],
+    "heroImageUrl": "https://basedmem.xyz/frame-image.jpg",
+    "tagline": "Human-controlled onchain tools",
+    "webhookUrl": "https://basedmem.xyz/api/webhook",
+    "capabilities": ["wallet-solana"]
+  }
+}

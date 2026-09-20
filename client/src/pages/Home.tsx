@@ -1,15 +1,9 @@
 import { HeroSection } from "@/components/HeroSection";
-import { useLocation } from "wouter";
 
 export default function Home() {
-  const [, setLocation] = useLocation();
-
   return (
-    <div>
-      <HeroSection 
-        onLaunchClick={() => setLocation('/create')}
-        onBrowseClick={() => setLocation('/browse')}
-      />
+    <div className="min-h-[100dvh] pb-20 2xl:pb-4">
+      <HeroSection />
     </div>
   );
 }

@@ -9,6 +9,7 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true, // Enable IR-based compilation for complex contracts
     },
   },
   networks: {
@@ -20,6 +21,11 @@ module.exports = {
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       chainId: 84532,
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    soneium: {
+      url: process.env.SONEIUM_RPC_URL || "https://rpc.soneium.org",
+      chainId: 1868,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     hardhat: {

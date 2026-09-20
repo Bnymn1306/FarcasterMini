@@ -20,72 +20,14 @@ window.addEventListener('unhandledrejection', (event) => {
 }, true);
 
 window.addEventListener('error', (event) => {
-  // Suppress buffer module errors (known Vite issue)
-  if (event.message && event.message.includes('buffer')) {
-    event.preventDefault();
-    return;
-  }
-  
-  // Log other errors
+  // Log errors for debugging
   if (event.message || event.error) {
     console.error('Window error:', event.message, event.error);
   }
   event.preventDefault(); // Prevent overlay
 }, true);
 
-// EXTREME OVERLAY REMOVAL - Target Replit runtime error plugin
-const nukeThatOverlay = () => {
-  // Kill all overlays
-  const killSelectors = [
-    '[data-vite-plugin-runtime-error-modal]',
-    '#vite-plugin-runtime-error-modal',
-    'iframe[data-vite-plugin]',
-    'div[class*="runtime"]',
-    'div[class*="error-overlay"]',
-    'div[style*="position: fixed"][style*="inset: 0"]',
-    'div[style*="z-index: 2147483647"]',
-  ];
+// Note: Aggressive overlay removal scripts removed - was causing mobile WebView crashes
 
-  killSelectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => el.remove());
-  });
-
-  // Kill ALL iframes with high z-index or fixed position
-  document.querySelectorAll('iframe').forEach(iframe => {
-    const style = iframe.getAttribute('style') || '';
-    const computedStyle = window.getComputedStyle(iframe);
-    
-    if (style.includes('position: fixed') || 
-        computedStyle.position === 'fixed' ||
-        parseInt(computedStyle.zIndex) > 1000) {
-      iframe.remove();
-    }
-  });
-
-  // Kill divs with error text
-  document.querySelectorAll('div').forEach(div => {
-    const text = div.textContent || '';
-    if ((text.includes('runtime-error-plugin') || 
-         text.includes('has not been authorized')) &&
-        div.parentElement?.tagName === 'BODY') {
-      div.remove();
-    }
-  });
-};
-
-// Nuclear option: run every 30ms
-nukeThatOverlay();
-setInterval(nukeThatOverlay, 30);
-
-// Observer with immediate callback
-const observer = new MutationObserver(() => {
-  nukeThatOverlay();
-});
-
-observer.observe(document.body || document.documentElement, {
-  childList: true,
-  subtree: true,
-  attributes: true
-});
-
+// Render App immediately - SDK ready() will be called from App component
 createRoot(document.getElementById("root")!).render(<App />);

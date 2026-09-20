@@ -4,12 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Upload, Rocket, Sparkles } from "lucide-react";
+import { Upload, Rocket, Sparkles, Crown, CheckCircle2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GasFeeDisplay } from "./GasFeeDisplay";
 import sdk from "@farcaster/frame-sdk";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useX402Payment } from "@/hooks/useX402Payment";
+import { useWallet } from "@/contexts/WalletContext";
+import { SiEthereum } from "react-icons/si";
+import { apiRequest } from "@/lib/queryClient";
 
 const STORAGE_KEY = 'basedmem_create_token_draft';
 
@@ -35,16 +39,20 @@ export interface TokenFormData {
   castText?: string;
   castLikes?: number;
   castRecasts?: number;
+  creatorWalletAddress?: string;
 }
 
 export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: CreateTokenFormProps) {
   const { toast } = useToast();
+  const wallet = useWallet();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [castUrl, setCastUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importedCast, setImportedCast] = useState<any>(null);
   const [lastProcessedUrl, setLastProcessedUrl] = useState('');
+  const [isPremiumLaunch, setIsPremiumLaunch] = useState(false);
+  const { fetchWithPayment, isPending: isPaymentPending } = useX402Payment();
   
   // Clear cast metadata when cast URL is cleared
   useEffect(() => {
@@ -105,32 +113,107 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
     setIsCreating(true);
     
     try {
-      const creationFeeInWei = "0x88B8E5B8000" as `0x${string}`;
-      
-      try {
-        const provider = sdk.wallet.ethProvider;
-        const accounts = await provider.request({ method: "eth_accounts" });
-        
-        if (accounts && accounts.length > 0) {
-          const txHash = await provider.request({
-            method: "eth_sendTransaction",
-            params: [{
-              from: accounts[0],
-              to: accounts[0],
-              value: creationFeeInWei,
-              data: "0x" as `0x${string}`,
-            }],
-          });
+      // If premium launch is selected, use x402 payment
+      if (isPremiumLaunch) {
+        // Check if wallet is connected before attempting premium launch
+        if (!wallet.isWalletConnected || !wallet.walletAddress) {
+          console.log("⚠️ Wallet not connected, attempting to connect...");
           
-          console.log('Token creation transaction sent:', txHash);
+          // Trigger wallet connection
+          try {
+            await wallet.connectWallet();
+            console.log("✅ Wallet connected successfully");
+            toast({
+              title: "Wallet Connected",
+              description: "Processing Premium Launch...",
+            });
+            // Don't return - continue with premium launch
+          } catch (connectError: any) {
+            console.error("❌ Wallet connection failed:", connectError);
+            toast({
+              title: "Wallet Connection Failed",
+              description: "Please connect your wallet to use Premium Launch",
+              variant: "destructive",
+            });
+            setIsCreating(false);
+            return;
+          }
         }
-      } catch (walletError) {
-        console.log('Wallet transaction skipped (dev mode):', walletError);
+
+        // Proceed with premium launch
+        try {
+          console.log("🚀 Starting premium launch with x402 payment...");
+          const result = await fetchWithPayment({
+            url: "/api/tokens/premium",
+            method: "POST",
+            body: formData,
+          });
+
+          toast({
+            title: "Premium Token Launched!",
+            description: "Your token has been created with verified badge and featured placement",
+          });
+
+          localStorage.removeItem(STORAGE_KEY);
+          onSubmit?.(formData);
+          return;
+        } catch (error: any) {
+          console.error("❌ Premium launch error:", error);
+          toast({
+            title: "Premium Launch Failed",
+            description: error.message || "Failed to process premium launch",
+            variant: "destructive",
+          });
+          setIsCreating(false);
+          return;
+        }
       }
-      
-      localStorage.removeItem(STORAGE_KEY);
-      
-      onSubmit?.(formData);
+
+      // Standard launch flow - ensure wallet is connected
+      try {
+        if (!wallet.isWalletConnected || !wallet.walletAddress) {
+          console.log("⚠️ Wallet not connected, attempting to connect...");
+          
+          try {
+            await wallet.connectWallet();
+            console.log("✅ Wallet connected successfully");
+            toast({
+              title: "Wallet Connected",
+              description: "Processing token launch...",
+            });
+          } catch (connectError: any) {
+            console.error("❌ Wallet connection failed:", connectError);
+            toast({
+              title: "Wallet Connection Required",
+              description: "Please connect your wallet to launch a token",
+              variant: "destructive",
+            });
+            setIsCreating(false);
+            return;
+          }
+        }
+
+        // Get provider from WalletContext
+        const provider = wallet.getProvider();
+        if (!provider) {
+          throw new Error("No wallet provider available");
+        }
+
+        console.log("📝 Passing form data to Create page for blockchain deployment...");
+        
+        // Pass form data to Create.tsx for blockchain deployment
+        // Create.tsx will handle both blockchain deployment AND database save
+        localStorage.removeItem(STORAGE_KEY);
+        
+        onSubmit?.({
+          ...formData,
+          creatorWalletAddress: wallet.walletAddress,
+        });
+        return; // Exit here - Create.tsx handles the rest
+      } catch (walletError: any) {
+        console.error('❌ Token creation error:', walletError);
+        throw walletError;
+      }
     } catch (error: any) {
       console.error("Token creation error:", error);
       toast({
@@ -202,10 +285,10 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
       // Generate unique token name using cast content
       const tokenName = `${displayName} ${capitalizedWord} Token`;
       
-      // Generate unique symbol using hash for uniqueness
-      const hashSuffix = data.hash ? data.hash.slice(-4).toUpperCase() : Date.now().toString().slice(-4);
-      const baseSymbol = username.substring(0, 4).toUpperCase();
-      const symbol = `${baseSymbol}${hashSuffix}`;
+      // Generate unique symbol using hash for uniqueness (6 char suffix for more uniqueness)
+      const hashSuffix = data.hash ? data.hash.slice(-6).toUpperCase() : Date.now().toString().slice(-6);
+      const baseSymbol = firstWord.substring(0, 4).toUpperCase().replace(/[^A-Z]/g, '');
+      const symbol = baseSymbol.length >= 2 ? `${baseSymbol}${hashSuffix}` : `CAST${hashSuffix}`;
 
       setFormData(prev => ({
         ...prev,
@@ -425,25 +508,132 @@ export function CreateTokenForm({ onSubmit, disabled: externalDisabled }: Create
             />
           </div>
 
-          <div className="space-y-3">
-            <div className="p-3 bg-muted/30 rounded-lg">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Launch Fee</span>
-                <span className="font-mono font-semibold">0.00003 ETH</span>
-              </div>
-              <GasFeeDisplay gasFee="0.00003" />
+          <div className="space-y-4">
+            {/* Premium Launch Selection */}
+            <div className="space-y-3">
+              <Label className="text-xs uppercase font-semibold">
+                Launch Type
+              </Label>
+              
+              {/* Standard Launch Card */}
+              <Card 
+                className={`p-4 cursor-pointer transition-all hover-elevate ${
+                  !isPremiumLaunch 
+                    ? 'border-primary border-2 bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+                onClick={() => setIsPremiumLaunch(false)}
+                data-testid="card-standard-launch"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                    !isPremiumLaunch ? 'border-primary bg-primary' : 'border-muted-foreground'
+                  }`}>
+                    {!isPremiumLaunch && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <SiEthereum className="h-4 w-4" />
+                      <h4 className="font-semibold">Standard Launch</h4>
+                      <Badge variant="secondary" className="ml-auto">
+                        Gas Only
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Standard token deployment on Base blockchain
+                    </p>
+                    <div className="mt-2 text-sm font-mono">
+                      ~0.00003 ETH gas fee
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Premium Launch Card */}
+              <Card 
+                className={`p-4 cursor-pointer transition-all hover-elevate ${
+                  isPremiumLaunch 
+                    ? 'border-primary border-2 bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+                onClick={() => setIsPremiumLaunch(true)}
+                data-testid="card-premium-launch"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                    isPremiumLaunch ? 'border-primary bg-primary' : 'border-muted-foreground'
+                  }`}>
+                    {isPremiumLaunch && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Crown className="h-4 w-4 text-primary" />
+                      <h4 className="font-semibold">Premium Launch</h4>
+                      <Badge className="ml-auto bg-gradient-to-r from-primary to-accent text-primary-foreground">
+                        $0.05 USDC
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Get verified badge, featured placement, and priority support
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                        <span>✓ Verified Badge</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                        <span>✓ Featured on Homepage</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                        <span>✓ Priority Support</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </div>
 
+            {/* Fee Display */}
+            {!isPremiumLaunch && (
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">Launch Fee</span>
+                  <span className="font-mono font-semibold">0.00003 ETH</span>
+                </div>
+                <GasFeeDisplay gasFee="0.00003" />
+              </div>
+            )}
+
+            {/* Launch Button */}
             <Button
               type="submit"
               className="w-full gap-2 py-6"
               size="lg"
-              disabled={isCreating || externalDisabled}
+              disabled={isCreating || isPaymentPending || externalDisabled}
               data-testid="button-create-token"
             >
-              <Rocket className="h-5 w-5" />
-              {isCreating || externalDisabled ? "Processing..." : "Launch Token"}
+              {isPremiumLaunch ? (
+                <>
+                  <Crown className="h-5 w-5" />
+                  {isCreating || isPaymentPending || externalDisabled 
+                    ? "Processing Premium Launch..." 
+                    : "Premium Launch ($0.05 USDC)"}
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-5 w-5" />
+                  {isCreating || externalDisabled ? "Processing..." : "Launch Token"}
+                </>
+              )}
             </Button>
+
+            {isPremiumLaunch && (
+              <p className="text-xs text-center text-muted-foreground">
+                Payment processed securely via x402 protocol on Base L2 • Zero fees
+              </p>
+            )}
           </div>
         </form>
       </Card>

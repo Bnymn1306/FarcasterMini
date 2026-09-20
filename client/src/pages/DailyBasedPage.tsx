@@ -2,7 +2,7 @@ import { DailyBased } from "@/components/DailyBased";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useWallet } from "@/contexts/WalletContext";
-import { Flame, Calendar, Award } from "lucide-react";
+import { Flame, Calendar, Award, Sparkles, Shield, Zap, TrendingUp, Rocket, Lock } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User, DailyCheckIn } from "@shared/schema";
@@ -14,9 +14,83 @@ interface CheckInData {
   recentCheckIns: DailyCheckIn[];
 }
 
+// Daily rotating content about BasedMem features
+const DAILY_FEATURES = [
+  {
+    day: 0, // Sunday
+    icon: Rocket,
+    title: "V3 ExecutorVault: Zero-Click Automation",
+    description: "BasedMem's V3 vault automatically executes AND withdraws your limit orders for ANY Base token. No manual withdrawals needed - tokens appear directly in your wallet!",
+    highlight: "100% automated from order creation to wallet delivery",
+    color: "text-chart-1",
+    bgColor: "bg-chart-1/10",
+    borderColor: "border-chart-1/20",
+  },
+  {
+    day: 1, // Monday
+    icon: Shield,
+    title: "Smart Token Risk Scoring",
+    description: "Every token gets a real-time risk score (Approved, Guarded, High Risk) using ERC20 validation, liquidity checks, and scam detection. Trade confidently with full transparency.",
+    highlight: "Whitelisted tokens: WETH, USDC, AERO, DEGEN, BRETT, VIRTUAL",
+    color: "text-chart-2",
+    bgColor: "bg-chart-2/10",
+    borderColor: "border-chart-2/20",
+  },
+  {
+    day: 2, // Tuesday
+    icon: Zap,
+    title: "x402 Micropayments: Zero Trading Fees",
+    description: "Pay for premium features with USDC micropayments via Coinbase's x402 protocol. No subscription, no gas fees, just pay-as-you-go for what you use.",
+    highlight: "Instant USDC payments without wallet confirmations",
+    color: "text-chart-3",
+    bgColor: "bg-chart-3/10",
+    borderColor: "border-chart-3/20",
+  },
+  {
+    day: 3, // Wednesday
+    icon: TrendingUp,
+    title: "0x Protocol: Best Prices Guaranteed",
+    description: "Our DEX aggregator scans all Base liquidity sources (Uniswap, Aerodrome, etc.) to find you the best swap rates. Plus native limit orders with price monitoring.",
+    highlight: "Instant swaps + automated limit order execution",
+    color: "text-chart-4",
+    bgColor: "bg-chart-4/10",
+    borderColor: "border-chart-4/20",
+  },
+  {
+    day: 4, // Thursday
+    icon: Lock,
+    title: "Atomic Order Creation with Rollback",
+    description: "If your limit order signature fails, deposited funds automatically return to your wallet. No stuck funds, no manual recovery needed.",
+    highlight: "Smart deposit validation prevents failed transactions",
+    color: "text-chart-5",
+    bgColor: "bg-chart-5/10",
+    borderColor: "border-chart-5/20",
+  },
+  {
+    day: 5, // Friday
+    icon: Sparkles,
+    title: "Trade ANY Base Token with Confidence",
+    description: "BasedMem supports 2000+ Base tokens with automatic whitelisting for SELL orders. The system handles token approvals, risk scoring, and vault management for you.",
+    highlight: "Universal token support - not just stablecoins",
+    color: "text-accent",
+    bgColor: "bg-accent/10",
+    borderColor: "border-accent/20",
+  },
+  {
+    day: 6, // Saturday
+    icon: Flame,
+    title: "Real-Time Market Data Integration",
+    description: "Live price feeds from DEXScreener and CoinGecko with 24h volume, liquidity tracking, and automatic limit order monitoring. Orders execute within 30 seconds of target price.",
+    highlight: "Backend auto-executes orders - zero user interaction",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    borderColor: "border-primary/20",
+  },
+];
+
 export default function DailyBasedPage() {
   const { toast } = useToast();
-  const { walletAddress, isWalletConnected } = useWallet();
+  const { walletAddress, isWalletConnected, getProvider } = useWallet();
 
   const { data: checkInData, isLoading: isLoadingData } = useQuery<CheckInData>({
     queryKey: ["/api/check-in", walletAddress],
@@ -48,33 +122,53 @@ export default function DailyBasedPage() {
       try {
         const gasFeeInWei = "0x1B48EB57E000" as `0x${string}`;
         
-        const provider = sdk.wallet.ethProvider;
+        // Try to get ethers provider first (MetaMask/browser wallets)
+        let txHash: string;
+        const ethersProvider = getProvider();
         
-        const accounts = await provider.request({ method: "eth_accounts" });
-        if (!accounts || accounts.length === 0) {
-          throw new Error("Wallet not connected");
-        }
-        
-        const fromAddress = accounts[0];
-        
-        const txHash = await provider.request({
-          method: "eth_sendTransaction",
-          params: [{
-            from: fromAddress,
-            to: fromAddress,
+        if (ethersProvider) {
+          // MetaMask/browser wallet flow
+          console.log("Using browser wallet (MetaMask/etc)");
+          const signer = await ethersProvider.getSigner();
+          const tx = await signer.sendTransaction({
+            to: walletAddress,
             value: gasFeeInWei,
-            data: "0x" as `0x${string}`,
-          }],
-        });
-        
-        console.log("Check-in transaction sent:", txHash);
+            data: "0x",
+          });
+          await tx.wait(1);
+          txHash = tx.hash;
+          console.log("Check-in transaction sent (browser wallet):", txHash);
+        } else {
+          // Fallback to Farcaster SDK
+          console.log("Using Farcaster SDK");
+          const provider = sdk.wallet.ethProvider;
+          
+          // ✅ CRITICAL FIX: Use eth_requestAccounts for Farcaster SDK v2
+          const accounts = await provider.request({ method: "eth_requestAccounts" });
+          if (!accounts || accounts.length === 0) {
+            throw new Error("Wallet not connected");
+          }
+          
+          const fromAddress = accounts[0];
+          
+          txHash = await provider.request({
+            method: "eth_sendTransaction",
+            params: [{
+              from: fromAddress,
+              to: fromAddress,
+              value: gasFeeInWei,
+              data: "0x" as `0x${string}`,
+            }],
+          });
+          console.log("Check-in transaction sent (Farcaster):", txHash);
+        }
         
         const response = await apiRequest("POST", "/api/check-in", {
           walletAddress,
         });
         return await response.json() as { checkIn: DailyCheckIn; user: User; gasFeePaid: string };
       } catch (error: any) {
-        if (error.message?.includes("rejected") || error.message?.includes("denied")) {
+        if (error.message?.includes("rejected") || error.message?.includes("denied") || error.message?.includes("user rejected")) {
           throw new Error("Transaction rejected");
         }
         throw error;
@@ -111,6 +205,9 @@ export default function DailyBasedPage() {
   const user = checkInData?.user;
   const hasCheckedInToday = !!checkInData?.todayCheckIn;
   const recentCheckIns = checkInData?.recentCheckIns || [];
+
+  // Get today's feature based on day of week
+  const todayFeature = DAILY_FEATURES[new Date().getDay()];
 
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
@@ -169,6 +266,34 @@ export default function DailyBasedPage() {
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          {/* Daily Feature Spotlight */}
+          <Card className={`p-6 space-y-4 border-2 ${todayFeature.borderColor} ${todayFeature.bgColor}`} data-testid="card-daily-feature">
+            <div className="flex items-start gap-4">
+              <div className={`p-3 rounded-lg bg-background/80 ${todayFeature.color}`}>
+                <todayFeature.icon className="h-6 w-6" data-testid="icon-feature" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="h-4 w-4 text-accent" data-testid="icon-sparkles" />
+                  <p className="text-xs font-semibold text-accent uppercase tracking-wide">
+                    Feature of the Day
+                  </p>
+                </div>
+                <h3 className="font-black text-xl mb-2" data-testid="text-feature-title">
+                  {todayFeature.title}
+                </h3>
+                <p className="text-sm text-foreground/80 leading-relaxed mb-3" data-testid="text-feature-description">
+                  {todayFeature.description}
+                </p>
+                <div className={`p-3 rounded-lg bg-background/60 border ${todayFeature.borderColor}`}>
+                  <p className={`text-sm font-semibold ${todayFeature.color}`} data-testid="text-feature-highlight">
+                    💡 {todayFeature.highlight}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           <DailyBased
             currentStreak={user?.currentStreak || 0}
             longestStreak={user?.longestStreak || 0}

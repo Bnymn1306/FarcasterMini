@@ -1,12 +1,13 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["glib", "nspr", "nss", "dbus", "atk", "at-spi2-atk", "cups", "xorg.libxcb", "libxkbcommon", "at-spi2-core", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "cairo", "pango", "alsa-lib"]
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
@@ -15,67 +16,15 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33835
-externalPort = 6000
-
-[[ports]]
-localPort = 34353
-externalPort = 5173
-
-[[ports]]
-localPort = 35905
-externalPort = 8099
-
-[[ports]]
-localPort = 35995
-externalPort = 4200
-
-[[ports]]
-localPort = 37369
-externalPort = 6800
-
-[[ports]]
-localPort = 38573
-externalPort = 8081
-
-[[ports]]
-localPort = 39209
-externalPort = 3001
-
-[[ports]]
-localPort = 39557
-externalPort = 8000
-
-[[ports]]
-localPort = 40117
+localPort = 5100
 externalPort = 3000
 
 [[ports]]
-localPort = 41465
-externalPort = 5000
-
-[[ports]]
-localPort = 41861
-externalPort = 3003
-
-[[ports]]
-localPort = 42275
+localPort = 8080
 externalPort = 8080
 
-[[ports]]
-localPort = 43487
-externalPort = 8008
 
-[[ports]]
-localPort = 44559
-externalPort = 9000
 
-[[ports]]
-localPort = 46501
-externalPort = 3002
-
-[env]
-PORT = "5000"
 
 [workflows]
 runButton = "Project"
@@ -97,3 +46,15 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+FACTORY_CONTRACT_ADDRESS = "0x166b765b67f52e1Bfd27AFEB03FedA1EE7C9A6B5"
+SONEIUM_EXECUTOR_VAULT_ADDRESS = "0xfBCe5D06a4fB74325e2154d2dc6b998AC5e91A5c"
+INK_EXECUTOR_VAULT_ADDRESS = "0xfBCe5D06a4fB74325e2154d2dc6b998AC5e91A5c"
+INK_USDC_ADDRESS = "0x2D270e6886d130D724215A266106e6832161EAEd"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

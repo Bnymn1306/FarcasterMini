@@ -1,0 +1,25 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM1MTUwMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDg5ODhDNDU1ZjBjZjREMzE2N2MzMkI5RDY1QjA5MTMwNDU0NTM2YWMifQ",
+    "payload": "eyJkb21haW4iOiJiYXNlZG1lbS54eXoifQ",
+    "signature": "PMCweYn4IOYWxoLLJx2KME10AZBo2Di9egjMI2TqSXppe3RilKPyRcbXUiCjsHZESjBcTKSJqqELtp/b4AQrwRs="
+  },
+  "frame": {
+    "version": "1",
+    "name": "BasedMem",
+    "subtitle": "Swap, Agents and Stocks",
+    "tagline": "Human-controlled onchain tools",
+    "description": "Swap tokens, create limit orders, discover onchain agents and access explainable tokenized stocks.",
+    "iconUrl": "https://basedmem.xyz/icon.png",
+    "homeUrl": "https://basedmem.xyz",
+    "splashImageUrl": "https://basedmem.xyz/splash.png",
+    "splashBackgroundColor": "#0a0a0f",
+    "webhookUrl": "https://basedmem.xyz/api/farcaster/webhook",
+    "primaryCategory": "finance",
+    "tags": ["trading", "defi", "agents", "stocks", "base"],
+    "heroImageUrl": "https://basedmem.xyz/icon.png",
+    "ogTitle": "BasedMem - Human-Controlled Onchain Tools",
+    "ogDescription": "Swap, limit orders, Agent Hub and explainable Stock Agents in one focused app.",
+    "ogImageUrl": "https://basedmem.xyz/icon.png"
+  }
+}

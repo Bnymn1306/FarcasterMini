@@ -22,10 +22,18 @@ export function AlertsList({ alerts, onToggleAlert, onDeleteAlert }: AlertsListP
   return (
     <div className="space-y-4">
       {alerts.map((alert) => {
-        const currentPrice = parseFloat(alert.token.currentPrice);
+        const token = alert.token || {
+          name: alert.externalTokenSymbol || 'Unknown',
+          symbol: alert.externalTokenSymbol || '???',
+          logoUrl: alert.externalTokenLogoUrl,
+          currentPrice: '0',
+        };
+        const currentPrice = parseFloat(token.currentPrice || '0');
         const targetPrice = parseFloat(alert.targetPrice);
         const isAbove = alert.condition === "above";
-        const percentDiff = ((targetPrice - currentPrice) / currentPrice * 100).toFixed(2);
+        const percentDiff = currentPrice > 0 
+          ? ((targetPrice - currentPrice) / currentPrice * 100).toFixed(2)
+          : 'Infinity';
 
         return (
           <Card 
@@ -36,40 +44,40 @@ export function AlertsList({ alerts, onToggleAlert, onDeleteAlert }: AlertsListP
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={alert.token.logoUrl || undefined} alt={alert.token.name} />
-                  <AvatarFallback>{alert.token.symbol.slice(0, 2)}</AvatarFallback>
+                  <AvatarImage src={token.logoUrl || undefined} alt={token.name} />
+                  <AvatarFallback>{token.symbol?.slice(0, 2) || '??'}</AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold">{alert.token.name}</h4>
+                    <h4 className="font-bold">{token.name}</h4>
                     <span className="text-sm text-muted-foreground uppercase">
-                      ${alert.token.symbol}
+                      ${token.symbol}
                     </span>
                     {alert.isTriggered && (
                       <Badge className="bg-chart-2/20 text-chart-2">
-                        Tetiklendi
+                        Triggered
                       </Badge>
                     )}
                     {!alert.isActive && (
                       <Badge variant="secondary">
-                        Pasif
+                        Inactive
                       </Badge>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
-                        Şu Anki Fiyat
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">
+                        CURRENT PRICE
                       </p>
                       <p className="font-mono font-semibold">
-                        {formatPrice(alert.token.currentPrice)}
+                        {formatPrice(token.currentPrice || '0')}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
-                        Hedef Fiyat
+                      <p className="text-xs text-muted-foreground font-semibold mb-1">
+                        TARGET PRICE
                       </p>
                       <div className="flex items-center gap-2">
                         {isAbove ? (
@@ -92,7 +100,7 @@ export function AlertsList({ alerts, onToggleAlert, onDeleteAlert }: AlertsListP
 
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>
-                      {isAbove ? 'Fiyat üzerine çıktığında' : 'Fiyat altına düştüğünde'} bildirim
+                      {isAbove ? 'Notify when price goes above' : 'Notify when price goes below'}
                     </span>
                     {alert.notifyViaFarcaster && (
                       <>
@@ -135,9 +143,9 @@ export function AlertsList({ alerts, onToggleAlert, onDeleteAlert }: AlertsListP
       {alerts.length === 0 && (
         <Card className="p-12 text-center">
           <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="font-bold text-lg mb-2">Henüz Uyarı Yok</h3>
+          <h3 className="font-bold text-lg mb-2">No Alerts Yet</h3>
           <p className="text-sm text-muted-foreground">
-            Token detay sayfasından fiyat uyarısı oluşturun
+            Create price alerts from token detail page
           </p>
         </Card>
       )}

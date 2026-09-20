@@ -3,116 +3,136 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>BasedMem - Base Blockchain Meme Coin Launcher</title>
-    <meta name="description" content="Base blockchain üzerinde meme coin oluştur ve trade et. 60 saniyede token launch et, topluluğunu büyüt ve kazanmaya başla." />
+    <title>BasedMem - Swap, Limit Orders & Onchain Agents</title>
+    <meta name="description" content="Swap tokens, create limit orders, discover onchain agents and access explainable tokenized stocks from one focused app." />
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/logo.svg" />
     
-    <!-- Open Graph Meta Tags for Social Sharing and Farcaster -->
-    <meta property="og:title" content="BasedMem - Launch Your Meme Coin in 60 Seconds" />
-    <meta property="og:description" content="Create and trade meme coins on Base blockchain. Deploy tokens instantly, build community, and start earning." />
+    <!-- Open Graph Meta Tags for Social Sharing -->
+    <meta property="og:title" content="BasedMem - Human-Controlled Onchain Tools" />
+    <meta property="og:description" content="Swap, limit orders, Agent Hub and explainable Stock Agents in one focused app." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://basedmem.replit.app" />
-    <meta property="og:image" content="https://basedmem.replit.app/frame-image.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="BasedMem - Base Blockchain Meme Coin Platform" />
+    <meta property="og:url" content="https://basedmem.xyz" />
+    <meta property="og:image" content="https://basedmem.xyz/icon.jpg" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="BasedMem Logo" />
     <meta property="og:site_name" content="BasedMem" />
     
     <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BasedMem - Launch Your Meme Coin in 60 Seconds" />
-    <meta name="twitter:description" content="Create and trade meme coins on Base blockchain" />
-    <meta name="twitter:image" content="https://basedmem.replit.app/frame-image.jpg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="BasedMem - Human-Controlled Onchain Tools" />
+    <meta name="twitter:description" content="Swap, limit orders, Agent Hub and explainable Stock Agents in one focused app." />
+    <meta name="twitter:image" content="https://basedmem.xyz/icon.jpg" />
     
-    <!-- Farcaster Frame Meta Tags -->
-    <meta name="fc:frame" content='{
-      "version": "1",
-      "imageUrl": "https://basedmem.replit.app/frame-image.jpg",
-      "button": {
-        "title": "Launch BasedMem",
-        "action": {
-          "type": "launch_frame",
-          "name": "BasedMem",
-          "url": "https://basedmem.replit.app"
-        }
-      }
-    }' />
+    <!-- Base Build Verification -->
+    <meta name="base:app_id" content="692acd2f6483df195b74bac2" />
+
+    <!-- Farcaster Mini App Embed Meta Tag -->
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://basedmem.xyz/icon.jpg","button":{"title":"Trade Now","action":{"type":"launch_miniapp","name":"BasedMem","url":"https://basedmem.xyz","splashImageUrl":"https://basedmem.xyz/splash-icon.jpg","splashBackgroundColor":"#0A0A0A"}}}' />
     
-    <!-- Farcaster Mini App Discovery Tags -->
-    <meta name="fc:miniapp" content='{
-      "version": "1",
-      "iconUrl": "https://basedmem.replit.app/icon.jpg",
-      "imageUrl": "https://basedmem.replit.app/frame-image.jpg",
-      "button": {
-        "title": "Launch BasedMem",
-        "action": {
-          "type": "link",
-          "name": "BasedMem",
-          "url": "https://basedmem.replit.app",
-          "splashImageUrl": "https://basedmem.replit.app/splash-icon.jpg",
-          "splashBackgroundColor": "#8B5CF6"
-        }
-      }
-    }' />
-    <!-- OVERLAY DESTROYER: Kill error overlay iframes immediately -->
+    <!-- ✅ CRITICAL CACHE BUST - Force Warpcast to reload! -->
+    <meta name="app-version" content="20251130T150000" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <!-- ✅ CRITICAL FRAME DETECTION - Cache before Warpcast strips UA! -->
     <script>
-      (function destroyOverlay() {
-        // Aggressively remove error overlay iframes/divs
-        function nuke() {
-          // Remove Replit runtime error modal iframe
-          document.querySelectorAll('iframe').forEach(function(iframe) {
-            var src = iframe.src || '';
-            var style = iframe.getAttribute('style') || '';
-            var computed = iframe.style ? iframe.style.position : '';
-            
-            // Kill if: has vite-plugin in src, OR is fixed position
-            if (src.indexOf('vite-plugin') !== -1 || 
-                style.indexOf('position: fixed') !== -1 ||
-                computed === 'fixed') {
-              iframe.remove();
-            }
-          });
-
-          // Remove high z-index divs (likely overlays)
-          document.querySelectorAll('div').forEach(function(div) {
-            var style = window.getComputedStyle(div);
-            var zIndex = parseInt(style.zIndex);
-            if (zIndex > 2000000000 && style.position === 'fixed') {
-              div.remove();
-            }
-          });
-        }
-
-        // Run immediately
-        nuke();
+      (function() {
+        // ✅ IMPROVED: Frame detection via multiple signals
+        var ua = navigator.userAgent || '';
+        var uaLower = ua.toLowerCase();
         
-        // Run every 20ms for 5 seconds
-        var count = 0;
-        var interval = setInterval(function() {
-          nuke();
-          count++;
-          if (count > 250) clearInterval(interval); // Stop after 5 seconds
-        }, 20);
-
-        // Also watch for new additions
-        if (typeof MutationObserver !== 'undefined') {
-          var observer = new MutationObserver(nuke);
-          observer.observe(document.documentElement, {
-            childList: true,
-            subtree: true
-          });
-          
-          // Disconnect after 5 seconds
-          setTimeout(function() { observer.disconnect(); }, 5000);
-        }
+        // Check 1: Direct Warpcast/Farcaster UA (may not always be present)
+        var isFrameUA = uaLower.includes('warpcast') || 
+                        uaLower.includes('farcaster');
+        
+        // Check 2: Mobile WebView indicators (Android/iOS in-app browser)
+        var isMobileWebView = (uaLower.includes(' wv)') || // Android WebView
+                               uaLower.includes('mobile') && !uaLower.includes('safari/')) ||
+                               uaLower.includes('fban') || // Facebook in-app
+                               uaLower.includes('fbav'); 
+        
+        // Check 3: In iframe (but not Replit preview)
+        var isIframe = window.self !== window.top;
+        var isReplitPreview = document.referrer.includes('replit.dev') && 
+                              document.referrer.includes('workspace_iframe');
+        
+        // Check 4: PC Farcaster (iframe on warpcast.com domain)
+        var isPCFarcaster = isIframe && !isReplitPreview && 
+                            (document.referrer.includes('warpcast.com') || 
+                             document.referrer.includes('farcaster.xyz') ||
+                             window.location.hostname === 'basedmem.xyz');
+        
+        // ✅ Frame = direct UA match OR (mobile webview in iframe) OR (PC Farcaster)
+        var isFrame = isFrameUA || (isMobileWebView && isIframe && !isReplitPreview) || isPCFarcaster;
+        
+        // ✅ Cache detection result
+        window.__FRAME_ENV = isFrame;
+        window.__IS_PC_FARCASTER = isPCFarcaster;
+        window.__FRAME_UA = ua;
+        window.__FRAME_DETECTION = {
+          isFrameUA: isFrameUA,
+          isMobileWebView: isMobileWebView,
+          isPCFarcaster: isPCFarcaster,
+          isIframe: isIframe,
+          isReplitPreview: isReplitPreview,
+          final: isFrame
+        };
+        
+        console.log('🔍 Boot-time Frame detection:', window.__FRAME_DETECTION);
+        
+        // Set visible title
+        document.title = 'BasedMem';
+        
+        // Send telemetry
+        fetch('/api/frame-telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            isFrame: isFrame,
+            detection: window.__FRAME_DETECTION,
+            userAgent: ua,
+            referrer: document.referrer,
+            timestamp: new Date().toISOString()
+          })
+        }).catch(function() {});
+        
+        // Track errors
+        window.addEventListener('error', function(e) {
+          fetch('/api/frame-telemetry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'error',
+              message: e.message,
+              filename: e.filename,
+              lineno: e.lineno
+            })
+          }).catch(function() {});
+        });
       })();
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Node.js polyfills for browser compatibility -->
+    <script type="module">
+      import { Buffer } from 'buffer';
+      import process from 'process';
+      
+      // Make Buffer and process globally available
+      window.Buffer = Buffer;
+      window.process = process;
+      window.global = window;
+      globalThis.Buffer = Buffer;
+      globalThis.process = process;
+      globalThis.global = globalThis;
+    </script>
+    <!-- ✅ CRITICAL: Version JavaScript to bust Warpcast cache! -->
+    <script type="module" src="/src/main.tsx?v=20251120T231500"></script>
   </body>
 </html>

@@ -32,4 +32,4 @@ Manifest: `https://basedmem.replit.app/.well-known/farcaster.json`
 
 ## Development
 
-Built with ❤️ on Replit for the Base blockchain meme revolution.Go....
+Built with ❤️ on Replit for the Base blockchain meme revolution.

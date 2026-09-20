@@ -1,0 +1,11 @@
+- [MCP Server Setup](mcp-server-setup.md) — BasedMem MCP server at /mcp; stateless StreamableHTTP; 9 tools; fix: use creatorId not creatorAddress on Token type.
+- [AgentHub MCP Tab](agenthub-mcp-tab.md) — MCPConnectTab component in AgentHub.tsx; MCP_TOOLS + BASE_MCP_SKILLS arrays defined before component; MCPConnectTab placed before export default function AgentHub().
+- [Deployment Pattern](deployment-pattern.md) — deploymentTarget="vm" in .replit; server.listen() must run BEFORE executor initialization so health check passes immediately.
+- [Connect Base Account](base-account-connect.md) — MCP tab session uses connected wallet, NOT Coinbase OAuth; Coinbase disabled public OAuth client creation (partner-only).
+- [CDP/x402 verify failures](cdp-x402-key-format.md) — two gotchas: SEC1→PKCS#8 key convert at startup, and paymentRequirements.extra (USDC EIP-712 domain) is required or facilitator 400s.
+- [x402 agent actions](x402-agent-actions.md) — boost/endorse paid routes need server-side authz; lock generic PATCH /api/agents; boostedUntil must drive list ordering or featured silently dies.
+- [Base RPC endpoint](base-rpc-endpoint.md) — never use base.llamarpc.com (Cloudflare 403/526 breaks wallet tx + stale reads); use mainnet.base.org.
+- [Base catalog RPC reads](base-catalog-rpc-reads.md) — batch fixed-catalog contract reads through Multicall3; concurrent individual calls can exceed request timeouts.
+- [B20 eligibility enforcement](b20-eligibility-enforcement.md) — issuer token restrictions are authoritative; direct venue routes must simulate after exact approval and fail closed on rejection.
+- [AskBase research routing](askbase-research-routing.md) — compute connected market metrics directly; use sourced research for open questions; never substitute a generic or guessed answer.
+- [UI demo recording](ui-demo-recording.md) — live-data pages continuously poll; browser recordings should wait for visible UI, not network-idle.

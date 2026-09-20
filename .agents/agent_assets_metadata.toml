@@ -1,0 +1,198 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "tIPHGC22mXCtA_8kYHN0C"
+uri = "file://attached_assets/generated_images/basedmem-stock-agents-x-launch.png"
+type = "image"
+title = "BasedMem Stock Agents — X Lansman Görseli"
+description = "X duyurusu için hazırlanmış yüksek çözünürlüklü 16:9 Stock Agents lansman görseli."
+logical_id = "2518d5c6-e696-4207-8077-e9a57e0cd827"
+content_hash = "sha256:77aa9d575b6b0f349199536b57cf81d2841f8926d736ead2526867718d7f2482"
+size = 1186328
+mtime_ms = 1788379761613
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/2518d5c6-e696-4207-8077-e9a57e0cd827/44eed715-7529-426e-a4d0-ff588759f390"
+storage_version_token = "1788379778854065"
+content_type = "image/png"
+
+[[outputs]]
+id = "cbJHi3hXW_qez4qu9nrgJ"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-01-natural-language-agent.png"
+type = "image"
+title = "Thread 1 — Natural Language Stock Agent"
+description = "Doğal dildeki hedefin açıklanabilir bir tokenized-stock sepetine dönüşmesini anlatan giriş görseli."
+logical_id = "3ade3f1b-eafd-4b03-8712-9d9581c0c7de"
+content_hash = "sha256:1fc38d17bec5f0f06b144cd1eb0dbd2ceff8b50b14ed4eed45541cb33fb52c25"
+size = 1271913
+mtime_ms = 1788379949641
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/3ade3f1b-eafd-4b03-8712-9d9581c0c7de/e1bc70e5-9f09-4a40-800a-1d7639c1bd19"
+storage_version_token = "1788379969837560"
+content_type = "image/png"
+
+[[outputs]]
+id = "7sYKdUWNd_2DH05Y8Fc7H"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-02-explainable-not-black-box.png"
+type = "image"
+title = "Thread 2 — Explainable, Not a Black Box"
+description = "Kara kutu yaklaşımı yerine görünür karar yollarını ve şeffaflığı anlatan görsel."
+logical_id = "11183ee4-852c-433c-b4d4-bdb1fceea218"
+content_hash = "sha256:e91f9fb4c058813d994376f6b517a0167464b9696542dd2b0119ebf140863651"
+size = 1570059
+mtime_ms = 1788379950989
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/11183ee4-852c-433c-b4d4-bdb1fceea218/3357d5b4-29c6-408c-8b72-4aa19b349bbd"
+storage_version_token = "1788379972711760"
+content_type = "image/png"
+
+[[outputs]]
+id = "537ZwyogdpCzOGMt4znUQ"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-03-official-b20-catalog.png"
+type = "image"
+title = "Thread 3 — Official B20 Catalog"
+description = "Resmî 13 varlıklı B20 kataloğunu ve doğrulanmış seçim sınırını anlatan görsel."
+logical_id = "fd7532db-cfb9-4aa0-8fb9-e1acd0d43905"
+content_hash = "sha256:79c7392f350d5c557dc9d0fce8a6522258ee58f9fa39d0e876658de35edb138d"
+size = 1421103
+mtime_ms = 1788379949569
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/fd7532db-cfb9-4aa0-8fb9-e1acd0d43905/11a7418e-20cf-444d-baeb-5f6b77e240c1"
+storage_version_token = "1788379975671667"
+content_type = "image/png"
+
+[[outputs]]
+id = "wpWpUDSbI0P2pOnO8fXoq"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-04-two-step-wallet-approval.png"
+type = "image"
+title = "Thread 4 — Separate Wallet Approvals"
+description = "Exact USDC approval ve satın alma imzasının ayrı adımlar olduğunu anlatan güvenlik görseli."
+logical_id = "ca6d5bc4-9425-43ee-b969-b55c821207c4"
+content_hash = "sha256:ef29a33686ad22f9630db2ff66b132dbb2662f04a1445e85f8b0bcfd760da45c"
+size = 1377057
+mtime_ms = 1788379948877
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/ca6d5bc4-9425-43ee-b969-b55c821207c4/db741037-45b7-48a7-a67f-8770e03b275b"
+storage_version_token = "1788379978647043"
+content_type = "image/png"
+
+[[outputs]]
+id = "9r-o80OIYI0ytwidv_iMy"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-05-aerodrome-execution.png"
+type = "image"
+title = "Thread 5 — Aerodrome Execution"
+description = "Kısa süreli quote, doğrulanmış havuz ve güvenli execution rotasını anlatan görsel."
+logical_id = "ac63d5f7-cdec-4839-a123-cd51c6b1afca"
+content_hash = "sha256:f3ca4703df08ed8e7ca782d7d343c213d52515d49043b8b14e4a12193e151233"
+size = 1318941
+mtime_ms = 1788379948845
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/ac63d5f7-cdec-4839-a123-cd51c6b1afca/1b72b0b4-92f7-4968-ab93-bd3d14129812"
+storage_version_token = "1788379981417282"
+content_type = "image/png"
+
+[[outputs]]
+id = "oBirh0vPceo1cO_WS1BxK"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-06-issuer-eligibility.png"
+type = "image"
+title = "Thread 6 — Issuer Eligibility"
+description = "Issuer ve bölgesel uygunluk kontrollerinin fail-closed uygulanmasını anlatan görsel."
+logical_id = "fadddd28-8882-46fa-9828-93457431695d"
+content_hash = "sha256:dae74277f6df38038c5891a2c3c9978f34b550da548fc576f5ac93cf0a9c4693"
+size = 1333032
+mtime_ms = 1788379950041
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/fadddd28-8882-46fa-9828-93457431695d/b3b7ef6f-5084-4faa-95b5-6dae789edab7"
+storage_version_token = "1788379984202574"
+content_type = "image/png"
+
+[[outputs]]
+id = "K_GJcM9_p4s9OjS1T3aBy"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-07-chainlink-multicall-data.png"
+type = "image"
+title = "Thread 7 — Verified Market Data"
+description = "Chainlink fiyatları, Multicall okumaları ve kesin portföy değerlemesini anlatan görsel."
+logical_id = "bd883ae3-f40c-4e82-b75d-5c7fad13e2df"
+content_hash = "sha256:1ab75de728d80e9ee28ab3b1dbdea77125dc306da89eae93614bec51163a83af"
+size = 1351387
+mtime_ms = 1788379953325
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/bd883ae3-f40c-4e82-b75d-5c7fad13e2df/0e9603a4-2529-48cd-a45a-fe3249efdc52"
+storage_version_token = "1788379987170824"
+content_type = "image/png"
+
+[[outputs]]
+id = "p-GcEhj5EHjqb3cXDbouU"
+uri = "file://attached_assets/generated_images/basedmem-stock-thread-08-human-controlled-future.png"
+type = "image"
+title = "Thread 8 — Human-Controlled Onchain Future"
+description = "Agent zekâsını self-custody ve insan onayıyla birleştiren final kampanya görseli."
+logical_id = "aaabfda4-afc5-4989-b9e8-93d6ecdb0cbc"
+content_hash = "sha256:9e06c6e2a7529c3ffa6675295d392af40931c626ac6591740a2c346b83cf0c0c"
+size = 1471504
+mtime_ms = 1788379951521
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/aaabfda4-afc5-4989-b9e8-93d6ecdb0cbc/e000814a-57be-4fb9-84a1-c1cfea640a65"
+storage_version_token = "1788379990381521"
+content_type = "image/png"
+
+[[outputs]]
+id = "0ncDWFnSjqza5mqj8MxiY"
+uri = "file://social-assets/basedmem-six-new-stocks-final.jpg"
+type = "image"
+title = "BasedMem — Six New Stocks"
+description = "X için 1280×720 duyuru görseli; altı yeni Coinbase Tokenized Stock ve Stock Agents ekranı."
+logical_id = "efdd403e-0f7d-4daa-8d50-4047f739b8b4"
+content_hash = "sha256:c9669ffc274be212587ce424292b0e69e1b896376e706b635e17c2a0351799a5"
+size = 106003
+mtime_ms = 1788547287770
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/efdd403e-0f7d-4daa-8d50-4047f739b8b4/5313e2fa-3ee0-449d-88e8-78fe494fbbb9"
+storage_version_token = "1788547304961065"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "JPlj8jLZbpD-i_oCcimBC"
+uri = "file://demo-output/askbase-x-demo.mp4"
+type = "video"
+title = "AskBase — Updated X Demo"
+description = "Updated 15-second X demo stating that AskBase uses the Exa API for real-time news and sourced research."
+logical_id = "271515e5-7261-4f84-b604-2aa54da55d3d"
+content_hash = "sha256:09c3f619e052c199d5d8e267bd3e484005d7fe31bb504caef0f6e8796b315c31"
+size = 586711
+mtime_ms = 1788711345572
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/271515e5-7261-4f84-b604-2aa54da55d3d/1742960b-38b6-495a-b952-520ade1adf03"
+storage_version_token = "1788711359163822"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "iE4zle6bdQc1HYiEvQoji"
+uri = "file://demo-output/askbase-x-demo-thumbnail.jpg"
+type = "image"
+title = "AskBase — Updated Thumbnail"
+description = "Updated thumbnail with the accurate Exa API wording."
+logical_id = "302fc723-8312-4d05-ad2c-eeda5bf0a8ed"
+content_hash = "sha256:043cdc1ff20e58fbafab169298cf1d937ce04f6e498b94509e428b31085676c3"
+size = 55670
+mtime_ms = 1788711345876
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/302fc723-8312-4d05-ad2c-eeda5bf0a8ed/53752eb3-7aca-463c-a0bf-d552b9cb571e"
+storage_version_token = "1788711360660727"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "7Di5MzjRXWY95mpcBsEEj"
+uri = "file://demo-output/askbase-buy-sell-demo.mp4"
+type = "video"
+title = "AskBase — Buy or Sell Demo"
+description = "19.7-second X-ready demo: a real TSLAc buy/sell question, live AskBase research, cited signals, and user-controlled execution."
+logical_id = "07de4177-ca56-47b8-8f70-e26844d8f86d"
+content_hash = "sha256:c494a998baff38f8613e39b9beefc83debec5107a9dd3a57efe4a63a867579a1"
+size = 1249510
+mtime_ms = 1788809347788
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/07de4177-ca56-47b8-8f70-e26844d8f86d/0b5cc4b0-82df-45a9-9f82-5ab961c5c1bd"
+storage_version_token = "1788809382827726"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "leTyfjvwW8HgxllU19i5u"
+uri = "file://demo-output/askbase-buy-sell-thumbnail.jpg"
+type = "image"
+title = "AskBase Buy/Sell Thumbnail"
+description = "Thumbnail highlighting live news, cited research, and the TSLAc buy/sell analysis."
+logical_id = "446b3c6a-4ab0-4e84-b06d-5999f3e8fe82"
+content_hash = "sha256:65b931d9f239097697f1241428baa5ce58f5f29199f667ab37697a2fd2144b59"
+size = 66339
+mtime_ms = 1788809348086
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:fb67568f-2022-4ae3-a285-7ec4902c6b54/446b3c6a-4ab0-4e84-b06d-5999f3e8fe82/e232047d-e972-4ff7-99b1-82cc5fcfd438"
+storage_version_token = "1788809384303632"
+content_type = "image/jpeg"

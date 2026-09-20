@@ -1,205 +1,188 @@
 # BasedMem - Meme Coin Launch Platform Design Guidelines
 
 ## Design Approach
-**Reference-Based Approach** inspired by modern crypto platforms (Pump.fun, Uniswap, Coinbase) blended with playful meme culture aesthetics. Balances trustworthy financial UI with energetic, fun visual elements that celebrate meme culture.
+**Reference-Based Approach** drawing from premium fintech platforms (Stripe, Revolut, Coinbase Pro) fused with contemporary web3 design (Zora, Foundation). Creates an elevated crypto experience that balances sophisticated financial UI with celebratory meme culture energy.
 
 ## Core Design Principles
-1. **Playful Professionalism**: Fun visuals without sacrificing trading clarity
-2. **Instant Recognition**: Bold token cards that showcase personality
-3. **Clear Financial Data**: Price charts and stats remain crisp and readable
-4. **Mobile-First Trading**: Touch-optimized controls for quick token actions
-5. **Viral Energy**: Design encourages sharing and community participation
+1. **Refined Playfulness**: Elegant design with subtle meme culture celebration
+2. **Premium Trading Experience**: Crystal-clear financial data with luxury feel
+3. **Trust Through Polish**: Sophisticated aesthetics build platform credibility
+4. **Effortless Interaction**: Smooth, intuitive flows for token creation and trading
 
 ## Color Palette
 
-**Dark Mode (Primary)**
-- Background Deep: 230 25% 8%
-- Background: 230 20% 11%
-- Surface: 230 18% 15%
-- Surface Elevated: 230 15% 19%
-- Border: 230 12% 25%
-- Primary (Cyan): 190 85% 55% (crypto trustworthy + energetic)
-- Primary Hover: 190 85% 50%
-- Accent (Hot Pink): 330 85% 60% (meme culture vibrancy)
-- Accent Hover: 330 85% 55%
-- Success: 142 70% 50%
-- Danger: 0 72% 55%
-- Warning: 45 90% 60%
-- Text Primary: 0 0% 98%
-- Text Secondary: 0 0% 70%
-- Text Muted: 0 0% 50%
+**Light Mode (Primary)**
+- Background: 0 0% 100%
+- Surface: 220 20% 98%
+- Surface Elevated: 0 0% 100%
+- Border: 220 15% 90%
+- Primary (Royal Blue): 220 90% 56%
+- Primary Hover: 220 90% 50%
+- Accent (Rose Pink): 340 82% 62%
+- Accent Hover: 340 82% 56%
+- Success: 142 70% 45%
+- Danger: 0 70% 58%
+- Text Primary: 220 25% 10%
+- Text Secondary: 220 15% 40%
+- Text Muted: 220 10% 60%
 
-**Light Mode**
-- Background: 230 30% 97%
-- Surface: 0 0% 100%
-- Border: 230 15% 88%
-- Primary: 190 85% 45%
-- Accent: 330 85% 55%
+**Dark Mode**
+- Background Deep: 220 30% 7%
+- Background: 220 25% 10%
+- Surface: 220 20% 13%
+- Surface Elevated: 220 18% 16%
+- Border: 220 15% 22%
+- Primary: 220 85% 65%
+- Accent: 340 75% 68%
+- Text Primary: 0 0% 98%
+- Text Secondary: 220 15% 75%
+- Text Muted: 220 10% 55%
 
 ## Typography
-**Font Stack**: System fonts via Tailwind
-- Display Headlines: font-black text-3xl to text-5xl (token names, hero)
-- Section Headers: font-bold text-xl to text-2xl
-- Token Names: font-bold text-lg
-- Price/Stats: font-mono font-semibold text-base to text-lg (financial clarity)
-- Body Text: font-normal text-sm to text-base
-- Captions: font-medium text-xs uppercase tracking-wide (labels)
+**Font Stack**: Inter via Google Fonts CDN for refined, modern aesthetic
+
+- Hero Headlines: font-bold text-4xl to text-6xl tracking-tight
+- Section Headers: font-semibold text-2xl to text-3xl
+- Token Names: font-semibold text-xl
+- Price Data: font-mono font-medium text-lg to text-2xl
+- Body Text: font-normal text-sm to text-base leading-relaxed
+- Labels: font-medium text-xs uppercase tracking-wider text-muted
 
 ## Layout System
-**Spacing Primitives**: Tailwind units of 2, 3, 4, 6, 8, 12, 16, 20, 24
+**Spacing Scale**: Tailwind units of 2, 4, 6, 8, 12, 16, 20, 24, 32
 
-**Container Widths**:
-- Landing hero: Full width with max-w-7xl inner content
-- Main app: max-w-7xl mx-auto
-- Token grid: 3-column on desktop (lg:grid-cols-3), 2-col tablet (md:grid-cols-2), 1-col mobile
-- Trading interface: max-w-md for focused trading cards
+**Grid Structure**:
+- Desktop token grid: lg:grid-cols-3 gap-6
+- Tablet: md:grid-cols-2 gap-4
+- Mobile: grid-cols-1 gap-4
+- Container: max-w-7xl mx-auto px-6
 
-## Component Library
+## Landing Page Architecture
 
-### Landing Page Structure
-**Hero Section** (h-screen with gradient overlay):
-- Full-width background image showing vibrant crypto/meme culture collage
-- Gradient overlay: from-background/90 via-background/70 to-background/50
-- Centered content with max-w-4xl
-- Display headline: "Launch Your Meme Coin in 60 Seconds"
-- Subheading: "Join the Base blockchain meme revolution"
-- Dual CTA: Primary "Launch Token" (bg-primary) + Secondary "Browse Tokens" (variant outline with backdrop-blur-md bg-surface/30)
-- Floating stat cards: "X tokens launched today" with blurred backgrounds
+**Hero Section** (min-h-screen with luxury imagery):
+- Full-width background: High-quality image of abstract 3D shapes in blue/pink gradients, floating coins, and digital elements creating depth
+- Gradient overlay: bg-gradient-to-b from-white/95 via-white/85 to-white/70 (light) or from-background/95 to-background/70 (dark)
+- Centered content (max-w-5xl):
+  - Headline: "Launch Your Meme Coin With Elegance"
+  - Subheading: "Professional-grade token creation on Base blockchain"
+  - Primary CTA: "Create Token" (bg-primary shadow-lg shadow-primary/30)
+  - Secondary CTA: "Explore Tokens" (border-2 border-border backdrop-blur-sm bg-white/60)
+- Floating stat cards: Glassmorphic cards with blur (backdrop-blur-md bg-white/50 border border-border/50) showing live metrics
 
-**Features Section** (py-20 bg-surface):
-- 3-column grid with icon cards
-- Each card: gradient border (border-t-4), icon (h-12 w-12), title, description
-- Icons: Rocket (launch), Chart (trade), Users (community)
+**Trust Section** (py-24 bg-surface):
+- "Why BasedMem?" header
+- 3-column feature grid with elegant icon cards:
+  - Each card: bg-white rounded-2xl p-8 border border-border hover:shadow-xl transition
+  - Icons: h-14 w-14 in gradient circles (bg-gradient-to-br from-primary to-accent)
+  - Features: Instant Launch, Secure Trading, Community Driven
 
-**Active Tokens Preview** (py-20):
-- "Trending Tokens" header with "View All" link
-- 3-card grid preview of top tokens
-- Each token card: mini version of main token card
+**Token Showcase** (py-24):
+- "Trending Launches" section
+- 3-column grid of premium token cards (featured styling)
+- Clean typography, subtle shadows, hover lift effects
+- "View All Tokens" link styled as ghost button
 
-**CTA Section** (py-24 bg-gradient-to-br from-primary/20 to-accent/20):
-- Centered, bold typography
-- "Ready to Launch?" headline
-- Primary CTA button (large, px-8 py-4)
+**How It Works** (py-24 bg-surface):
+- 3-step visual flow with connecting lines
+- Step cards: numbered circles + title + description
+- Modern, minimal illustrations for each step
 
-### Navigation Bar
-- Sticky top with backdrop-blur-xl bg-surface/80
-- Height: h-16
-- Logo (left): Bold wordmark with gradient text from-primary to-accent
-- Nav links (center): Browse, Create, Portfolio
-- Connect Wallet button (right): Primary color, rounded-full px-6 py-2.5
+**Social Proof** (py-20):
+- 2-column layout: testimonials left, stats grid right
+- Testimonial cards with avatar, quote, user info
+- Stats: Large numbers with labels (Tokens Launched, Total Volume, Active Traders)
 
-### Token Browse Grid
-- Grid: gap-6 with responsive columns
-- Filter bar above grid: Tabs (All, Hot, New, Top), Sort dropdown
-- Pagination or infinite scroll with load trigger
+**Final CTA** (py-32 bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5):
+- Centered content, bold headline
+- Large primary button (px-10 py-4 text-lg)
 
-### Token Card
-- Background: bg-surface rounded-xl border border-border
-- Structure (p-6 space-y-4):
-  - Header: Token logo (h-16 w-16 rounded-full ring-4 ring-primary/20) + Name (font-bold text-lg) + Symbol (uppercase text-sm text-muted)
-  - Price display: Large font-mono text-2xl + 24h change badge (success/danger pill)
-  - Mini chart: Sparkline showing price trend (h-12)
-  - Stats row: Market cap, Volume, Holders (grid-cols-3 text-xs)
-  - Action buttons: Trade (primary), View Details (outline)
-- Hover: scale-[1.02] shadow-lg shadow-primary/10
+## Navigation
+- Sticky header: backdrop-blur-xl bg-white/80 border-b border-border (light) or bg-surface/80 (dark)
+- Height: h-20
+- Logo: Gradient text "BasedMem" from-primary to-accent font-bold text-2xl
+- Nav links: Browse, Create, Docs
+- Connect Wallet: Primary button rounded-full
 
-### Token Creation Form
-- Modal overlay or dedicated page with max-w-2xl
-- Sections with clear labels (uppercase text-xs font-semibold mb-2):
-  - Token Image: Upload with preview (h-32 w-32 rounded-full)
-  - Basic Info: Name, Symbol, Description (textarea min-h-32)
-  - Supply: Number input with max supply
-  - Social Links: Optional Twitter, Telegram inputs
-- Preview panel: Live preview of how token card will look
-- Submit: Large primary button "Launch Token - 0.001 ETH"
+## Token Components
 
-### Trading Interface
-- Card layout: max-w-md bg-surface rounded-2xl p-6
-- Token header: Logo + name + current price (large, prominent)
-- Price chart: h-64 with time range tabs (1H, 24H, 7D, 30D)
-- Trade form:
-  - Input group: Amount input + token symbol
-  - Balance display: "Balance: X.XX ETH" (text-sm text-muted)
-  - Slider: For quick amount selection
-  - Price impact warning: If high (text-warning)
-  - Action button: "Buy" (success) or "Sell" (danger) with full width
-- Recent trades list: Mini cards with timestamp, amount, price
+**Token Card** (elevated, premium feel):
+- Container: bg-white rounded-3xl p-6 border border-border shadow-sm hover:shadow-xl transition-all
+- Header: Token logo (h-20 w-20 rounded-full shadow-md) + name + symbol
+- Price: font-mono text-3xl font-semibold + 24h badge
+- Mini chart: h-16 sparkline in primary color
+- Stats grid: 3-column (Market Cap, Volume, Holders) with dividers
+- Actions: Primary "Trade" + outline "Details" buttons
+- Hover: translate-y-[-4px] shadow-2xl
 
-### Token Detail Page
-- Two-column layout (lg:grid-cols-3):
-  - Left (col-span-2): Price chart + description + activity feed
-  - Right (col-span-1): Trading interface card (sticky)
-- Token header: Large logo, name, socials, creator info
-- Stats grid: 4-column stats (price, mcap, volume, holders)
-- Description: Rich text with text-base leading-relaxed
+**Creation Form** (max-w-3xl centered):
+- Clean modal with bg-white rounded-3xl p-10
+- Sections with generous spacing (space-y-8):
+  - Image upload: Large circular dropzone (h-40 w-40)
+  - Text inputs: Tall (h-14), rounded-xl, border-2
+  - Description: Textarea rounded-xl min-h-40
+  - Supply controls: Number input with elegant steppers
+- Live preview panel: Real-time card preview as user types
+- Submit: Large gradient button "Launch Token" with cost display
 
-### Portfolio View
-- Summary cards: Total value, P&L, token count (grid-cols-3 with gradient backgrounds)
-- Holdings table: Token | Amount | Value | P&L | Actions
-- Each row: Token logo + name, amounts in font-mono, color-coded P&L
-- Actions: Quick trade buttons
+**Trading Interface** (max-w-lg):
+- Glassmorphic card: backdrop-blur-xl bg-white/90 rounded-3xl p-8
+- Large price display with real-time updates
+- Chart: h-80 with elegant time range pills
+- Trade inputs: Large, clear amount fields
+- Slider: Custom-styled in primary color
+- Dual action buttons: Buy (success gradient) / Sell (danger) full width
 
-## Visual Enhancements
+**Token Detail Page**:
+- Grid layout: lg:grid-cols-3 gap-8
+- Left column (2/3): Large chart + rich description + activity feed
+- Right column (1/3): Sticky trading card
+- Header: Hero-sized logo, name, verified badge, social links
+- Stats bar: 4-column premium stat cards with subtle backgrounds
 
-**Gradients**: Use liberally for excitement
-- Hero backgrounds: from-primary/20 via-accent/10 to-primary/20
-- Button hover: Subtle gradient shift
-- Card borders: Gradient borders for featured/trending tokens
+## Visual Refinements
 
-**Icons**: Use Heroicons or Lucide
-- Financial: chart-bar, trending-up, wallet
-- Actions: rocket (launch), fire (trending), sparkles (new)
-- Size: h-5 w-5 to h-6 w-6 in buttons, h-12 w-12 for feature cards
+**Shadows**: Layered, soft shadows for depth
+- Cards: shadow-sm default, shadow-xl hover
+- Buttons: shadow-lg with color tint (shadow-primary/20)
+- Floating elements: shadow-2xl
 
-**Animations**: Moderate use for delight
-- Token card hover: transform transition-transform duration-200
-- Price updates: Pulse animation on change
-- Chart lines: Smooth line drawing (animate via JS library)
+**Borders**: Subtle, refined
+- Default: border border-border
+- Accent: border-2 border-primary/20
+- Gradients: border-gradient for premium cards
 
-**Badges & Pills**:
-- 24h change: Rounded-full px-2.5 py-1 text-xs font-semibold
-- "New" label: bg-accent/20 text-accent
-- "Hot" label: bg-warning/20 text-warning with fire icon
+**Icons**: Lucide React icons
+- Size: h-5 w-5 in UI, h-12 w-12 in features
+- Style: Rounded, 2px stroke width
+
+**Badges**:
+- Rounded-full px-3 py-1 font-medium text-xs
+- Success: bg-success/10 text-success border border-success/20
+- Trending: bg-accent/10 text-accent with flame icon
+
+**Animations**: Subtle, refined
+- Hover transitions: duration-300 ease-out
+- Number updates: Smooth counting animation
+- Loading: Elegant skeleton shimmer
 
 ## Images
 
-**Hero Section**:
-- Full-width hero image showing vibrant collage: meme culture + crypto symbols + rocket ships + charts
-- High energy, colorful composition
-- Applied gradient overlay for text readability
+**Hero Background**: Premium 3D render featuring floating geometric shapes (spheres, toruses) with glass/chrome materials in blue-to-pink gradient lighting. Subtle particle effects and depth of field. Modern, luxurious, crypto-inspired aesthetic.
 
-**Token Logos**:
-- User-uploaded circular logos throughout
-- Fallback: Gradient circle with token symbol letter
-- Sizes: Small (h-10 w-10), Medium (h-16 w-16), Large (h-24 w-24)
+**Token Logos**: User uploads, circular with subtle shadow rings
 
-**Empty States**:
-- Illustration for "No tokens in portfolio"
-- Illustration for "No results found"
-- Style: Simple, playful line art matching brand colors
+**Empty States**: Minimalist line illustrations in primary color scheme
 
 ## Interaction Patterns
-
-**Token Actions**: Instant optimistic updates with loading states
-**Price Updates**: Real-time via WebSocket with smooth number transitions
-**Form Validation**: Inline errors in danger color below inputs
-**Success States**: Toast notifications slide from top-right with success color
-**Loading States**: Skeleton screens with shimmer effect for cards
-
-## Data Visualization
-
-**Price Charts**: Use Chart.js or Recharts
-- Line color: Primary for gains, danger for losses
-- Grid: Subtle border color
-- Tooltips: bg-surface with border, shows price + time
-
-**Sparklines**: Mini trend indicators
-- Height: h-12 w-full
-- Single color: Primary or success/danger based on trend
+- Smooth page transitions with fade
+- Toast notifications: Top-right, glassmorphic style
+- Form validation: Inline with gentle color shift
+- Loading states: Skeleton screens with pulse animation
+- Hover states: Subtle lift and shadow increase
 
 ## Accessibility
-- WCAG AA contrast ratios maintained
-- All trading actions keyboard accessible
-- Price updates announced to screen readers
-- Focus indicators: ring-2 ring-primary
-- Form labels always present (use sr-only if needed for clean design)
+- WCAG AA contrast maintained across all color combinations
+- Keyboard navigation with visible focus rings (ring-2 ring-primary/50)
+- Labels present for all inputs
+- ARIA labels for icon-only buttons
+- Screen reader announcements for price updates

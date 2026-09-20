@@ -9,11 +9,16 @@ import { useState } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { Contract, Interface } from "ethers";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useChain } from "@/contexts/ChainContext";
+import { Badge } from "@/components/ui/badge";
+import { Info, ExternalLink, Rocket } from "lucide-react";
 
 export default function Create() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { walletAddress, getProvider } = useWallet();
+  const { currentChain, chainInfo, isBase, isSolana } = useChain();
   const [isDeploying, setIsDeploying] = useState(false);
 
   const createTokenMutation = useMutation({
@@ -58,6 +63,16 @@ export default function Create() {
   });
 
   const handleSubmit = async (data: any) => {
+    // Prevent Base token creation when Solana is selected
+    if (isSolana) {
+      toast({
+        title: "Base Network Required",
+        description: "Token creation is only available on Base network. Please switch to Base.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!walletAddress) {
       toast({
         title: "Wallet Not Connected",
@@ -187,12 +202,20 @@ export default function Create() {
         contractAddress,
       };
 
-      await createTokenMutation.mutateAsync(tokenDataWithContract);
-
+      // Token is already deployed on blockchain - show success first
       toast({
         title: "Token Deployed! 🚀",
         description: `${data.name} (${data.symbol}) deployed to Base blockchain!`,
       });
+
+      // Try to save to database (non-blocking - blockchain deployment is the important part)
+      try {
+        await createTokenMutation.mutateAsync(tokenDataWithContract);
+        console.log("✅ Token saved to database");
+      } catch (dbError: any) {
+        console.error("⚠️ Token deployed but database save failed:", dbError);
+        // Don't show error to user - token is already on blockchain
+      }
 
       // Open Warpcast compose
       const baseUrl = window.location.origin;
@@ -244,6 +267,9 @@ export default function Create() {
       } else if (errorMsg.includes("network") || errorMsg.includes("connection")) {
         errorTitle = "Network Error";
         errorDescription = "Connection to Base network failed. Please check your internet and try again.";
+      } else if (errorMsg.includes("symbol already exists") || errorMsg.includes("symbol") && errorMsg.includes("exists")) {
+        errorTitle = "Symbol Already Exists";
+        errorDescription = "This token symbol is already taken. Please edit the symbol to make it unique (e.g., add numbers).";
       } else if (error?.message) {
         errorDescription = error.message.length > 100 
           ? error.message.substring(0, 100) + "..." 
@@ -273,14 +299,87 @@ export default function Create() {
     await handleSubmit(quickData);
   };
 
+  if (isSolana) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Rocket className="h-10 w-10 text-primary" />
+            <h1 className="text-4xl font-black">Token Launch</h1>
+            <Badge variant="outline" className="border-purple-500 text-purple-500">
+              {chainInfo.icon} Solana
+            </Badge>
+          </div>
+          <p className="text-muted-foreground">Solana Token Launch Options</p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Rocket className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Pump.fun</h3>
+                <p className="text-sm text-muted-foreground">Most popular Solana token launcher</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Launch meme tokens on Solana with bonding curve mechanics. Most popular platform for Solana meme coins.
+            </p>
+            <Button asChild className="w-full gap-2">
+              <a href="https://pump.fun" target="_blank" rel="noopener noreferrer">
+                Launch on Pump.fun
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-lg bg-accent/10">
+                <Info className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Metaplex</h3>
+                <p className="text-sm text-muted-foreground">Professional token creation</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Create SPL tokens with full metadata support. Best for serious projects with customization needs.
+            </p>
+            <Button asChild variant="outline" className="w-full gap-2">
+              <a href="https://www.metaplex.com/" target="_blank" rel="noopener noreferrer">
+                Visit Metaplex
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
+          </Card>
+        </div>
+
+        <Card className="mt-6 p-4 bg-muted/30">
+          <p className="text-sm text-muted-foreground text-center">
+            Solana token creation requires SPL Token Program and Metaplex for metadata. 
+            Use Base network for one-click token launches with BasedMem.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-black mb-2">Launch Your Meme Token</h1>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <h1 className="text-4xl font-black">Launch Your Meme Token</h1>
+          <Badge variant="outline" className="border-primary text-primary">
+            {chainInfo.icon} Base
+          </Badge>
+        </div>
         <p className="text-muted-foreground">Create and deploy your token in under 60 seconds</p>
         {isDeploying && (
           <p className="text-sm text-primary mt-2 font-medium">
-            ⏳ Deploying via Farcaster wallet...
+            Deploying via Farcaster wallet...
           </p>
         )}
       </div>
@@ -294,7 +393,7 @@ export default function Create() {
           className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
           data-testid="button-quick-launch"
         >
-          ⚡ 5-Second Quick Launch
+          5-Second Quick Launch
         </Button>
       </div>
       

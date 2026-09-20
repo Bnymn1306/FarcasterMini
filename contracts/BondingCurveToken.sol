@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BondingCurveToken is ERC20, Ownable {
     uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10**18; // 1B tokens
-    uint256 public constant GRADUATION_THRESHOLD = 30 ether; // 30 ETH to graduate
+    uint256 public constant GRADUATION_THRESHOLD = 5 ether; // 5 ETH to graduate
     uint256 public reserveBalance; // ETH in bonding curve
     uint256 public circulatingSupply; // Tokens sold from bonding curve
     bool public graduated;

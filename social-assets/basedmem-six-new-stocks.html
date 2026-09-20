@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Six New Stocks on BasedMem</title>
+<style>
+  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden}
+  body{font-family:Inter,Arial,sans-serif;background:#07101c;color:#f4f8ff}
+  .canvas{width:1280px;height:720px;position:relative;overflow:hidden;background:
+    radial-gradient(circle at 13% 13%,rgba(0,222,238,.2),transparent 34%),
+    radial-gradient(circle at 91% 81%,rgba(235,75,190,.18),transparent 34%),
+    linear-gradient(135deg,#07111d 0%,#0b1828 53%,#121127 100%)}
+  .grid{position:absolute;inset:0;opacity:.06;background-image:linear-gradient(#8debf4 1px,transparent 1px),linear-gradient(90deg,#8debf4 1px,transparent 1px);background-size:32px 32px}
+  .brand{position:absolute;left:52px;top:38px;display:flex;align-items:center;gap:11px;font-weight:800;font-size:19px}
+  .brandmark{width:31px;height:31px;border-radius:8px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#17ddea,#6e80ff 55%,#ef69cf)}
+  .left{position:absolute;left:52px;top:105px;width:455px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(24,222,231,.45);background:rgba(8,48,65,.7);border-radius:999px;padding:8px 14px;color:#9ff8f7;font-size:12px;font-weight:800;letter-spacing:1.7px}
+  .dot{width:7px;height:7px;border-radius:50%;background:#22e1e7}
+  h1{margin:25px 0 14px;font-size:64px;line-height:.94;letter-spacing:-3.5px}
+  h1 span{color:#4ce8ef}
+  .intro{font-size:17px;line-height:1.48;color:#b6c5d7;max-width:440px;margin:0 0 22px}
+  .label{font-size:11px;letter-spacing:2px;color:#87a0b8;font-weight:800;margin-bottom:10px}
+  .tokens{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:414px}
+  .token{height:46px;border-radius:10px;border:1px solid rgba(54,213,224,.35);background:rgba(14,43,61,.86);display:flex;align-items:center;justify-content:space-between;padding:0 11px;font:800 18px ui-monospace,monospace}
+  .token:nth-child(n+4){border-color:rgba(143,106,222,.45);background:rgba(31,36,66,.9)}
+  .new{font:800 8px Inter,Arial,sans-serif;letter-spacing:1px;color:#00181b;background:#41e8ed;border-radius:999px;padding:4px 6px}
+  .proof{position:absolute;left:52px;bottom:42px;width:455px;height:66px;border:1px solid rgba(27,222,232,.4);border-radius:13px;background:rgba(8,35,51,.85);padding:13px 15px 12px 53px}
+  .shield{position:absolute;left:17px;top:17px;width:24px;height:29px;border:2px solid #35e1e8;border-radius:12px 12px 14px 14px;clip-path:polygon(50% 0,100% 18%,100% 66%,50% 100%,0 66%,0 18%)}
+  .proof strong{display:block;font-size:11px;letter-spacing:1.1px;color:#dffeff;margin-bottom:6px}
+  .proof small{font-size:11px;color:#91a9bc}
+  .appframe{position:absolute;left:535px;top:115px;width:690px;height:487px;padding:13px;border-radius:22px;background:linear-gradient(135deg,#20dfe8,#547ff8 58%,#e25bc6);box-shadow:0 30px 60px rgba(0,0,0,.5)}
+  .inner{width:100%;height:100%;border-radius:13px;overflow:hidden;background:#08121f;border:6px solid #08121f;position:relative}
+  .inner img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .live{position:absolute;left:17px;top:16px;background:rgba(5,18,29,.88);border:1px solid rgba(38,226,234,.48);border-radius:999px;padding:7px 12px;color:#dfffff;font-size:10px;font-weight:800;letter-spacing:1px}
+  .footer{position:absolute;right:56px;bottom:43px;text-align:right}
+  .footer strong{display:block;color:#d9fafe;font-size:18px;margin-bottom:5px}
+  .footer span{font-size:11px;color:#86a2b7;letter-spacing:1.6px;font-weight:800}
+</style>
+</head>
+<body>
+<main class="canvas">
+  <div class="grid"></div>
+  <div class="brand"><div class="brandmark">B</div>BasedMem</div>
+  <section class="left">
+    <div class="eyebrow"><i class="dot"></i>STOCK AGENTS</div>
+    <h1>SIX NEW<br><span>STOCKS. LIVE.</span></h1>
+    <p class="intro">Coinbase Tokenized Stocks are now available in your human-controlled onchain trading workspace on Base.</p>
+    <div class="label">NEWLY SUPPORTED</div>
+    <div class="tokens">
+      <div class="token">AMZNc <b class="new">NEW</b></div>
+      <div class="token">MSFTc <b class="new">NEW</b></div>
+      <div class="token">MSTRc <b class="new">NEW</b></div>
+      <div class="token">SNDKc <b class="new">NEW</b></div>
+      <div class="token">SPCXc <b class="new">NEW</b></div>
+      <div class="token">TSLAc <b class="new">NEW</b></div>
+    </div>
+  </section>
+  <div class="proof"><i class="shield"></i><strong>VERIFIED AERODROME SLIPSTREAM EXECUTION</strong><small>10 tradeable stocks total · Every transaction needs your approval</small></div>
+  <div class="appframe"><div class="inner"><img src="../screenshots/stock-agents-current.jpg" alt="BasedMem Stock Agents"><div class="live">● LIVE APP</div></div></div>
+  <div class="footer"><strong>basedmem.xyz/tokenized-stocks</strong><span>BUILT ON BASE</span></div>
+</main>
+</body>
+</html>
