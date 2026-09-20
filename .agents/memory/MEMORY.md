@@ -9,3 +9,4 @@
 - [B20 eligibility enforcement](b20-eligibility-enforcement.md) — issuer token restrictions are authoritative; direct venue routes must simulate after exact approval and fail closed on rejection.
 - [AskBase research routing](askbase-research-routing.md) — compute connected market metrics directly; use sourced research for open questions; never substitute a generic or guessed answer.
 - [UI demo recording](ui-demo-recording.md) — live-data pages continuously poll; browser recordings should wait for visible UI, not network-idle.
+- [GitHub export](github-export.md) — preserve remote history during snapshot exports; Git CLI credentials and connector authorization are independent.
