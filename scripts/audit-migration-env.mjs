@@ -12,7 +12,8 @@ const readinessNames = [
   "BASE_RPC_URL",
   "VITE_BASE_RPC_URL",
   "FRACTION_UPLOAD_STORAGE",
-  "BLOB_READ_WRITE_TOKEN",
+  "BLOB_STORE_ID",
+  "VERCEL_OIDC_TOKEN",
 ];
 
 function visit(directory) {
@@ -54,7 +55,7 @@ for (const target of [
 for (const name of ["CDP_API_KEY_SECRET", "EXA_API_KEY", "VERCEL", "VERCEL_ENV"]) names.add(name);
 
 if (process.argv.includes("--readiness")) {
-  console.log("Migration readiness environment check (names and booleans only; values are never printed)");
+  console.log("Migration runtime environment check (names and booleans only; values are never printed; run inside the target runtime for its managed OIDC credential)");
   let complete = true;
   for (const name of readinessNames) {
     const present = typeof process.env[name] === "string" && process.env[name].trim().length > 0;

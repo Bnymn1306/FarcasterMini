@@ -26,3 +26,9 @@ Repeat portability checks after dependency changes, not just the first export.
 **Why:** Package installation can restore internal registry URLs and remove Ganache's bundled macOS watcher's optional marker, even after both were previously corrected.
 
 **How to apply:** Treat lockfile portability tests as an export prerequisite. Registry portability corrections must never be used to bypass a package security-policy block; those require dependency remediation.
+
+Do not silently reduce financial monitoring cadence to fit a hosting provider.
+
+**Why:** Replacing a fast continuous protection loop with a slower durable schedule can preserve the feature's name while materially changing its protection. Migration authorization is not approval for that change.
+
+**How to apply:** Preserve the existing monitoring behavior on suitable always-on infrastructure, or obtain explicit agreement on the redesigned behavior before removing activation gates.

@@ -14,6 +14,8 @@ export type BackgroundService = typeof SERVICES[number];
 export type Owner = "vm" | "workflow";
 
 export function configuredOwner(env: NodeJS.ProcessEnv = process.env): Owner | "disabled" | "legacy" {
+  // A copied production owner flag must never authorize a preview deployment.
+  if (env.VERCEL && env.VERCEL_ENV !== "production") return "disabled";
   const value = env.BACKGROUND_EXECUTION_OWNER;
   if (value === undefined && !env.VERCEL) return "legacy";
   if (value === "vm" && !env.VERCEL) return "vm";

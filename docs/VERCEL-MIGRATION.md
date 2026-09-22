@@ -1,8 +1,29 @@
 # Release validation hold
 
-The standalone bundle builds and the focused migration tests pass, but this is **not a release-ready migration**. A fresh-cache isolated install encountered the package firewall's critical-CVE blocks in legacy transitive dependencies (including eth-sig-util, arbundles, basic-ftp, and old crypto/build dependencies), followed by temporary extraction quota errors. Do not bypass that policy or present the preinstalled-workspace build as a clean-install pass. The legacy @0x/protocol-utils and rubic-sdk direct parents were already at their registry latest versions when checked; a newer Neynar SDK exists but has not been adopted or compatibility-tested. Resolve or remove the unused dependency chains and complete a real clean install before enabling the standalone deployment.
+The standalone bundle builds and the focused migration tests pass, but this is **not a release-ready migration**. The previous clean-install blocker is resolved: unused legacy dependency parents were removed after import checks, Neynar was upgraded, and a genuine fresh-cache isolated `npm ci` succeeded. A subsequent full standalone build and 44 focused migration tests passed. The dependency audit still reports high-severity findings; installation success is not a security clearance.
 
 The pre-existing broad TypeScript check also fails; the separate type-check restoration work remains required. New migration-specific diagnostics were corrected, but that does not make the whole project type-clean.
+
+## Hosting decision required before worker cutover
+
+The current rug detector schedules checks every 100 ms; the proposed Workflow
+loop sleeps 30 seconds and ends after 120 ticks. They do **not** offer equivalent
+monitoring behavior. Do not activate that scaffold or silently reduce protection
+cadence to fit request-scoped functions.
+
+Choose explicitly between preserving a single always-on Node backend/worker on
+an independent host (with the frontend on Vercel), or redesigning durable
+execution with reviewed monitoring cadence, signed-intent persistence, finality
+reconciliation, generation renewal, and failure-injection tests. Both approaches
+still require stopping/draining the old owner and a final fresh data transfer.
+The always-on option removes the hosting-specific polling redesign; it does not
+prove the legacy transaction handling safe or remove the need for reconciliation.
+
+The Neon `migration-test` restore rehearsal succeeded with matching table sets
+and row counts (21 tables, 502 rows). No workers ran on that restored data and the
+`main` branch was not written. This rehearsal is not a final production copy or
+a durable independent backup policy: the archive was held in a private temporary
+directory and the live source continues changing.
 
 # Vercel migration preparation
 
@@ -42,7 +63,7 @@ Never use production keys in Vercel Preview deployments. Copy private secrets ma
 
 Run `npm run audit:vercel-env` to rescan source references. It reads source code only: it does not open `.env` files or print secret values.
 
-After an operator has privately entered environment variables in the target environment, run:
+After an operator has privately entered environment variables in the target environment, run the following **inside that runtime**. Blob's short-lived `VERCEL_OIDC_TOKEN` is supplied by Vercel, not copied by the operator; its absence in a local shell is not a reason to create a permanent token:
 
 ```sh
 npm run audit:vercel-env -- --readiness
@@ -59,7 +80,9 @@ This zero-secret check only reports each required key name with `true` or `false
 | `BASE_RPC_URL` | Server configuration/secret if provider-authenticated | Reliable Base reads and all Base execution features. Some reads have a public-RPC default, but executors require this name. |
 | `VITE_BASE_RPC_URL` | **Public build-time** | Browser wallet RPC. Anything prefixed `VITE_` is bundled into public client code and must contain no secret. |
 | `FRACTION_UPLOAD_STORAGE` | Server configuration | Must equal `vercel-blob` for fraction uploads on Vercel. |
-| `BLOB_READ_WRITE_TOKEN` | Server secret | Authorizes durable fraction-image uploads to Vercel Blob. |
+| `BLOB_STORE_ID` | Server configuration | Store ID for the public `basedmem-images` Blob store. Configure in Production only; Preview must not target the production store. |
+| `VERCEL_OIDC_TOKEN` | Vercel-managed runtime credential | Vercel injects this short-lived credential. Do not create, copy, or store it manually. Fraction uploads require it together with `BLOB_STORE_ID`. |
+| `BLOB_WEBHOOK_PUBLIC_KEY` | Server verification configuration | Production-only public key for verifying Blob webhook signatures. It is not an upload credential and is not used by the current server-side upload path. |
 
 Vercel supplies `VERCEL`, `VERCEL_ENV`, `VERCEL_URL`, and `VERCEL_PROJECT_PRODUCTION_URL`; do not manually treat these as secrets. `NODE_ENV` is runtime/build configuration. `PORT` is relevant to the long-running Replit/Node server, not normally configured for a Vercel function.
 
@@ -105,7 +128,9 @@ No migration command, Drizzle push, or proposed worker SQL is part of automatic 
 The package manifest requests `@vercel/blob` `^2.8.0`, `workflow` `^4.8.9`, `nitro` `^3.0.260903-beta`, and `jiti` `^2.7.0`; the current lock resolves Workflow `4.8.9`, Nitro `3.0.260903-beta`, and jiti `2.7.0`. Their presence only makes implementation/build work possible:
 
 - `workflow/nitro` is registered in the Nitro configuration, but automatic execution remains blocked by the explicit worker audit gates.
-- The Vercel fraction-upload branch now calls Vercel Blob and fails closed unless `FRACTION_UPLOAD_STORAGE=vercel-blob` and `BLOB_READ_WRITE_TOKEN` are set. This is targeted preparation, not proof that existing local objects were migrated or that the complete fraction flow has production parity. Keep the token server-only and out of Preview.
+- The Vercel fraction-upload branch calls the public `basedmem-images` Blob store only in Vercel Production and fails closed unless `FRACTION_UPLOAD_STORAGE=vercel-blob`, `BLOB_STORE_ID`, and Vercel's runtime-provided OIDC credential are present. It does not accept `BLOB_READ_WRITE_TOKEN` as a substitute. The server validates the decoded-byte limit (4 MiB), filename/MIME agreement, an allowlist of PNG/JPEG/GIF/WEBP, and each format's magic bytes before calling Blob. Provider failures do not fall back to ephemeral disk.
+- The installed `@vercel/blob` 2.8.0 API and local official type documentation include `oidcToken` and `storeId` on `put`; no dependency upgrade is required for this implementation. Keep the package on an OIDC-capable release if dependency resolution changes.
+- This is implementation evidence only, not evidence that pre-existing local images were migrated. Inventory `public/uploads/fractions`, copy each object to the production store through a separately reviewed migration process, update persisted local URLs, and verify object counts/checksums and rollback before claiming migration complete. No such migration was run as part of this preparation.
 - Beta Nitro and the workflow integration require targeted build/runtime validation before handoff. Package installation is not evidence of production parity.
 - `jiti` is build/configuration support, not an application feature.
 
@@ -113,7 +138,7 @@ The package manifest requests `@vercel/blob` `^2.8.0`, `workflow` `^4.8.9`, `nit
 
 These are concrete handoff checks. Verify them against source and targeted tests; installed packages or scaffolding alone do not close them:
 
-1. **Uploads:** `/api/fractions/upload-image` now selects Vercel Blob on Vercel while retaining local filesystem behavior off Vercel. Before parity is claimed, add content-byte/MIME validation (the current path trusts the extension/data declaration), verify size after base64 decoding, test authorization and failure behavior, and migrate any existing local objects/references.
+1. **Uploads:** `/api/fractions/upload-image` selects OIDC-authenticated Vercel Blob on Vercel while retaining local filesystem behavior off Vercel. Decoded size, MIME/extension, magic bytes, missing authorization, and provider failure are covered by mock tests. Existing local objects/references still require the separately evidenced migration and verification described above.
 2. **Solana deposit verification state:** `SolanaEscrowService.verifiedDeposits` is an in-memory `Map`. It is lost on cold start and not shared across instances, so replay/use tracking cannot be trusted serverlessly. Store transaction signature, order, wallet, mint, amount, verification slot/status, and an atomic `usedForExecution` transition in Postgres. Enforce unique transaction signatures and perform claim/execution state changes transactionally.
 3. **AskBase rate limiting:** `stock-agents/router.ts` uses an instance-local `Map` keyed by IP. Serverless concurrency and cold starts bypass the intended global limit. Move it to a shared atomic limiter (Redis/Upstash or Postgres), use a trusted proxy-aware client identifier, set an expiry, and retain the current 10 requests/minute policy and 429 response.
 4. **General in-memory state:** `MemStorage` and multiple route/executor caches are process-local. The exported application storage currently uses `DBStorage`, but every active write path should be confirmed to use it. Keep caches non-authoritative; move idempotency, jobs, locks, and financial state to shared durable storage.

@@ -23,13 +23,13 @@ function fakeDatabase() {
           if (sql.includes("INSERT INTO background_claims")) {
             const key = values.slice(0, 3).join(":");
             if (!control.enabled || control.owner !== values[3] ||
-              (values[3] === "workflow" && control.generation !== values[4]) || claims.has(key)) return { rows: [] };
+              control.generation !== values[4] || claims.has(key)) return { rows: [] };
             claims.add(key);
             return { rows: [{ subject: values[1] }] };
           }
           throw new Error(`Unexpected test query: ${sql}`);
         },
-        release() { releases++; },
+        release(destroy) { if (destroy) locked = false; releases++; },
       };
     },
   };
@@ -39,9 +39,85 @@ function fakeDatabase() {
 test("legacy default is VM-only, previews fail closed, activation cannot be enabled", () => {
   assert.equal(configuredOwner({}), "legacy");
   assert.equal(configuredOwner({ VERCEL: "1", VERCEL_ENV: "preview" }), "disabled");
+  assert.equal(configuredOwner({ VERCEL: "1", VERCEL_ENV: "preview", BACKGROUND_EXECUTION_OWNER: "workflow" }), "disabled");
   assert.equal(configuredOwner({ BACKGROUND_EXECUTION_OWNER: "typo" }), "disabled");
   assert.equal(configuredOwner({ BACKGROUND_EXECUTION_OWNER: "workflow" }), "workflow");
   assert.equal(workflowActivationAllowed(), false);
+});
+
+test("VM stop/restart generation fences an already-running tick", async () => {
+  const db = fakeDatabase();
+  await lockedTick(db.pool, "base", "vm", async () => {
+    db.control.generation = "g2";
+    assert.equal(await claimSideEffect("old-generation-order", "swap"), false);
+  });
+  assert.equal(db.claims.size, 0);
+});
+
+test("async descendants cannot use a lock after the owning tick returns", async () => {
+  const db = fakeDatabase();
+  let resume!: () => void;
+  let descendant!: Promise<void>;
+  await lockedTick(db.pool, "base", "vm", async () => {
+    descendant = (async () => {
+      await new Promise<void>(resolve => resume = resolve);
+      await assert.rejects(claimSideEffect("late-order", "swap"), /expired or lost/);
+    })();
+  });
+  resume();
+  await descendant;
+  assert.equal(db.claims.size, 0);
+});
+
+test("session loss denies later claims and destroys rather than reuses the session", async () => {
+  const listeners = new Map<string, () => void>();
+  let destroyed = false;
+  let inserts = 0;
+  const pool: SessionPool = { async connect() { return {
+    on(event, listener) { listeners.set(event, listener); },
+    removeListener(event) { listeners.delete(event); },
+    async query(sql) {
+      if (sql.includes("pg_try_advisory_lock")) return { rows: [{ acquired: true }] };
+      if (sql.startsWith("SELECT owner")) return { rows: [{ owner: "vm", enabled: true, generation: "g1" }] };
+      if (sql.includes("INSERT")) inserts++;
+      throw new Error("query after connection loss");
+    },
+    release(destroy) { destroyed = destroy === true; },
+  }; } };
+  await assert.rejects(lockedTick(pool, "base", "vm", async () => {
+    listeners.get("error")!();
+    await assert.rejects(claimSideEffect("lost-session-order", "swap"), /expired or lost/);
+  }), /lock session lost/);
+  assert.equal(inserts, 0);
+  assert.equal(destroyed, true);
+  assert.equal(listeners.size, 0);
+});
+
+test("claim commit followed by response loss poisons the tick and cannot resend", async () => {
+  const db = fakeDatabase();
+  let loseResponse = true;
+  const pool: SessionPool = { async connect() {
+    const session = await db.pool.connect();
+    return {
+      release: session.release,
+      async query(sql, values) {
+        const result = await session.query(sql, values);
+        if (sql.includes("INSERT INTO background_claims") && loseResponse) {
+          loseResponse = false;
+          throw new Error("connection lost after commit");
+        }
+        return result;
+      },
+    };
+  } };
+  await assert.rejects(lockedTick(pool, "base", "vm", async () => {
+    await assert.rejects(claimSideEffect("ambiguous-order", "swap"), /after commit/);
+    await assert.rejects(claimSideEffect("different-order", "swap"), /expired or lost/);
+  }), /lock session lost/);
+  await lockedTick(pool, "base", "vm", async () => {
+    assert.equal(await claimSideEffect("ambiguous-order", "swap"), false);
+  });
+  assert.equal(db.claims.size, 1);
 });
 
 test("session lock spans the entire awaited tick and denies overlapping ticks", async () => {
